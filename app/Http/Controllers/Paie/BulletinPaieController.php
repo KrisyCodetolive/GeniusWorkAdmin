@@ -889,79 +889,58 @@ class BulletinPaieController extends Controller
                     ->with('error', 'Vous n\'avez pas l\'autorisation de visualiser ce bulletin.');
             }
             
-            // Récupérer les éléments du bulletin
-            $elementsSalaire = ElementPaie::where('bulletin_paie_id', $bulletin->id)
-                ->where('type', 'salaire_base')
-                ->get();
-                
-            $elementsIndemnites = ElementPaie::where('bulletin_paie_id', $bulletin->id)
-                ->where('type', 'indemnite')
-                ->get();
-                
-            $elementsPrimes = ElementPaie::where('bulletin_paie_id', $bulletin->id)
-                ->where('type', 'prime')
-                ->get();
-                
-            $elementsRetenues = ElementPaie::where('bulletin_paie_id', $bulletin->id)
-                ->where('type', 'retenue')
-                ->get();
-                
-            $elementsCharges = ElementPaie::where('bulletin_paie_id', $bulletin->id)
-                ->where('type', 'charge_patronale')
-                ->get();
+            // Récupérer les éléments de paie par type
+            $elementsSalaire = $bulletin->getElementsByType('salaire');
+            $elementsIndemnites = $bulletin->getElementsByType('indemnite');
+            $elementsPrimes = $bulletin->getElementsByType('prime');
+            $elementsRetenues = $bulletin->getElementsByType('retenue_salariale');
+            $elementsCharges = $bulletin->getElementsByType('charge_patronale');
             
-            // Préparer les données pour la vue Tailwind
+            // Récupérer la configuration de paie par défaut de l'entreprise
+            $configPaie = \App\Models\Paie\ConfigurationPaie::where('entreprise_id', $bulletin->entreprise_id)
+                ->where('est_defaut', true)
+                ->first();
+            
+            // Si aucune configuration par défaut n'est trouvée, prendre la première configuration disponible
+            if (!$configPaie) {
+                $configPaie = \App\Models\Paie\ConfigurationPaie::where('entreprise_id', $bulletin->entreprise_id)
+                    ->first();
+            }
+            
+            // Si aucune configuration n'est disponible, créer une configuration par défaut
+            if (!$configPaie) {
+                $configPaie = \App\Models\Paie\ConfigurationPaie::creerConfigurationDefaut($bulletin->entreprise_id);
+            }
+            
+            
+            // Convertir le montant en lettres
+            $montantEnLettres = $this->convertirMontantEnLettres($bulletin->salaire_net);
+            
+            // Récupérer les données de présence pour la période du bulletin
+            $presenceData = $this->getPresenceData($bulletin);
+            
+            // Récupérer les données de congés
+            $congeData = $this->getCongeData($bulletin);
+            
+            // Préparer les données minimales nécessaires pour la vue
             $payrollData = [
-                'employee' => [
-                    'name' => $bulletin->employeur->nom_complet ?? 'N/A',
-                    'position' => $bulletin->employeur->fonction ?? 'N/A',
-                    'contractType' => $bulletin->employeur->type_contrat ?? 'N/A',
-                    'contractHours' => $bulletin->employeur->horaire ?? 'Temps plein'
-                ],
-                'company' => [
-                    'name' => $bulletin->employeur->entreprise->nom ?? 'N/A',
-                    'siret' => $bulletin->employeur->entreprise->rccm ?? 'N/A'
-                ],
-                'period' => [
-                    'start' => $bulletin->periode_debut ? \Carbon\Carbon::parse($bulletin->periode_debut)->format('d/m/Y') : 'N/A',
-                    'end' => $bulletin->periode_fin ? \Carbon\Carbon::parse($bulletin->periode_fin)->format('d/m/Y') : 'N/A',
-                    'paymentDate' => $bulletin->date_paiement ? \Carbon\Carbon::parse($bulletin->date_paiement)->format('d/m/Y') : 'N/A',
-                    'number' => $bulletin->reference
-                ],
-                'earnings' => [
-                    'baseSalary' => $elementsSalaire->sum('montant') ?? 0,
-                    'overtime' => 0, // À adapter selon vos données
-                    'bonus' => $elementsPrimes->sum('montant') ?? 0,
-                    'benefits' => $elementsIndemnites->sum('montant') ?? 0,
-                    'totalGross' => $bulletin->salaire_brut ?? 0
-                ],
-                'deductions' => [
-                    'socialContrib' => $elementsRetenues->where('libelle', 'like', '%social%')->sum('montant') ?? 0,
-                    'incomeTax' => $elementsRetenues->where('libelle', 'like', '%impôt%')->sum('montant') ?? 0,
-                    'specialDeduction' => $elementsRetenues->whereNotIn('libelle', ['%social%', '%impôt%'])->sum('montant') ?? 0,
-                    'totalDeductions' => $bulletin->total_retenues ?? 0
-                ],
                 'net' => [
-                    'amount' => $bulletin->salaire_net ?? 0,
-                    'inWords' => ''
+                    'inWords' => $montantEnLettres
                 ],
-                'leave' => [
-                    'accrued' => $bulletin->employeur->conges_acquis ?? 0,
-                    'taken' => $bulletin->employeur->conges_pris ?? 0,
-                    'balance' => ($bulletin->employeur->conges_acquis ?? 0) - ($bulletin->employeur->conges_pris ?? 0)
-                ],
-                'tax' => [
-                    'annualGross' => ($bulletin->salaire_brut ?? 0) * 12,
-                    'rate' => $bulletin->employeur->taux_imposition ?? '0%',
-                    'shares' => $bulletin->employeur->parts_fiscales ?? 1
-                ],
-                'payment' => [
-                    'method' => $bulletin->mode_paiement ?? 'Virement bancaire'
-                ],
-                'generatedOn' => \Carbon\Carbon::now()->format('d/m/Y')
+                'presence' => $presenceData,
+                'conge' => $congeData
             ];
             
-            return view('paie.bulletins.paie', compact('bulletin', 'payrollData'));
+            return view('paie.bulletins.paie', compact(
+                'bulletin', 
+                'elementsSalaire', 
+                'elementsIndemnites', 
+                'elementsPrimes', 
+                'elementsRetenues', 
+                'elementsCharges', 
+                'payrollData',
+                'configPaie'
+            ));
             
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'affichage du bulletin de paie Tailwind', [
@@ -972,6 +951,258 @@ class BulletinPaieController extends Controller
             
             return redirect()->route('paie.bulletins.index')
                 ->with('error', 'Une erreur est survenue lors de l\'affichage du bulletin de paie : ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Convertir un montant numérique en lettres
+     * 
+     * @param float $montant
+     * @return string
+     */
+    private function convertirMontantEnLettres($montant)
+    {
+        // Tableau des unités
+        $unite = array('', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf');
+        // Tableau des dizaines
+        $dizaine = array('', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix');
+        
+        // Arrondir le montant à l'entier
+        $montant = round($montant);
+        
+        if ($montant == 0) {
+            return 'zéro francs CFA';
+        }
+        
+        $result = '';
+        
+        // Traitement des millions
+        $millions = floor($montant / 1000000);
+        if ($millions > 0) {
+            $result .= ($millions > 1) ? $this->convertirNombre($millions) . ' millions ' : 'un million ';
+            $montant = $montant % 1000000;
+        }
+        
+        // Traitement des milliers
+        $milliers = floor($montant / 1000);
+        if ($milliers > 0) {
+            $result .= ($milliers > 1) ? $this->convertirNombre($milliers) . ' mille ' : 'mille ';
+            $montant = $montant % 1000;
+        }
+        
+        // Traitement des centaines et unités restantes
+        if ($montant > 0) {
+            $result .= $this->convertirNombre($montant);
+        }
+        
+        return trim($result) . ' francs CFA';
+    }
+    
+    /**
+     * Convertir un nombre en lettres (auxiliaire pour convertirMontantEnLettres)
+     * 
+     * @param int $nombre
+     * @return string
+     */
+    private function convertirNombre($nombre)
+    {
+        $unite = array('', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf');
+        $dizaine = array('', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt');
+        $dix = array('dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf');
+        
+        $result = '';
+        
+        // Centaines
+        $centaines = floor($nombre / 100);
+        if ($centaines > 0) {
+            $result .= ($centaines > 1) ? $unite[$centaines] . ' cents ' : 'cent ';
+            $nombre = $nombre % 100;
+        }
+        
+        // Dizaines et unités
+        if ($nombre > 0) {
+            $dizaines = floor($nombre / 10);
+            $unites = $nombre % 10;
+            
+            if ($dizaines > 0) {
+                if ($dizaines == 1 && $unites > 0) {
+                    $result .= $dix[$unites] . ' ';
+                } else {
+                    $result .= $dizaine[$dizaines];
+                    
+                    if ($dizaines == 7 || $dizaines == 9) {
+                        $result .= '-';
+                        if ($unites == 0) {
+                            $result .= 'dix';
+                        } else if ($unites == 1) {
+                            $result .= 'et-onze';
+                        } else {
+                            $result .= $dix[$unites];
+                        }
+                    } else {
+                        if ($unites > 0) {
+                            if ($unites == 1 && ($dizaines == 2 || $dizaines == 3 || $dizaines == 4 || $dizaines == 5 || $dizaines == 6)) {
+                                $result .= '-et-un';
+                            } else {
+                                $result .= '-' . $unite[$unites];
+                            }
+                        } else if ($dizaines == 8) {
+                            $result .= 's';
+                        }
+                    }
+                    
+                    $result .= ' ';
+                }
+            } else {
+                $result .= $unite[$unites] . ' ';
+            }
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * Récupère les données de présence pour un bulletin de paie
+     * 
+     * @param BulletinPaie $bulletin
+     * @return array
+     */
+    private function getPresenceData(BulletinPaie $bulletin)
+    {
+        try {
+            // Récupérer le service de temps de présence
+            $tempsPresenceService = app(\App\Services\TempsPresenceService::class);
+            
+            // Convertir les dates de début et de fin en objets Carbon
+            $dateDebut = \Carbon\Carbon::parse($bulletin->periode_debut);
+            $dateFin = \Carbon\Carbon::parse($bulletin->periode_fin);
+            
+            // Récupérer l'ID de l'entreprise
+            $entrepriseId = $bulletin->entreprise_id;
+            
+            // Calculer le temps de présence pour l'employé
+            $presences = $tempsPresenceService->calculerTempsPresenceParEmploye($dateDebut, $dateFin, $entrepriseId);
+            
+            // Filtrer pour ne garder que les données de l'employé concerné
+            $presenceEmploye = $presences->first(function ($item) use ($bulletin) {
+                return $item['employe']->id === $bulletin->employeur_id;
+            });
+            
+            if (!$presenceEmploye) {
+                return [
+                    'temps_total' => '0h 0m',
+                    'jours_travailles' => 0,
+                    'temps_moyen_par_jour' => '0h 0m',
+                    'retard_total' => '0h 0m',
+                    'heures_supplementaires' => '0h 0m'
+                ];
+            }
+            
+            return [
+                'temps_total' => $presenceEmploye['temps_total_formate'],
+                'jours_travailles' => $presenceEmploye['jours_travailles'],
+                'temps_moyen_par_jour' => $presenceEmploye['temps_moyen_par_jour_formate'],
+                'retard_total' => $presenceEmploye['retard_total_formate'],
+                'heures_supplementaires' => $presenceEmploye['heures_supplementaires_formate']
+            ];
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération des données de présence', [
+                'bulletin_id' => $bulletin->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'temps_total' => '0h 0m',
+                'jours_travailles' => 0,
+                'temps_moyen_par_jour' => '0h 0m',
+                'retard_total' => '0h 0m',
+                'heures_supplementaires' => '0h 0m'
+            ];
+        }
+    }
+    
+    /**
+     * Récupère les données de congés pour un bulletin de paie
+     * 
+     * @param BulletinPaie $bulletin
+     * @return array
+     */
+    private function getCongeData(BulletinPaie $bulletin)
+    {
+        try {
+            // Récupérer le service de congés
+            $congeService = app(\App\Services\CongeService::class);
+            
+            // Récupérer l'utilisateur associé à l'employeur
+            $user = \App\Models\User::where('employeur_id', $bulletin->employeur_id)->first();
+            
+            if (!$user) {
+                return [
+                    'solde_initial' => 0,
+                    'solde_acquis' => 0,
+                    'solde_pris' => 0,
+                    'solde_restant' => 0,
+                    'conges_pris_periode' => 0
+                ];
+            }
+            
+            // Récupérer l'année du bulletin
+            $annee = \Carbon\Carbon::parse($bulletin->periode_fin)->year;
+            
+            // Récupérer les statistiques de congés
+            $stats = $congeService->getStatistiquesUtilisateur($user, $annee);
+            
+            // Calculer les congés pris sur la période du bulletin
+            $dateDebut = \Carbon\Carbon::parse($bulletin->periode_debut);
+            $dateFin = \Carbon\Carbon::parse($bulletin->periode_fin);
+            
+            $congesPeriode = \App\Models\Conge::where('employeur_id', $bulletin->employeur_id)
+                ->where('statut', 'approuve')
+                ->where(function ($query) use ($dateDebut, $dateFin) {
+                    $query->whereBetween('date_debut', [$dateDebut, $dateFin])
+                        ->orWhereBetween('date_fin', [$dateDebut, $dateFin])
+                        ->orWhere(function ($query) use ($dateDebut, $dateFin) {
+                            $query->where('date_debut', '<', $dateDebut)
+                                ->where('date_fin', '>', $dateFin);
+                        });
+                })
+                ->sum('duree_jours');
+            
+            // Récupérer les données du premier type de congé (congé payé)
+            $congePaye = $stats['soldes']->first();
+            
+            if (!$congePaye) {
+                return [
+                    'solde_initial' => 0,
+                    'solde_acquis' => 0,
+                    'solde_pris' => 0,
+                    'solde_restant' => 0,
+                    'conges_pris_periode' => $congesPeriode
+                ];
+            }
+            
+            return [
+                'solde_initial' => $congePaye['solde_initial'],
+                'solde_acquis' => $congePaye['solde_acquis'],
+                'solde_pris' => $congePaye['solde_pris'],
+                'solde_restant' => $congePaye['solde_restant'],
+                'conges_pris_periode' => $congesPeriode
+            ];
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération des données de congés', [
+                'bulletin_id' => $bulletin->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'solde_initial' => 0,
+                'solde_acquis' => 0,
+                'solde_pris' => 0,
+                'solde_restant' => 0,
+                'conges_pris_periode' => 0
+            ];
         }
     }
 }

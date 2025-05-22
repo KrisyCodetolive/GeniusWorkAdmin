@@ -44,7 +44,7 @@ class ElementPaie extends Model
     const TYPE_PRIME = 'prime';
     const TYPE_RETENUE_SALARIALE = 'retenue_salariale';
     const TYPE_CHARGE_PATRONALE = 'charge_patronale';
-
+    const CATEGORIE_PRIME_AUTRE = 'prime_autre';
     /**
      * Les catégories d'éléments de paie possibles
      */
@@ -59,6 +59,8 @@ class ElementPaie extends Model
     const CATEGORIE_PRESTATIONS_FAMILIALES = 'prestations_familiales';
     const CATEGORIE_ACCIDENT_TRAVAIL = 'accident_travail';
     const CATEGORIE_ASSURANCE_MALADIE = 'assurance_maladie';
+    const CATEGORIE_INDEMNITE_PERSONNALISEE = 'indemnite_personnalisee';
+    const CATEGORIE_INDEMNITE_AUTRE = 'indemnite_autre';
 
     /**
      * Relation avec le bulletin de paie

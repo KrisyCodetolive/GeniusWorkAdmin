@@ -267,21 +267,78 @@ class CreateBulletinPaie extends CreateRecord
                     ->helperText('Activer pour calculer automatiquement les éléments du bulletin')
                     ->default(true),
                     
-                Forms\Components\Repeater::make('indemnites')
-                    ->label('Indemnités')
-                    ->schema($this->_getRemunerationElementSchema())
-                    ->columns(2)
-                    ->itemLabel(fn (array $state): ?string => $state['libelle'] ?? null)
-                    ->collapsible()
-                    ->defaultItems(0),
-                    
-                Forms\Components\Repeater::make('primes')
-                    ->label('Primes')
-                    ->schema($this->_getRemunerationElementSchema())
-                    ->columns(2)
-                    ->itemLabel(fn (array $state): ?string => $state['libelle'] ?? null)
-                    ->collapsible()
-                    ->defaultItems(0),
+                Forms\Components\Section::make('Indemnités et Primes')
+                    ->description('Gérez les indemnités et primes pour ce bulletin de paie')
+                    ->schema([
+                        Forms\Components\Toggle::make('charger_config_paie')
+                            ->label('Charger depuis la configuration de paie')
+                            ->helperText('Utiliser les indemnités et primes définies dans la configuration de paie de l\'entreprise')
+                            ->default(true)
+                            ->reactive()
+                            ->afterStateUpdated(function (Forms\Set $set, $state) {
+                                if ($state) {
+                                    // Si activé, charger les indemnités et primes depuis la config
+                                    $configPaie = $this->getConfigurationPaie();
+                                    $employeur = $this->getEmployeur();
+                                    
+                                    if ($configPaie && $employeur) {
+                                        $calculPaieService = app(\App\Services\Paie\CalculPaieService::class);
+                                        
+                                        // Calculer les indemnités
+                                        $indemnites = $calculPaieService->calculerIndemnites($employeur, $configPaie);
+                                        $indemnitesData = [];
+                                        
+                                        foreach ($indemnites as $indemnite) {
+                                            $indemnitesData[] = [
+                                                'libelle' => $indemnite['libelle'],
+                                                'type' => $indemnite['taux'] ? 'pourcentage' : 'montant_fixe',
+                                                'taux' => $indemnite['taux'],
+                                                'montant' => $indemnite['montant'],
+                                                'imposable' => $indemnite['imposable'],
+                                            ];
+                                        }
+                                        
+                                        $set('indemnites', $indemnitesData);
+                                        
+                                        // Calculer les primes
+                                        $primes = $calculPaieService->calculerPrimes($employeur, $configPaie);
+                                        $primesData = [];
+                                        
+                                        foreach ($primes as $prime) {
+                                            $primesData[] = [
+                                                'libelle' => $prime['libelle'],
+                                                'type' => $prime['taux'] ? 'pourcentage' : 'montant_fixe',
+                                                'taux' => $prime['taux'],
+                                                'montant' => $prime['montant'],
+                                                'imposable' => $prime['imposable'],
+                                            ];
+                                        }
+                                        
+                                        $set('primes', $primesData);
+                                    }
+                                } else {
+                                    // Si désactivé, vider les collections
+                                    $set('indemnites', []);
+                                    $set('primes', []);
+                                }
+                            }),
+                            
+                        Forms\Components\Repeater::make('indemnites')
+                            ->label('Indemnités')
+                            ->schema($this->_getRemunerationElementSchema())
+                            ->columns(2)
+                            ->itemLabel(fn (array $state): ?string => $state['libelle'] ?? null)
+                            ->collapsible()
+                            ->defaultItems(0),
+                            
+                        Forms\Components\Repeater::make('primes')
+                            ->label('Primes')
+                            ->schema($this->_getRemunerationElementSchema())
+                            ->columns(2)
+                            ->itemLabel(fn (array $state): ?string => $state['libelle'] ?? null)
+                            ->collapsible()
+                            ->defaultItems(0),
+                    ]),
                     
                 Forms\Components\Repeater::make('retenues')
                     ->label('Retenues supplémentaires')
@@ -845,5 +902,49 @@ class CreateBulletinPaie extends CreateRecord
                 ->label('Imposable')
                 ->default(true),
         ];
+    }
+    
+    /**
+     * Récupère la configuration de paie par défaut de l'entreprise
+     * 
+     * @return \App\Models\Paie\ConfigurationPaie|null
+     */
+    private function getConfigurationPaie()
+    {
+        $entrepriseId = Auth::user()->entreprise_id;
+        
+        // Récupérer la configuration de paie par défaut
+        $configPaie = \App\Models\Paie\ConfigurationPaie::where('entreprise_id', $entrepriseId)
+            ->where('est_defaut', true)
+            ->first();
+        
+        // Si aucune configuration par défaut n'est trouvée, prendre la première configuration disponible
+        if (!$configPaie) {
+            $configPaie = \App\Models\Paie\ConfigurationPaie::where('entreprise_id', $entrepriseId)
+                ->first();
+        }
+        
+        // Si aucune configuration n'est disponible, créer une configuration par défaut
+        if (!$configPaie) {
+            $configPaie = \App\Models\Paie\ConfigurationPaie::creerConfigurationDefaut($entrepriseId);
+        }
+        
+        return $configPaie;
+    }
+    
+    /**
+     * Récupère l'employeur sélectionné dans le formulaire
+     * 
+     * @return \App\Models\Employeur|null
+     */
+    private function getEmployeur()
+    {
+        $employeurId = $this->form->getState()['employeur_id'] ?? null;
+        
+        if (!$employeurId) {
+            return null;
+        }
+        
+        return \App\Models\Employeur::find($employeurId);
     }
 }

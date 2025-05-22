@@ -28,7 +28,7 @@ class BulletinPaieResource extends Resource
 {
     protected static ?string $model = BulletinPaie::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
     
     protected static ?string $navigationGroup = 'Paie';
     
@@ -46,6 +46,8 @@ class BulletinPaieResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make('Informations générales')
+                    ->description('Informations de base du bulletin de paie')
+                    ->icon('heroicon-o-information-circle')
                     ->schema([
                         Forms\Components\Select::make('employeur_id')
                             ->label('Employé')
@@ -101,6 +103,8 @@ class BulletinPaieResource extends Resource
                     ->columns(2),
                     
                 Forms\Components\Section::make('Éléments de rémunération')
+                    ->description('Salaire de base et options de calcul')
+                    ->icon('heroicon-o-currency-dollar')
                     ->schema([
                         Forms\Components\TextInput::make('salaire_base')
                             ->label('Salaire de base')
@@ -120,6 +124,9 @@ class BulletinPaieResource extends Resource
                     ->columns(2),
                     
                 Forms\Components\Section::make('Indemnités')
+                    ->description('Ajoutez les indemnités versées à l\'employé')
+                    ->icon('heroicon-o-plus-circle')
+                    ->collapsible()
                     ->schema([
                         Forms\Components\Repeater::make('indemnites')
                             ->label(false)
@@ -159,6 +166,9 @@ class BulletinPaieResource extends Resource
                     ]),
                     
                 Forms\Components\Section::make('Primes')
+                    ->description('Ajoutez les primes versées à l\'employé')
+                    ->icon('heroicon-o-star')
+                    ->collapsible()
                     ->schema([
                         Forms\Components\Repeater::make('primes')
                             ->label(false)
@@ -198,6 +208,9 @@ class BulletinPaieResource extends Resource
                     ]),
                     
                 Forms\Components\Section::make('Retenues supplémentaires')
+                    ->description('Ajoutez les retenues supplémentaires')
+                    ->icon('heroicon-o-minus-circle')
+                    ->collapsible()
                     ->schema([
                         Forms\Components\Repeater::make('retenues')
                             ->label(false)
@@ -218,6 +231,8 @@ class BulletinPaieResource extends Resource
                     ]),
                     
                 Forms\Components\Section::make('Résultats calculés')
+                    ->description('Montants calculés automatiquement')
+                    ->icon('heroicon-o-calculator')
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
@@ -274,6 +289,7 @@ class BulletinPaieResource extends Resource
                             Forms\Components\Actions\Action::make('calculer')
                                 ->label('Calculer le bulletin')
                                 ->icon('heroicon-o-calculator')
+                                ->iconPosition(IconPosition::After)
                                 ->action(function (Forms\Get $get, Forms\Set $set, array $state) {
                                     // Récupérer le service de calcul de paie
                                     $calculPaieService = App::make(CalculPaieServiceInterface::class);
@@ -328,33 +344,57 @@ class BulletinPaieResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc') // Tri par défaut : du plus récent au plus ancien
             ->columns([
                 Tables\Columns\TextColumn::make('reference')
                     ->label('Référence')
-                    ->searchable(),
+                    ->searchable()
+                    ->copyable()
+                    ->copyMessage('Référence copiée')
+                    ->icon('heroicon-o-document-text'),
                     
                 Tables\Columns\TextColumn::make('employeur.nom_complet')
                     ->label('Employé')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable()
+                    ->icon('heroicon-o-user'),
                     
                 Tables\Columns\TextColumn::make('periode_debut')
                     ->label('Début période')
-                    ->date('d/m/Y'),
+                    ->date('d/m/Y')
+                    ->sortable()
+                    ->icon('heroicon-o-calendar'),
                     
                 Tables\Columns\TextColumn::make('periode_fin')
                     ->label('Fin période')
-                    ->date('d/m/Y'),
+                    ->date('d/m/Y')
+                    ->sortable()
+                    ->icon('heroicon-o-calendar'),
                     
                 Tables\Columns\TextColumn::make('salaire_brut')
                     ->label('Salaire brut')
-                    ->money('XOF'),
+                    ->money('XOF')
+                    ->sortable()
+                    ->alignRight()
+                    ->icon('heroicon-o-currency-dollar'),
                     
                 Tables\Columns\TextColumn::make('salaire_net')
                     ->label('Salaire net')
-                    ->money('XOF'),
+                    ->money('XOF')
+                    ->sortable()
+                    ->alignRight()
+                    ->weight('bold')
+                    ->icon('heroicon-o-banknotes'),
                     
                 Tables\Columns\BadgeColumn::make('statut')
                     ->label('Statut')
+                    ->searchable()
+                    ->sortable()
+                    ->icons([
+                        'heroicon-o-clock' => 'brouillon',
+                        'heroicon-o-check' => 'validé',
+                        'heroicon-o-x-mark' => 'annulé',
+                    ])
                     ->colors([
                         'warning' => 'brouillon',
                         'success' => 'validé',
@@ -403,6 +443,8 @@ class BulletinPaieResource extends Resource
                 Tables\Actions\Action::make('pdf')
                     ->label('PDF')
                     ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->tooltip('Télécharger le PDF')
                     ->url(fn (BulletinPaie $record): string => route('paie.bulletins.pdf', $record->id))
                     ->openUrlInNewTab(),
                 
@@ -410,6 +452,8 @@ class BulletinPaieResource extends Resource
                 Tables\Actions\Action::make('visualiser')
                     ->label('Visualiser')
                     ->icon('heroicon-o-eye')
+                    ->color('primary')
+                    ->tooltip('Aperçu du bulletin de paie')
                     ->url(fn (BulletinPaie $record): string => route('paie.bulletins.tailwind', $record->id))
                     ->openUrlInNewTab(),
             
@@ -444,8 +488,7 @@ class BulletinPaieResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn (): bool => Auth::user()->can('delete', BulletinPaie::class)),
+                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -455,6 +498,7 @@ class BulletinPaieResource extends Resource
         return $infolist
             ->schema([
                 Infolists\Components\Section::make('Informations générales')
+                    ->icon('heroicon-o-information-circle')
                     ->schema([
                         Infolists\Components\TextEntry::make('reference')
                             ->label('Référence')
@@ -488,6 +532,7 @@ class BulletinPaieResource extends Resource
                     ->columns(3),
                     
                 Infolists\Components\Section::make('Éléments de rémunération')
+                    ->icon('heroicon-o-currency-dollar')
                     ->schema([
                         Infolists\Components\TextEntry::make('salaire_base')
                             ->label('Salaire de base')
@@ -509,6 +554,7 @@ class BulletinPaieResource extends Resource
                     ->columns(4),
                     
                 Infolists\Components\Section::make('Retenues')
+                    ->icon('heroicon-o-minus-circle')
                     ->schema([
                         Infolists\Components\TextEntry::make('cnps_employe')
                             ->label('CNPS employé')
@@ -526,6 +572,7 @@ class BulletinPaieResource extends Resource
                     ->columns(3),
                     
                 Infolists\Components\Section::make('Salaire net')
+                    ->icon('heroicon-o-banknotes')
                     ->schema([
                         Infolists\Components\TextEntry::make('salaire_net')
                             ->label('Salaire net à payer')
@@ -536,6 +583,7 @@ class BulletinPaieResource extends Resource
                     ]),
                     
                 Infolists\Components\Section::make('Charges patronales')
+                    ->icon('heroicon-o-building-office')
                     ->schema([
                         Infolists\Components\TextEntry::make('cnps_employeur')
                             ->label('CNPS employeur')

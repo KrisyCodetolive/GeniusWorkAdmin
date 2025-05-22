@@ -6,6 +6,7 @@ use App\Filament\Resources\Paie\BulletinPaieResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Facades\Auth;
+use Filament\Notifications\Notification;
 
 class ViewBulletinPaie extends ViewRecord
 {
@@ -22,6 +23,12 @@ class ViewBulletinPaie extends ViewRecord
                 ->icon('heroicon-o-document-arrow-down')
                 ->url(fn () => route('paie.bulletins.pdf', $this->record->id))
                 ->openUrlInNewTab(),
+
+            Actions\Action::make('visualiser')
+                ->label('Visualiser')
+                ->icon('heroicon-o-eye')
+                ->url(fn ($record): string => route('paie.bulletins.tailwind', $record->id))
+                ->openUrlInNewTab(),
                 
             Actions\Action::make('valider')
                 ->label('Valider')
@@ -36,7 +43,11 @@ class ViewBulletinPaie extends ViewRecord
                         'date_validation' => now(),
                     ]);
                     
-                    $this->notify('success', 'Le bulletin a été validé avec succès.');
+                    Notification::make()
+                        ->title('Bulletin validé')
+                        ->success()
+                        ->send();
+                    
                     $this->redirect($this->getResource()::getUrl('view', ['record' => $this->record->id]));
                 }),
                 
@@ -57,7 +68,11 @@ class ViewBulletinPaie extends ViewRecord
                         'commentaire' => $data['commentaire'],
                     ]);
                     
-                    $this->notify('success', 'Le bulletin a été annulé avec succès.');
+                    Notification::make()
+                        ->title('Bulletin annulé')
+                        ->danger()
+                        ->send();
+                    
                     $this->redirect($this->getResource()::getUrl('view', ['record' => $this->record->id]));
                 }),
         ];

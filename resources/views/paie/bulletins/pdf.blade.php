@@ -74,9 +74,8 @@
             display: flex;
             flex-direction: row;
             justify-content: space-between;
-            margin-bottom: 30px;
-            flex-wrap: nowrap;
             gap: 20px;
+            flex-wrap: nowrap;
         }
         .info-box {
             flex: 1;
@@ -163,6 +162,8 @@
             margin-top: 50px;
             display: flex;
             justify-content: space-between;
+            width: 48%; /* légèrement moins large pour laisser un espace au centre */
+            text-align: center;
         }
         .signature-box {
             width: 45%;
@@ -197,6 +198,14 @@
             .container {
                 padding: 0;
                 max-width: 100%;
+            }
+            .info-section,
+            .signature-section {
+                flex-wrap: nowrap !important;
+            }
+            .info-box,
+            .signature-box {
+                width: 48% !important;
             }
         }
     </style>
@@ -236,6 +245,14 @@
                     <span class="info-label">Compte Contribuable:</span>
                     <span class="info-value">{{ $bulletin->employeur->entreprise->compte_contribuable ?? 'N/A' }}</span>
                 </div>
+                <div class="info-item">
+                    <span class="info-label">Téléphone:</span>
+                    <span class="info-value">{{ $bulletin->employeur->entreprise->telephone ?? 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">{{ $bulletin->employeur->entreprise->email ?? 'N/A' }}</span>
+                </div>
             </div>
             
             <div class="info-box">
@@ -250,11 +267,15 @@
                 </div>
                 <div class="info-item">
                     <span class="info-label">Fonction:</span>
-                    <span class="info-value">{{ $bulletin->employeur->fonction ?? 'N/A' }}</span>
+                    <span class="info-value">{{ $bulletin->employeur->poste ?? 'N/A' }}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Date d'embauche:</span>
                     <span class="info-value">{{ $bulletin->employeur->date_embauche ? \Carbon\Carbon::parse($bulletin->employeur->date_embauche)->format('d/m/Y') : 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date de naissance:</span>
+                    <span class="info-value">{{ $bulletin->employeur->date_naissance ? \Carbon\Carbon::parse($bulletin->employeur->date_naissance)->format('d/m/Y') : 'N/A' }}</span>
                 </div>
             </div>
         </div>
@@ -389,10 +410,6 @@
             <div class="signature-box">
                 <div class="signature-title">Signature de l'employeur</div>
                 <div>Nom et cachet</div>
-            </div>
-            <div class="signature-box">
-                <div class="signature-title">Signature de l'employé</div>
-                <div>Lu et approuvé</div>
             </div>
         </div>
 

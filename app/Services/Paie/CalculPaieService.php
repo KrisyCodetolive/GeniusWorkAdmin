@@ -161,60 +161,110 @@ class CalculPaieService implements CalculPaieServiceInterface
     /**
      * {@inheritDoc}
      */
-    public function calculerIndemnites(Employeur $employeur, ConfigurationPaie $configuration)
+    public function calculerIndemnites(Employeur $employeur, ConfigurationPaie $configuration, array $indemnitesSupplementaires = [])
     {
-        $salaireBase = $employeur->salaire_base ?? $configuration->smig;
         $indemnites = [];
+        $salaireBase = $employeur->salaire_base ?? $configuration->smig;
         
         // Récupérer les paramètres d'indemnités
         $parametresIndemnites = $configuration->parametres_indemnites ?? [];
         
-        // Indemnité de logement
-        if (isset($parametresIndemnites['indemnite_logement'])) {
-            $paramLogement = $parametresIndemnites['indemnite_logement'];
-            $montant = 0;
-            
-            if ($paramLogement['type'] === 'pourcentage') {
-                $montant = $salaireBase * ($paramLogement['taux'] / 100);
-            } else {
-                $montant = $paramLogement['montant'] ?? 0;
-            }
-            
-            $indemnites[] = [
-                'code' => 'IL',
-                'libelle' => 'Indemnité de logement',
-                'type' => ElementPaie::TYPE_INDEMNITE,
-                'categorie' => ElementPaie::CATEGORIE_INDEMNITE_LOGEMENT,
-                'base' => $salaireBase,
-                'taux' => $paramLogement['taux'] ?? null,
-                'montant' => $montant,
-                'imposable' => $paramLogement['imposable'] ?? true,
-                'ordre' => 10
-            ];
-        }
+        // Ajouter un log pour déboguer
+        Log::info('Paramètres d\'indemnités', $parametresIndemnites);
         
-        // Indemnité de transport
-        if (isset($parametresIndemnites['indemnite_transport'])) {
-            $paramTransport = $parametresIndemnites['indemnite_transport'];
-            $montant = 0;
+        // Traitement des indemnités selon le format du tableau
+        if (is_array($parametresIndemnites)) {
+            $ordre = 10;
             
-            if ($paramTransport['type'] === 'pourcentage') {
-                $montant = $salaireBase * ($paramTransport['taux'] / 100);
+            // Vérifier si c'est un tableau indexé numériquement (format [{}])
+            if (array_keys($parametresIndemnites) === range(0, count($parametresIndemnites) - 1)) {
+                // Format de tableau indexé numériquement - nouvelle structure
+                foreach ($parametresIndemnites as $indemnite) {
+                    $montant = 0;
+                    $code = strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $indemnite['nom']), 0, 2));
+                    
+                    // Déterminer la catégorie d'indemnité
+                    $categorie = ElementPaie::CATEGORIE_INDEMNITE_AUTRE;
+                    if (stripos($indemnite['nom'], 'logement') !== false) {
+                        $categorie = ElementPaie::CATEGORIE_INDEMNITE_LOGEMENT;
+                        $code = 'IL';
+                    } elseif (stripos($indemnite['nom'], 'transport') !== false) {
+                        $categorie = ElementPaie::CATEGORIE_INDEMNITE_TRANSPORT;
+                        $code = 'IT';
+                    }
+                    
+                    // Calculer le montant selon le type
+                    if ($indemnite['type'] === 'pourcentage' && isset($indemnite['taux'])) {
+                        $montant = $salaireBase * ($indemnite['taux'] / 100);
+                    } elseif (isset($indemnite['montant'])) {
+                        $montant = $indemnite['montant'];
+                    }
+                    
+                    // Ajouter l'indemnité au tableau des indemnités
+                    $indemnites[] = [
+                        'code' => $code,
+                        'libelle' => $indemnite['nom'],
+                        'type' => ElementPaie::TYPE_INDEMNITE,
+                        'categorie' => $categorie,
+                        'base' => $salaireBase,
+                        'taux' => $indemnite['type'] === 'pourcentage' ? $indemnite['taux'] : null,
+                        'montant' => $montant,
+                        'imposable' => $indemnite['imposable'] ?? false,
+                        'ordre' => $ordre
+                    ];
+                    
+                    $ordre += 10;
+                }
             } else {
-                $montant = $paramTransport['montant'] ?? 0;
+                // Format de tableau associatif - ancienne structure
+                // Indemnité de logement
+                if (isset($parametresIndemnites['indemnite_logement'])) {
+                    $paramLogement = $parametresIndemnites['indemnite_logement'];
+                    $montant = 0;
+                    
+                    if ($paramLogement['type'] === 'pourcentage') {
+                        $montant = $salaireBase * ($paramLogement['taux'] / 100);
+                    } else {
+                        $montant = $paramLogement['montant'] ?? 0;
+                    }
+                    
+                    $indemnites[] = [
+                        'code' => 'IL',
+                        'libelle' => 'Indemnité de logement',
+                        'type' => ElementPaie::TYPE_INDEMNITE,
+                        'categorie' => ElementPaie::CATEGORIE_INDEMNITE_LOGEMENT,
+                        'base' => $salaireBase,
+                        'taux' => $paramLogement['taux'] ?? null,
+                        'montant' => $montant,
+                        'imposable' => $paramLogement['imposable'] ?? false,
+                        'ordre' => 10
+                    ];
+                }
+                
+                // Indemnité de transport
+                if (isset($parametresIndemnites['indemnite_transport'])) {
+                    $paramTransport = $parametresIndemnites['indemnite_transport'];
+                    $montant = 0;
+                    
+                    if ($paramTransport['type'] === 'pourcentage') {
+                        $montant = $salaireBase * ($paramTransport['taux'] / 100);
+                    } else {
+                        $montant = $paramTransport['montant'] ?? 0;
+                    }
+                    
+                    $indemnites[] = [
+                        'code' => 'IT',
+                        'libelle' => 'Indemnité de transport',
+                        'type' => ElementPaie::TYPE_INDEMNITE,
+                        'categorie' => ElementPaie::CATEGORIE_INDEMNITE_TRANSPORT,
+                        'base' => $salaireBase,
+                        'taux' => $paramTransport['taux'] ?? null,
+                        'montant' => $montant,
+                        'imposable' => $paramTransport['imposable'] ?? false,
+                        'ordre' => 20
+                    ];
+                }
             }
-            
-            $indemnites[] = [
-                'code' => 'IT',
-                'libelle' => 'Indemnité de transport',
-                'type' => ElementPaie::TYPE_INDEMNITE,
-                'categorie' => ElementPaie::CATEGORIE_INDEMNITE_TRANSPORT,
-                'base' => $salaireBase,
-                'taux' => $paramTransport['taux'] ?? null,
-                'montant' => $montant,
-                'imposable' => $paramTransport['imposable'] ?? false,
-                'ordre' => 20
-            ];
         }
         
         // Autres indemnités personnalisées (à partir des meta_donnees de l'employeur)
@@ -250,75 +300,138 @@ class CalculPaieService implements CalculPaieServiceInterface
         // Récupérer les paramètres de primes
         $parametresPrimes = $configuration->parametres_primes ?? [];
         
-        // Prime d'ancienneté
-        if (isset($parametresPrimes['prime_anciennete'])) {
-            $paramAnciennete = $parametresPrimes['prime_anciennete'];
-            $montant = 0;
+        Log::info('Paramètres de primes', $parametresPrimes);
+        
+        // Traitement des primes selon le format du tableau
+        if (is_array($parametresPrimes)) {
+            $ordre = 10;
             
-            // Calculer l'ancienneté en années
-            $anciennete = $employeur->getAnciennete() ?? 0;
-            
-            // Déterminer le taux applicable selon l'ancienneté
-            $tauxApplicable = null;
-            
-            if ($paramAnciennete['type'] === 'pourcentage' && isset($paramAnciennete['taux']) && is_array($paramAnciennete['taux'])) {
-                // Trouver le taux applicable selon l'ancienneté
-                $tauxTrouve = null;
-                $paliers = array_keys($paramAnciennete['taux']);
-                sort($paliers, SORT_NUMERIC);
-                
-                foreach ($paliers as $palier) {
-                    if ($anciennete >= (int)$palier) {
-                        $tauxTrouve = $paramAnciennete['taux'][$palier];
-                    } else {
-                        break;
+            // Vérifier si c'est un tableau indexé numériquement (format [{}])
+            if (array_keys($parametresPrimes) === range(0, count($parametresPrimes) - 1)) {
+                // Format de tableau indexé numériquement - nouvelle structure
+                foreach ($parametresPrimes as $prime) {
+                    $montant = 0;
+                    $code = strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $prime['nom']), 0, 2));
+                    
+                    // Déterminer la catégorie de prime
+                    $categorie = ElementPaie::CATEGORIE_PRIME_AUTRE;
+                    if (stripos($prime['nom'], 'ancienneté') !== false) {
+                        $categorie = ElementPaie::CATEGORIE_PRIME_ANCIENNETE;
+                        $code = 'PA';
+                        
+                        // Pour la prime d'ancienneté, vérifier l'ancienneté de l'employé
+                        $anciennete = $employeur->getAnciennete() ?? 0;
+                        if ($anciennete < 2) { // Par exemple, nécessite 2 ans d'ancienneté
+                            continue; // Passer cette prime si l'employé n'a pas assez d'ancienneté
+                        }
+                    } elseif (stripos($prime['nom'], 'rendement') !== false) {
+                        $categorie = ElementPaie::CATEGORIE_PRIME_RENDEMENT;
+                        $code = 'PR';
+                    }
+                    
+                    // Calculer le montant selon le type
+                    if ($prime['type'] === 'pourcentage' && isset($prime['taux'])) {
+                        $montant = $salaireBase * ($prime['taux'] / 100);
+                    } elseif (isset($prime['montant'])) {
+                        $montant = $prime['montant'];
+                    }
+                    
+                    // Ajouter la prime au tableau des primes
+                    $primes[] = [
+                        'code' => $code,
+                        'libelle' => $prime['nom'],
+                        'type' => ElementPaie::TYPE_PRIME,
+                        'categorie' => $categorie,
+                        'base' => $salaireBase,
+                        'taux' => $prime['type'] === 'pourcentage' ? $prime['taux'] : null,
+                        'montant' => $montant,
+                        'imposable' => $prime['imposable'] ?? true,
+                        'ordre' => $ordre
+                    ];
+                    
+                    $ordre += 10;
+                }
+            } else {
+                // Format de tableau associatif - ancienne structure
+                // Prime d'ancienneté
+                if (isset($parametresPrimes['prime_anciennete'])) {
+                    $paramAnciennete = $parametresPrimes['prime_anciennete'];
+                    $montant = 0;
+                    
+                    // Calculer l'ancienneté en années
+                    $anciennete = $employeur->getAnciennete() ?? 0;
+                    
+                    // Déterminer le taux applicable selon l'ancienneté
+                    $tauxApplicable = null;
+                    
+                    if ($paramAnciennete['type'] === 'pourcentage' && isset($paramAnciennete['taux'])) {
+                        if (is_array($paramAnciennete['taux'])) {
+                            // Trouver le taux applicable selon l'ancienneté
+                            $tauxTrouve = null;
+                            $paliers = array_keys($paramAnciennete['taux']);
+                            sort($paliers, SORT_NUMERIC);
+                            
+                            foreach ($paliers as $palier) {
+                                if ($anciennete >= (int)$palier) {
+                                    $tauxTrouve = $paramAnciennete['taux'][$palier];
+                                } else {
+                                    break;
+                                }
+                            }
+                            
+                            if ($tauxTrouve !== null) {
+                                $tauxApplicable = $tauxTrouve;
+                            }
+                        } else {
+                            // Taux simple
+                            $tauxApplicable = $paramAnciennete['taux'];
+                        }
+                        
+                        if ($tauxApplicable !== null) {
+                            $montant = $salaireBase * ($tauxApplicable / 100);
+                        }
+                    }
+                    
+                    // Ajouter la prime d'ancienneté si applicable
+                    if ($tauxApplicable !== null) {
+                        $primes[] = [
+                            'code' => 'PA',
+                            'libelle' => 'Prime d\'ancienneté',
+                            'type' => ElementPaie::TYPE_PRIME,
+                            'categorie' => ElementPaie::CATEGORIE_PRIME_ANCIENNETE,
+                            'base' => $salaireBase,
+                            'taux' => $tauxApplicable,
+                            'montant' => $montant,
+                            'imposable' => $paramAnciennete['imposable'] ?? true,
+                            'ordre' => 10
+                        ];
                     }
                 }
                 
-                if ($tauxTrouve !== null) {
-                    $tauxApplicable = $tauxTrouve;
-                    $montant = $salaireBase * ($tauxApplicable / 100);
+                // Prime de rendement
+                if (isset($parametresPrimes['prime_rendement'])) {
+                    $paramRendement = $parametresPrimes['prime_rendement'];
+                    $montant = 0;
+                    
+                    if ($paramRendement['type'] === 'pourcentage') {
+                        $montant = $salaireBase * ($paramRendement['taux'] / 100);
+                    } else {
+                        $montant = $paramRendement['montant'] ?? 0;
+                    }
+                    
+                    $primes[] = [
+                        'code' => 'PR',
+                        'libelle' => 'Prime de rendement',
+                        'type' => ElementPaie::TYPE_PRIME,
+                        'categorie' => ElementPaie::CATEGORIE_PRIME_RENDEMENT,
+                        'base' => $salaireBase,
+                        'taux' => $paramRendement['taux'] ?? null,
+                        'montant' => $montant,
+                        'imposable' => $paramRendement['imposable'] ?? true,
+                        'ordre' => 20
+                    ];
                 }
             }
-            
-            // Ajouter la prime d'ancienneté si applicable
-            if ($tauxApplicable !== null) {
-                $primes[] = [
-                    'code' => 'PA',
-                    'libelle' => 'Prime d\'ancienneté',
-                    'type' => ElementPaie::TYPE_PRIME,
-                    'categorie' => ElementPaie::CATEGORIE_PRIME_ANCIENNETE,
-                    'base' => $salaireBase,
-                    'taux' => $tauxApplicable,
-                    'montant' => $montant,
-                    'imposable' => $paramAnciennete['imposable'] ?? true,
-                    'ordre' => 10
-                ];
-            }
-        }
-        
-        // Prime de rendement
-        if (isset($parametresPrimes['prime_rendement'])) {
-            $paramRendement = $parametresPrimes['prime_rendement'];
-            $montant = 0;
-            
-            if ($paramRendement['type'] === 'pourcentage') {
-                $montant = $salaireBase * ($paramRendement['taux'] / 100);
-            } else {
-                $montant = $paramRendement['montant'] ?? 0;
-            }
-            
-            $primes[] = [
-                'code' => 'PR',
-                'libelle' => 'Prime de rendement',
-                'type' => ElementPaie::TYPE_PRIME,
-                'categorie' => ElementPaie::CATEGORIE_PRIME_RENDEMENT,
-                'base' => $salaireBase,
-                'taux' => $paramRendement['taux'] ?? null,
-                'montant' => $montant,
-                'imposable' => $paramRendement['imposable'] ?? true,
-                'ordre' => 20
-            ];
         }
         
         // Autres primes personnalisées (à partir des meta_donnees de l'employeur)
@@ -392,6 +505,8 @@ class CalculPaieService implements CalculPaieServiceInterface
         // Calculer les charges patronales
         $resultatChargesPatronales = $this->calculerChargesPatronales($resultatSalaireBrut['salaire_brut'], $configuration);
         
+    
+
         // Créer le bulletin de paie
         $bulletinData = [
             'employeur_id' => $employeur->id,
