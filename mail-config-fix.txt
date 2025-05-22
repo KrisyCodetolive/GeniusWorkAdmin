@@ -1,0 +1,22 @@
+# Instructions pour corriger la configuration du mail dans le fichier .env
+
+# Remplacez les lignes suivantes dans votre fichier .env :
+
+MAIL_MAILER=smtp
+# Supprimer la ligne MAIL_SCHEME=ssl si elle existe
+MAIL_HOST=mail.genius.ci
+MAIL_PORT=587
+MAIL_USERNAME=work@genius.ci
+# Assurez-vous que votre mot de passe est correctement configuré
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="work@genius.ci"
+MAIL_FROM_NAME="${APP_NAME}"
+
+# Note: Le port 587 est généralement utilisé pour TLS, tandis que le port 465 est utilisé pour SSL.
+# Si votre serveur mail ne supporte pas le port 587, vous pouvez essayer d'utiliser le port 465 avec smtps:
+# MAIL_MAILER=smtp
+# MAIL_HOST=mail.genius.ci
+# MAIL_PORT=465
+# MAIL_USERNAME=work@genius.ci
+# MAIL_PASSWORD=votre_mot_de_passe
+# MAIL_ENCRYPTION=smtps

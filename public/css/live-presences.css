@@ -1,0 +1,914 @@
+/* Styles pour la page des présences en temps réel */
+
+/* Animation pour les nouveaux éléments dans la file d'attente */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation pour les mises à jour des statistiques */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Styles pour les cartes de statistiques */
+.stats-item {
+    transition: all 0.3s ease;
+}
+
+.stats-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Styles pour les boutons de filtrage */
+button[wire\:click^="filterPresencesByType"] {
+    transition: all 0.2s ease;
+}
+
+button[wire\:click^="filterPresencesByType"]:hover {
+    transform: translateY(-2px);
+}
+
+/* Styles pour les lignes du tableau d'historique */
+table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+table tbody tr:hover {
+    background-color: rgba(243, 244, 246, 0.8);
+}
+
+/* Animation pour les nouvelles entrées dans l'historique */
+.history-row-new {
+    animation: fadeInLeft 1s ease;
+}
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Styles pour les avatars des employés */
+.employee-avatar {
+    transition: all 0.3s ease;
+}
+
+.employee-avatar:hover {
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+/* Styles pour les badges de type de pointage */
+.badge-type {
+    transition: all 0.2s ease;
+}
+
+.badge-type:hover {
+    transform: scale(1.1);
+}
+
+/* Styles pour les boutons d'action */
+.action-button {
+    transition: all 0.2s ease;
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Styles pour les sélecteurs */
+select {
+    transition: all 0.3s ease;
+}
+
+select:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Effet de scintillement pour attirer l'attention */
+@keyframes glowing {
+    0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+    100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
+}
+
+.glow-effect {
+    animation: glowing 2s infinite;
+}
+
+/* Animations pour le tableau d'historique */
+.table-row-animate {
+    transition: all 0.3s ease;
+}
+
+.table-row-animate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    z-index: 10;
+    position: relative;
+}
+
+/* Animation pour les badges de statut */
+.status-badge {
+    transition: all 0.2s ease;
+}
+
+.status-badge:hover {
+    transform: scale(1.1);
+}
+
+/* Animation pour les boutons d'action */
+.action-button {
+    transition: all 0.2s ease;
+}
+
+.action-button:hover {
+    transform: scale(1.2);
+}
+
+/* Animation pour les filtres */
+.filter-button {
+    transition: all 0.2s ease;
+}
+
+.filter-button:hover {
+    transform: translateY(-2px);
+}
+
+.filter-button.active {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Animation pour les nouvelles entrées */
+@keyframes highlightRow {
+    0% {
+        background-color: rgba(79, 70, 229, 0.1);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.highlight-new {
+    animation: highlightRow 2s ease-out;
+}
+
+/* Animation pour les changements de statut */
+@keyframes statusChange {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.status-changed {
+    animation: statusChange 1s ease-out;
+}
+
+/* Effet de survol pour les photos de profil */
+.profile-image {
+    transition: all 0.3s ease;
+}
+
+.profile-image:hover {
+    transform: scale(1.15);
+    z-index: 20;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Animation pour le chargement des données */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.loading-shimmer {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(to right, #f6f7f8 8%, #edeef1 18%, #f6f7f8 33%);
+    background-size: 1000px 100%;
+}
+
+/* Animation pour les notifications */
+@keyframes notification-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+    }
+}
+
+.notification-badge {
+    animation: notification-pulse 2s infinite;
+}
+
+/* Effet de transition pour les changements de page dans la pagination */
+.pagination-item {
+    transition: all 0.3s ease;
+}
+
+.pagination-item:hover {
+    transform: translateY(-2px);
+}
+
+/* Animation pour les statistiques */
+.stats-card {
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Animation pour les barres de progression */
+@keyframes progressGrow {
+    from {
+        width: 0;
+    }
+}
+
+.progress-bar {
+    animation: progressGrow 1.5s ease-out;
+}
+
+/* Animation pour les icônes */
+.icon-animate {
+    transition: all 0.3s ease;
+}
+
+.icon-animate:hover {
+    transform: rotate(15deg);
+}
+
+/* Animations pour les lignes du tableau */
+.table-row-animate {
+    transition: all 0.3s ease;
+}
+
+.table-row-animate:hover {
+    background-color: rgba(79, 70, 229, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Animation pour les badges de statut */
+.status-badge {
+    transition: all 0.3s ease;
+}
+
+.status-badge:hover {
+    transform: scale(1.05);
+}
+
+.status-changed {
+    animation: statusChange 1s ease;
+}
+
+@keyframes statusChange {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* Animation pour les boutons d'action */
+.action-button {
+    transition: all 0.2s ease;
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+/* Animation pour les photos de profil */
+.profile-image {
+    transition: all 0.3s ease;
+}
+
+.profile-image:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
+}
+
+/* Animation pour les nouveaux éléments */
+.highlight-new {
+    animation: highlightNew 3s ease;
+}
+
+@keyframes highlightNew {
+    0% { background-color: rgba(79, 70, 229, 0.2); }
+    100% { background-color: transparent; }
+}
+
+/* Animation pour les boutons de filtrage */
+.filter-button {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.filter-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+
+.filter-button:hover::after {
+    animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(20, 20);
+        opacity: 0;
+    }
+}
+
+/* Animation pour la pagination */
+.pagination-item {
+    transition: all 0.3s ease;
+}
+
+.pagination-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Animation pour les cartes de statistiques */
+.stats-card {
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Animation pour les icônes */
+.icon-animate {
+    transition: all 0.3s ease;
+}
+
+.icon-animate:hover {
+    transform: rotate(15deg);
+    color: #4F46E5;
+}
+
+/* Styles pour le menu d'exportation */
+.relative {
+    position: relative;
+}
+
+.absolute {
+    position: absolute;
+}
+
+.z-10 {
+    z-index: 10;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.w-48 {
+    width: 12rem;
+}
+
+.bg-white {
+    background-color: #ffffff;
+}
+
+.rounded-md {
+    border-radius: 0.375rem;
+}
+
+.shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.py-1 {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.block {
+    display: block;
+}
+
+.w-full {
+    width: 100%;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.py-2 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.text-sm {
+    font-size: 0.875rem;
+}
+
+.text-gray-700 {
+    color: #374151;
+}
+
+.hover\:bg-gray-100:hover {
+    background-color: #f3f4f6;
+}
+
+.flex {
+    display: flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.mr-2 {
+    margin-right: 0.5rem;
+}
+
+.text-green-500 {
+    color: #10b981;
+}
+
+.text-blue-500 {
+    color: #3b82f6;
+}
+
+.text-red-500 {
+    color: #ef4444;
+}
+
+/* Animation pour les boutons d'exportation */
+.block.w-full {
+    transition: all 0.2s ease;
+}
+
+.block.w-full:hover {
+    background-color: #f3f4f6;
+    transform: translateX(5px);
+}
+
+/* Barres de progression animées */
+.progress-bar {
+    transition: width 1s ease-in-out;
+}
+
+/* Animation pour les tableaux de données */
+table {
+    transition: all 0.3s ease;
+}
+
+table:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Animation pour les en-têtes de tableau */
+th {
+    transition: all 0.3s ease;
+}
+
+th:hover {
+    background-color: #4338ca;
+}
+
+/* Animation pour les cellules de tableau */
+td {
+    transition: all 0.3s ease;
+}
+
+td:hover {
+    background-color: rgba(79, 70, 229, 0.05);
+}
+
+/* Animation pour les notifications */
+.notification {
+    animation: slideIn 0.5s ease-out forwards;
+}
+
+@keyframes slideIn {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Effet de pulsation pour les nouveaux éléments */
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+    }
+}
+
+/* Effet de survol pour les boutons d'action */
+.hover-effect {
+    position: relative;
+    overflow: hidden;
+}
+
+.hover-effect::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transition: all 0.5s ease;
+}
+
+.hover-effect:hover::before {
+    left: 100%;
+}
+
+/* Animation pour les cartes de statistiques */
+.stats-item {
+    transition: all 0.3s ease;
+}
+
+.stats-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive design pour les petits écrans */
+@media (max-width: 640px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-button {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+}
+
+/* Styles pour le tableau des présences */
+.presence-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.presence-table th {
+    position: sticky;
+    top: 0;
+    background-color: #f9fafb;
+    z-index: 10;
+    transition: all 0.3s ease;
+}
+
+.presence-table th:hover {
+    background-color: #f3f4f6;
+}
+
+.presence-table tbody tr {
+    transition: all 0.3s ease;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.presence-table tbody tr:hover {
+    background-color: rgba(243, 244, 246, 0.7);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.presence-table td {
+    transition: all 0.2s ease;
+}
+
+.presence-table tbody tr:hover td {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+/* Animation pour les nouvelles entrées */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation pour les badges de statut */
+.status-badge {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.status-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        left: 100%;
+    }
+}
+
+/* Styles pour les boutons d'action */
+.action-button {
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+}
+
+.action-button:active {
+    transform: translateY(0);
+}
+
+.action-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%, -50%);
+    transform-origin: 50% 50%;
+}
+
+.action-button:focus:not(:active)::after {
+    animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(20, 20);
+        opacity: 0;
+    }
+}
+
+/* Styles pour les cartes de statistiques */
+.stats-card {
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.stats-card:hover::before {
+    opacity: 1;
+}
+
+/* Animations pour les filtres */
+.filter-button {
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.filter-button:hover {
+    transform: translateY(-2px);
+}
+
+.filter-button:active {
+    transform: translateY(0);
+}
+
+.filter-button.active {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+    }
+}
+
+/* Styles pour le menu d'exportation */
+.export-menu {
+    transition: all 0.3s ease;
+    transform-origin: top right;
+}
+
+.export-menu.hidden {
+    transform: scale(0.95);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.export-menu-item {
+    transition: all 0.2s ease;
+}
+
+.export-menu-item:hover {
+    background-color: #f3f4f6;
+    padding-left: 1.5rem;
+}
+
+/* Styles pour les graphiques */
+.chart-container {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+    transform: scale(1.02);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .presence-table th, 
+    .presence-table td {
+        padding: 0.5rem;
+    }
+    
+    .presence-table tbody tr:hover td {
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-3px);
+    }
+}
+
+/* Animation pour le modal de recherche avancée */
+.search-modal {
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation pour les filtres actifs */
+.active-filter {
+    animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Styles pour la pagination */
+.pagination-item {
+    transition: all 0.2s ease;
+}
+
+.pagination-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Animation pour le compteur de résultats */
+.results-counter {
+    transition: all 0.3s ease;
+}
+
+.results-counter.updated {
+    animation: flash 0.5s ease-out;
+}
+
+@keyframes flash {
+    0% {
+        background-color: rgba(99, 102, 241, 0.2);
+    }
+    100% {
+        background-color: transparent;
+    }
+}

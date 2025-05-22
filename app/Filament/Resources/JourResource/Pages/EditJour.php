@@ -1,0 +1,24 @@
+<?php
+
+namespace App\Filament\Resources\JourResource\Pages;
+
+use App\Filament\Resources\JourResource;
+use Filament\Actions;
+use Filament\Resources\Pages\EditRecord;
+
+class EditJour extends EditRecord
+{
+    protected static string $resource = JourResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\DeleteAction::make(),
+        ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+}

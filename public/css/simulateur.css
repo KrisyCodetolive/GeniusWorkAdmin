@@ -1,0 +1,67 @@
+/* Styles personnalisés pour le simulateur de coût */
+
+.range-container {
+    position: relative;
+    width: 100%;
+    margin: 20px 0;
+}
+
+.form-range::-webkit-slider-thumb {
+    background: #4f46e5;
+}
+
+.form-range::-moz-range-thumb {
+    background: #4f46e5;
+}
+
+.form-range::-ms-thumb {
+    background: #4f46e5;
+}
+
+.result-box {
+    transition: all 0.3s ease;
+    transform: translateY(20px);
+    opacity: 0;
+}
+
+.result-box.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.pricing-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.pricing-table th, 
+.pricing-table td {
+    padding: 12px;
+    text-align: left;
+}
+
+.pricing-table thead {
+    background-color: #f8f9fa;
+}
+
+.pricing-highlight {
+    background-color: rgba(79, 70, 229, 0.1);
+    border-left: 3px solid #4f46e5;
+}
+
+.total-cost {
+    font-size: 1.5rem;
+    color: #4f46e5;
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    .pricing-table {
+        font-size: 0.9rem;
+    }
+    
+    .pricing-table th, 
+    .pricing-table td {
+        padding: 8px;
+    }
+}

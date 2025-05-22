@@ -1,0 +1,64 @@
+.fi-logo {
+    @apply h-12;
+}
+
+.fi-simple-main {
+    @apply bg-gradient-to-br from-primary-500/10 via-white to-success-500/10;
+}
+
+.fi-simple-footer {
+    @apply border-t border-gray-200 bg-white/50 py-4 backdrop-blur-xl;
+}
+
+.fi-simple-logo {
+    @apply flex items-center gap-x-4 text-xl font-bold tracking-tight;
+}
+
+.fi-auth-card {
+    @apply relative mt-8 w-full max-w-lg rounded-xl border border-gray-200 bg-white/50 p-8 backdrop-blur-xl sm:mt-16;
+}
+
+.fi-auth-card::before {
+    content: '';
+    @apply absolute inset-0 -z-10 rounded-xl bg-gradient-to-br from-primary-500/5 via-transparent to-success-500/5;
+}
+
+.fi-auth-card-header {
+    @apply space-y-2;
+}
+
+.fi-auth-title {
+    @apply text-2xl font-bold tracking-tight text-gray-950;
+}
+
+.fi-auth-description {
+    @apply text-gray-600;
+}
+
+.fi-form-wrapper {
+    @apply space-y-6;
+}
+
+.fi-input-wrp {
+    @apply relative;
+}
+
+.fi-input {
+    @apply block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 shadow-sm transition duration-75 placeholder:text-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-inset focus:ring-primary-500;
+}
+
+.fi-btn {
+    @apply inline-flex items-center justify-center gap-x-2 rounded-lg bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:pointer-events-none disabled:opacity-50;
+}
+
+.fi-remember-me {
+    @apply flex items-center gap-x-3;
+}
+
+.fi-checkbox {
+    @apply h-5 w-5 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500;
+}
+
+.fi-checkbox-label {
+    @apply text-sm text-gray-600;
+}

@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Filament\Resources\NotificationResource\Pages;
+
+use App\Filament\Resources\NotificationResource;
+use Filament\Resources\Pages\CreateRecord;
+
+class CreateNotification extends CreateRecord
+{
+    protected static string $resource = NotificationResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        // Si l'utilisateur n'est pas spécifié, utiliser l'utilisateur connecté
+        if (empty($data['user_id'])) {
+            $data['user_id'] = auth()->id();
+        }
+
+        return $data;
+    }
+}

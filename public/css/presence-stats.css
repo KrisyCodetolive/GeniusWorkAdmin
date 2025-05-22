@@ -1,0 +1,251 @@
+/**
+ * Styles pour les statistiques de présence
+ */
+
+/* Cartes de statistiques */
+.stats-card {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: translateX(-100%);
+}
+
+.stats-card:hover::after {
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Animation pour les mises à jour */
+.updated {
+    animation: highlight 1s ease;
+}
+
+@keyframes highlight {
+    0% {
+        color: inherit;
+    }
+    30% {
+        color: #3b82f6;
+    }
+    100% {
+        color: inherit;
+    }
+}
+
+/* Animation pulse pour les mises à jour */
+.animate-pulse {
+    animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Conteneurs de graphiques */
+.chart-container {
+    position: relative;
+    height: 250px;
+    transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* Responsivité des graphiques */
+@media (max-width: 1024px) {
+    .chart-container {
+        height: 220px;
+    }
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 200px;
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* Onglets pour les graphiques */
+.chart-tabs {
+    display: flex;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 1rem;
+}
+
+.chart-tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chart-tab:hover {
+    color: #4b5563;
+}
+
+.chart-tab.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+/* Légendes des graphiques */
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 0.25rem;
+}
+
+/* Tooltips personnalisés */
+.chart-tooltip {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Animation d'entrée pour les statistiques */
+.stats-section {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Styles pour les boutons de filtres */
+.stats-filter-button {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 9999px;
+    transition: all 0.2s ease;
+}
+
+.stats-filter-button:hover {
+    background-color: #f3f4f6;
+}
+
+.stats-filter-button.active {
+    background-color: #3b82f6;
+    color: white;
+}
+
+/* Styles pour les badges d'information */
+.stats-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 9999px;
+    background-color: #f3f4f6;
+    color: #4b5563;
+}
+
+.stats-badge-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    margin-right: 0.25rem;
+}
+
+/* Styles pour les cartes d'information */
+.info-card {
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid #3b82f6;
+}
+
+.info-card-title {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.info-card-content {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* Styles pour le loader des graphiques */
+.chart-loader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.7);
+    z-index: 5;
+}
+
+.chart-loader-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
