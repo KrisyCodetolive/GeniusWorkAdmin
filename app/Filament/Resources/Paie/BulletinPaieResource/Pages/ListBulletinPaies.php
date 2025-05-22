@@ -16,19 +16,7 @@ class ListBulletinPaies extends ListRecords
         return [
             Actions\CreateAction::make()
                 ->label('Nouveau bulletin'),
-                
-            Actions\Action::make('generer_bulletin')
-                ->label('Générer un bulletin')
-                ->icon('heroicon-o-document-plus')
-                ->color('success')
-                ->url(fn (): string => route('paie.bulletins.wizard.generate')),
-                
-            Actions\Action::make('generer_bulletins_masse')
-                ->label('Génération en masse')
-                ->icon('heroicon-o-document-duplicate')
-                ->color('warning')
-                ->url(fn (): string => route('paie.bulletins.wizard.generate-masse')),
-                   
+    
             Actions\Action::make('configurations')
                 ->label('Configurations')
                 ->icon('heroicon-o-cog')

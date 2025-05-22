@@ -405,6 +405,14 @@ class BulletinPaieResource extends Resource
                     ->icon('heroicon-o-document-arrow-down')
                     ->url(fn (BulletinPaie $record): string => route('paie.bulletins.pdf', $record->id))
                     ->openUrlInNewTab(),
+                
+                    //Visualiser le buletin 
+                Tables\Actions\Action::make('visualiser')
+                    ->label('Visualiser')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn (BulletinPaie $record): string => route('paie.bulletins.tailwind', $record->id))
+                    ->openUrlInNewTab(),
+            
                 Tables\Actions\Action::make('valider')
                     ->label('Valider')
                     ->icon('heroicon-o-check-circle')
@@ -556,8 +564,6 @@ class BulletinPaieResource extends Resource
             'create' => Pages\CreateBulletinPaie::route('/create'),
             'edit' => Pages\EditBulletinPaie::route('/{record}/edit'),
             'view' => Pages\ViewBulletinPaie::route('/{record}'),
-            'generate' => Pages\GenerateBulletinPaie::route('/generate'),
-            'generate-masse' => Pages\GenerateBulletinPaieMasse::route('/generate-masse'),
         ];
     }
     

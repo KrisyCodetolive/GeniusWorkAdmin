@@ -23,6 +23,7 @@ Route::prefix('paie/bulletins')->name('paie.bulletins.')->group(function () {
     Route::put('/{id}', [BulletinPaieController::class, 'update'])->name('update');
     Route::delete('/{id}', [BulletinPaieController::class, 'destroy'])->name('destroy');
     Route::get('/{id}/pdf', [BulletinPaieController::class, 'pdf'])->name('pdf');
+    Route::get('/{id}/tailwind', [BulletinPaieController::class, 'showTailwind'])->name('tailwind');
     Route::post('/{id}/valider', [BulletinPaieController::class, 'valider'])->name('valider');
     Route::post('/{id}/annuler', [BulletinPaieController::class, 'annuler'])->name('annuler');
     

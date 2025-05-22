@@ -448,7 +448,7 @@ class BulletinPaieController extends Controller
             $elementsCharges = $bulletin->getElementsByType('charge_patronale');
 
             // Générer le PDF
-            $pdf = PDF::loadView('paie.bulletins.pdf', compact(
+            $pdf = Pdf::loadView('paie.bulletins.pdf', compact(
                 'bulletin',
                 'elementsSalaire',
                 'elementsIndemnites',
@@ -512,8 +512,7 @@ class BulletinPaieController extends Controller
             $configurations->push($configurationDefaut);
         }
         
-        return view('paie.wizard.generate', compact('employeurs', 'configurations', 'configurationDefaut'))
-                ->with('layout', $this->wizardLayout);
+        return view('paie.wizard.generate', compact('employeurs', 'configurations', 'configurationDefaut'));
     }
     
     /**
@@ -551,8 +550,7 @@ class BulletinPaieController extends Controller
             $configurations->push($configurationDefaut);
         }
             
-        return view('paie.wizard.generate-masse', compact('employeurs', 'configurations', 'configurationDefaut'))
-                ->with('layout', $this->wizardLayout);
+        return view('paie.wizard.generate-masse', compact('employeurs', 'configurations', 'configurationDefaut'));
     }
     
     /**
@@ -865,6 +863,115 @@ class BulletinPaieController extends Controller
                 'success' => false,
                 'message' => 'Erreur lors du calcul des éléments de paie : ' . $e->getMessage()
             ], 500);
+        }
+    }
+    
+    /**
+     * Afficher le bulletin de paie avec le design Tailwind CSS
+     * 
+     * @param string $id
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     */
+    public function showTailwind($id)
+    {
+        try {
+            // Récupérer le bulletin
+            $bulletin = $this->bulletinRepository->trouverParId($id);
+            
+            if (!$bulletin) {
+                return redirect()->route('paie.bulletins.index')
+                    ->with('error', 'Bulletin de paie non trouvé.');
+            }
+            
+            // Vérifier les autorisations
+            if (Auth::user()->entreprise_id != $bulletin->employeur->entreprise_id) {
+                return redirect()->route('paie.bulletins.index')
+                    ->with('error', 'Vous n\'avez pas l\'autorisation de visualiser ce bulletin.');
+            }
+            
+            // Récupérer les éléments du bulletin
+            $elementsSalaire = ElementPaie::where('bulletin_paie_id', $bulletin->id)
+                ->where('type', 'salaire_base')
+                ->get();
+                
+            $elementsIndemnites = ElementPaie::where('bulletin_paie_id', $bulletin->id)
+                ->where('type', 'indemnite')
+                ->get();
+                
+            $elementsPrimes = ElementPaie::where('bulletin_paie_id', $bulletin->id)
+                ->where('type', 'prime')
+                ->get();
+                
+            $elementsRetenues = ElementPaie::where('bulletin_paie_id', $bulletin->id)
+                ->where('type', 'retenue')
+                ->get();
+                
+            $elementsCharges = ElementPaie::where('bulletin_paie_id', $bulletin->id)
+                ->where('type', 'charge_patronale')
+                ->get();
+            
+            // Préparer les données pour la vue Tailwind
+            $payrollData = [
+                'employee' => [
+                    'name' => $bulletin->employeur->nom_complet ?? 'N/A',
+                    'position' => $bulletin->employeur->fonction ?? 'N/A',
+                    'contractType' => $bulletin->employeur->type_contrat ?? 'N/A',
+                    'contractHours' => $bulletin->employeur->horaire ?? 'Temps plein'
+                ],
+                'company' => [
+                    'name' => $bulletin->employeur->entreprise->nom ?? 'N/A',
+                    'siret' => $bulletin->employeur->entreprise->rccm ?? 'N/A'
+                ],
+                'period' => [
+                    'start' => $bulletin->periode_debut ? \Carbon\Carbon::parse($bulletin->periode_debut)->format('d/m/Y') : 'N/A',
+                    'end' => $bulletin->periode_fin ? \Carbon\Carbon::parse($bulletin->periode_fin)->format('d/m/Y') : 'N/A',
+                    'paymentDate' => $bulletin->date_paiement ? \Carbon\Carbon::parse($bulletin->date_paiement)->format('d/m/Y') : 'N/A',
+                    'number' => $bulletin->reference
+                ],
+                'earnings' => [
+                    'baseSalary' => $elementsSalaire->sum('montant') ?? 0,
+                    'overtime' => 0, // À adapter selon vos données
+                    'bonus' => $elementsPrimes->sum('montant') ?? 0,
+                    'benefits' => $elementsIndemnites->sum('montant') ?? 0,
+                    'totalGross' => $bulletin->salaire_brut ?? 0
+                ],
+                'deductions' => [
+                    'socialContrib' => $elementsRetenues->where('libelle', 'like', '%social%')->sum('montant') ?? 0,
+                    'incomeTax' => $elementsRetenues->where('libelle', 'like', '%impôt%')->sum('montant') ?? 0,
+                    'specialDeduction' => $elementsRetenues->whereNotIn('libelle', ['%social%', '%impôt%'])->sum('montant') ?? 0,
+                    'totalDeductions' => $bulletin->total_retenues ?? 0
+                ],
+                'net' => [
+                    'amount' => $bulletin->salaire_net ?? 0,
+                    'inWords' => ''
+                ],
+                'leave' => [
+                    'accrued' => $bulletin->employeur->conges_acquis ?? 0,
+                    'taken' => $bulletin->employeur->conges_pris ?? 0,
+                    'balance' => ($bulletin->employeur->conges_acquis ?? 0) - ($bulletin->employeur->conges_pris ?? 0)
+                ],
+                'tax' => [
+                    'annualGross' => ($bulletin->salaire_brut ?? 0) * 12,
+                    'rate' => $bulletin->employeur->taux_imposition ?? '0%',
+                    'shares' => $bulletin->employeur->parts_fiscales ?? 1
+                ],
+                'payment' => [
+                    'method' => $bulletin->mode_paiement ?? 'Virement bancaire'
+                ],
+                'generatedOn' => \Carbon\Carbon::now()->format('d/m/Y')
+            ];
+            
+            return view('paie.bulletins.paie', compact('bulletin', 'payrollData'));
+            
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de l\'affichage du bulletin de paie Tailwind', [
+                'id' => $id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->route('paie.bulletins.index')
+                ->with('error', 'Une erreur est survenue lors de l\'affichage du bulletin de paie : ' . $e->getMessage());
         }
     }
 }

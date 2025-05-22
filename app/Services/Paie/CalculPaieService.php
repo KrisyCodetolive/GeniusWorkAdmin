@@ -365,6 +365,13 @@ class CalculPaieService implements CalculPaieServiceInterface
      */
     public function genererBulletinPaie(Employeur $employeur, ConfigurationPaie $configuration, array $parametres = [])
     {
+        // Ajouter des logs pour le débogage
+        Log::info('Début de génération du bulletin de paie', [
+            'employeur_id' => $employeur->id,
+            'employeur_nom' => $employeur->nom_complet,
+            'configuration_id' => $configuration->id,
+            'parametres' => $parametres
+        ]);
         // Récupérer les paramètres
         $periodeDebut = $parametres['periode_debut'] ?? now()->startOfMonth()->format('Y-m-d');
         $periodeFin = $parametres['periode_fin'] ?? now()->endOfMonth()->format('Y-m-d');
@@ -410,6 +417,47 @@ class CalculPaieService implements CalculPaieServiceInterface
                 'elements_imposables' => $elementsImposables
             ]
         ];
+        
+        // Générer une référence unique pour ce bulletin en utilisant une approche plus robuste
+        // Format: XX-YYYYMM-NNNN où XX est le préfixe, YYYYMM est l'année et le mois, NNNN est un numéro séquentiel
+        $moisAnnee = date('Ym', strtotime($periodeDebut));
+        
+        // Utiliser les initiales de l'employé pour le préfixe
+        $nomParts = explode(' ', trim($employeur->nom_complet));
+        $initiales = '';
+        foreach ($nomParts as $part) {
+            if (!empty($part)) {
+                $initiales .= strtoupper(substr($part, 0, 1));
+            }
+        }
+        // Limiter à 2 caractères et s'assurer qu'il y a au moins 2 caractères
+        $prefixe = substr($initiales . 'XX', 0, 2);
+        
+        // Utiliser un identifiant unique pour éviter les problèmes de concurrence
+        $uniqueId = substr(md5($employeur->id . time() . rand(1000, 9999)), 0, 4);
+        
+        // Créer la référence unique avec un timestamp pour éviter les doublons
+        $reference = "{$prefixe}-{$moisAnnee}-{$uniqueId}";
+        
+        // Vérifier si cette référence existe déjà (très peu probable mais par sécurité)
+        $referenceExists = BulletinPaie::where('reference', $reference)->exists();
+        if ($referenceExists) {
+            // Si par hasard la référence existe, en générer une nouvelle avec un autre identifiant unique
+            $uniqueId = substr(md5($employeur->id . time() . rand(10000, 99999)), 0, 4);
+            $reference = "{$prefixe}-{$moisAnnee}-{$uniqueId}";
+        }
+        
+        // Ajouter la référence aux données du bulletin
+        $bulletinData['reference'] = $reference;
+        
+        Log::info('Génération de référence pour bulletin', [
+            'employeur_id' => $employeur->id,
+            'employeur_nom' => $employeur->nom_complet,
+            'reference' => $reference,
+            'mois_annee' => $moisAnnee,
+            'prefixe' => $prefixe,
+            'unique_id' => $uniqueId
+        ]);
         
         // Créer le bulletin
         $bulletin = $this->bulletinRepository->creer($bulletinData);

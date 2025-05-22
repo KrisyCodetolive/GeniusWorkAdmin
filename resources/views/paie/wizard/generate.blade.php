@@ -1,14 +1,14 @@
-@extends('layouts.wizard')
+@extends('layouts.app')
 
 @section('content')
 <div x-data="bulletinWizard()" x-cloak>
-    <div class="mb-8 bg-white p-6 rounded-lg shadow-md border-l-4 border-primary-500">
+    <div class="mb-8 bg-white p-6 rounded-lg shadow-soft border-l-4 border-primary-500 animate-fadeIn">
         <h1 class="text-2xl font-bold text-gray-800">Génération d'un bulletin de paie</h1>
         <p class="text-gray-600 mt-2">Suivez les étapes pour générer un bulletin de paie pour un employé.</p>
     </div>
 
     <!-- Étapes du wizard -->
-    <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+    <div class="mb-8 bg-white p-6 rounded-lg shadow-soft">
         <div class="flex justify-between">
             <!-- Étape 1 -->
             <div class="flex-1 text-center relative">
@@ -29,7 +29,7 @@
                         <span class="text-lg font-bold">1</span>
                     </template>
                 </div>
-                <div class="text-sm font-medium transition-all duration-300" :class="{'text-primary-700 font-semibold': currentStep === 1, 'text-gray-900': currentStep > 1, 'text-gray-500': currentStep < 1}">
+                <div class="text-sm font-medium transition-all duration-300" :class="{'text-primary-600 font-semibold': currentStep === 1, 'text-gray-900': currentStep > 1, 'text-gray-500': currentStep < 1}">
                     <span class="flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -41,7 +41,7 @@
             
             <!-- Ligne de connexion 1-2 -->
             <div class="w-full mx-2 flex items-center justify-center">
-                <div class="h-1 w-full rounded-full transition-all duration-500" :class="{'bg-primary-500': currentStep > 1, 'bg-gray-200': currentStep <= 1}"></div>
+                <div class="h-3 w-full rounded-full transition-all duration-500" :class="{'bg-primary-500': currentStep > 1, 'bg-gray-200': currentStep <= 1}"></div>
             </div>
             
             <!-- Étape 2 -->
@@ -63,7 +63,7 @@
                         <span class="text-lg font-bold">2</span>
                     </template>
                 </div>
-                <div class="text-sm font-medium transition-all duration-300" :class="{'text-primary-700 font-semibold': currentStep === 2, 'text-gray-900': currentStep > 2, 'text-gray-500': currentStep < 2}">
+                <div class="text-sm font-medium transition-all duration-300" :class="{'text-primary-600 font-semibold': currentStep === 2, 'text-gray-900': currentStep > 2, 'text-gray-500': currentStep < 2}">
                     <span class="flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -75,7 +75,7 @@
             
             <!-- Ligne de connexion 2-3 -->
             <div class="w-full mx-2 flex items-center justify-center">
-                <div class="h-1 w-full rounded-full transition-all duration-500" :class="{'bg-primary-500': currentStep > 2, 'bg-gray-200': currentStep <= 2}"></div>
+                <div class="h-3 w-full rounded-full transition-all duration-500" :class="{'bg-primary-500': currentStep > 2, 'bg-gray-200': currentStep <= 2}"></div>
             </div>
             
             <!-- Étape 3 -->
@@ -97,7 +97,7 @@
                         <span class="text-lg font-bold">3</span>
                     </template>
                 </div>
-                <div class="text-sm font-medium transition-all duration-300" :class="{'text-primary-700 font-semibold': currentStep === 3, 'text-gray-900': currentStep > 3, 'text-gray-500': currentStep < 3}">
+                <div class="text-sm font-medium transition-all duration-300" :class="{'text-primary-600 font-semibold': currentStep === 3, 'text-gray-900': currentStep > 3, 'text-gray-500': currentStep < 3}">
                     <span class="flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -132,7 +132,7 @@
             <p class="text-primary-600">Sélectionnez l'employé et définissez les paramètres de base du bulletin de paie.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded-lg shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded-lg shadow-soft">
             <div class="transition-all duration-200 hover:shadow-md p-4 rounded-lg border border-gray-100">
                 <label for="employeur_id" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -177,7 +177,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 bg-white p-6 rounded-lg shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 bg-white p-6 rounded-lg shadow-soft">
             <div class="transition-all duration-200 hover:shadow-md p-4 rounded-lg border border-gray-100">
                 <label for="periode_debut" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -227,8 +227,8 @@
             </div>
         </div>
 
-        <div x-show="employeurInfo" class="mt-6 bg-white rounded-lg shadow-sm border-l-4 border-primary-500 overflow-hidden transition-all duration-300" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform -translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0">
-            <div class="bg-primary-50 p-4 flex items-center">
+        <div x-show="employeurInfo" class="mt-6 bg-white rounded-lg shadow-soft border-l-4 border-primary-500 overflow-hidden transition-all duration-300 animate-fadeIn" style="animation-delay: 0.3s;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform -translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0">
+            <div class="bg-primary-50 p-4 flex items-center border-b border-primary-100">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -341,7 +341,7 @@
                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                         <div class="flex justify-between items-center mb-4">
                             <h4 class="font-medium text-gray-700" x-text="indemnite.libelle || 'Nouvelle indemnité'"></h4>
-                            <button type="button" @click="removeIndemnite(index)" class="text-danger-500 hover:text-danger-700">
+                            <button type="button" @click="removeIndemnite(index)" class="text-danger-500 hover:text-danger-700 transition-all duration-200">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                                 </svg>
@@ -377,7 +377,7 @@
                     </div>
                 </template>
                 
-                <button type="button" @click="addIndemnite()" class="flex items-center text-primary-600 hover:text-primary-800">
+                <button type="button" @click="addIndemnite()" class="flex items-center text-primary-600 hover:text-primary-800 hover:translate-x-1 transition-all duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
                     </svg>
@@ -395,10 +395,10 @@
             </div>
             <div class="space-y-4">
                 <template x-for="(prime, index) in formData.primes" :key="index">
-                    <div class="bg-white p-4 rounded-lg border-l-4 border-green-500 shadow-sm hover:shadow-md transition-all duration-200">
+                    <div class="bg-white p-4 rounded-lg border-l-4 border-primary-500 shadow-soft hover:shadow-soft-lg transition-all duration-200">
                         <div class="flex justify-between items-center mb-4">
                             <h4 class="font-medium text-gray-800 flex items-center" >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <span x-text="prime.libelle || 'Nouvelle prime'"></span>
@@ -474,7 +474,7 @@
                     </div>
                 </template>
                 
-                <button type="button" @click="addPrime()" class="flex items-center justify-center w-full py-2 px-4 bg-primary-50 hover:bg-primary-100 text-primary-700 font-medium rounded-lg border border-primary-200 transition-all duration-200 hover:shadow-sm group">
+                <button type="button" @click="addPrime()" class="flex items-center justify-center w-full py-2 px-4 bg-primary-50 hover:bg-primary-100 text-primary-700 font-medium rounded-lg border border-primary-200 transition-all duration-200 hover:shadow-soft group">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-600 group-hover:scale-110 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
                     </svg>
@@ -490,7 +490,7 @@
                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                         <div class="flex justify-between items-center mb-4">
                             <h4 class="font-medium text-gray-700" x-text="retenue.libelle || 'Nouvelle retenue'"></h4>
-                            <button type="button" @click="removeRetenue(index)" class="text-danger-500 hover:text-danger-700">
+                            <button type="button" @click="removeRetenue(index)" class="text-danger-500 hover:text-danger-700 transition-all duration-200">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                                 </svg>
@@ -520,7 +520,7 @@
                     </div>
                 </template>
                 
-                <button type="button" @click="addRetenue()" class="flex items-center text-primary-600 hover:text-primary-800">
+                <button type="button" @click="addRetenue()" class="flex items-center text-primary-600 hover:text-primary-800 hover:translate-x-1 transition-all duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
                     </svg>
@@ -559,7 +559,7 @@
         </div>
         
         <div x-show="!isCalculating && calculationResults" class="space-y-6">
-            <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div class="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-soft hover:shadow-soft-lg transition-all duration-300">
                 <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
                     <h3 class="text-lg font-medium text-gray-900">Récapitulatif du bulletin</h3>
                 </div>
@@ -615,7 +615,7 @@
                                 </div>
                                 <div class="flex justify-between font-bold">
                                     <dt class="text-gray-700">Salaire net</dt>
-                                    <dd class="text-success-600" x-text="formatMontant(calculationResults.salaire_net) + ' FCFA'"></dd>
+                                    <dd class="text-primary-600" x-text="formatMontant(calculationResults.salaire_net) + ' FCFA'"></dd>
                                 </div>
                             </dl>
                             <dl class="space-y-1">
@@ -644,12 +644,12 @@
     </div>
     
     <!-- Boutons de navigation -->
-    <div class="mt-8 pt-5 border-t border-gray-200 flex justify-between bg-white p-6 rounded-lg shadow-md">
+    <div class="mt-8 pt-5 border-t border-gray-200 flex justify-between bg-white p-6 rounded-lg shadow-soft">
         <button 
             type="button" 
             @click="previousStep()" 
             x-show="currentStep > 1"
-            class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-3 px-6 rounded-lg shadow-sm text-sm font-medium flex items-center transition-all duration-300 hover:shadow-md hover:translate-x-[-2px] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 group">
+            class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-3 px-6 rounded-lg shadow-soft text-sm font-medium flex items-center transition-all duration-300 hover:shadow-soft-lg hover:translate-x-[-2px] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 group">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-500 group-hover:animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
@@ -660,7 +660,7 @@
                 type="button" 
                 @click="nextStep()" 
                 x-show="currentStep < 3"
-                class="bg-primary-600 hover:bg-primary-700 text-white py-3 px-6 rounded-lg shadow-sm text-sm font-medium flex items-center transition-all duration-300 hover:shadow-md hover:translate-x-[2px] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 group">
+                class="bg-primary-600 hover:bg-primary-700 text-white py-3 px-6 rounded-lg shadow-soft text-sm font-medium flex items-center transition-all duration-300 hover:shadow-soft-lg hover:translate-x-[2px] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 group">
                 <span>Suivant</span>
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 group-hover:animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -672,7 +672,7 @@
                 x-show="currentStep === 3"
                 :disabled="isSubmitting"
                 :class="{'opacity-75 cursor-not-allowed': isSubmitting}"
-                class="bg-success-600 hover:bg-success-700 text-white py-3 px-8 rounded-lg shadow-md text-sm font-medium flex items-center justify-center transition-all duration-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 transform hover:scale-105 group">
+                class="bg-success-600 hover:bg-success-700 text-white py-3 px-8 rounded-lg shadow-soft text-sm font-medium flex items-center justify-center transition-all duration-300 hover:shadow-soft-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 transform hover:scale-105 group">
                 <span x-show="isSubmitting" class="mr-2">
                     <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
