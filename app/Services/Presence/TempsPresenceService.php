@@ -191,6 +191,88 @@ class TempsPresenceService
         });
     }
     
+
+    
+    /**
+     * Récupère les informations de présence pour un employé spécifique sur une période donnée
+     *
+     * @param Carbon $dateDebut Date de début de la période
+     * @param Carbon $dateFin Date de fin de la période
+     * @param string $employeurId ID de l'employeur
+     * @param string $entrepriseId ID de l'entreprise
+     * @return array Données de présence pour l'employé
+     */
+    public function getPresenceDataForEmploye(Carbon $dateDebut, Carbon $dateFin, string $employeurId, string $entrepriseId): array
+    {
+        // Récupérer les présences sur la période pour cet employé spécifique
+        $query = Presence::query()
+            ->where('employeur_id', $employeurId)
+            ->whereHas('employeur', function ($query) use ($entrepriseId) {
+                $query->where('entreprise_id', $entrepriseId);
+            })
+            ->where(function ($query) use ($dateDebut, $dateFin) {
+                $query->whereBetween('date_heure_entree', [$dateDebut, $dateFin])
+                    ->orWhereBetween('date_heure_sortie', [$dateDebut, $dateFin])
+                    ->orWhere(function ($query) use ($dateDebut, $dateFin) {
+                        $query->where('date_heure_entree', '<', $dateDebut)
+                            ->where('date_heure_sortie', '>', $dateFin);
+                    });
+            })
+            ->whereNotNull('date_heure_entree')
+            ->whereNotNull('date_heure_sortie')
+            ->where('statut', '!=', 'annule');
+        
+        $presences = $query->with(['employeur', 'site'])->get();
+        
+        // Si aucune présence n'est trouvée, retourner des valeurs par défaut
+        if ($presences->isEmpty()) {
+            return [
+                'temps_total' => '0h 0m',
+                'jours_travailles' => 0,
+                'temps_moyen_par_jour' => '0h 0m',
+                'retard_total' => '0h 0m',
+                'heures_supplementaires' => '0h 0m'
+            ];
+        }
+        
+        // Récupérer l'employé
+        $employe = \App\Models\Employeur::find($employeurId);
+        
+        if (!$employe) {
+            return [
+                'temps_total' => '0h 0m',
+                'jours_travailles' => 0,
+                'temps_moyen_par_jour' => '0h 0m',
+                'retard_total' => '0h 0m',
+                'heures_supplementaires' => '0h 0m'
+            ];
+        }
+        
+        // Calculer le temps total
+        $tempsTotal = $this->calculerTempsTotal($presences);
+        
+        // Calculer le nombre de jours travaillés
+        $nombreJours = $this->calculerNombreJoursTravailles($presences);
+        
+        // Calculer le temps moyen par jour
+        $tempsMoyenParJour = $nombreJours > 0 ? $tempsTotal / $nombreJours : 0;
+        
+        // Calculer les retards
+        $tempsRetard = $this->calculerTempsRetard($presences);
+        
+        // Calculer les heures supplémentaires
+        $heuresSupplementaires = $this->calculerHeuresSupplementaires($presences, $employe);
+        
+        // Retourner les données formatées
+        return [
+            'temps_total' => $this->formaterTemps($tempsTotal),
+            'jours_travailles' => $nombreJours,
+            'temps_moyen_par_jour' => $this->formaterTemps($tempsMoyenParJour),
+            'retard_total' => $this->formaterTemps($tempsRetard),
+            'heures_supplementaires' => $this->formaterTemps($heuresSupplementaires)
+        ];
+    }
+    
     /**
      * Calcule le nombre de jours travaillés pour une collection de présences
      *

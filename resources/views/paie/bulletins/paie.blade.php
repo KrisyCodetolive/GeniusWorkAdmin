@@ -85,7 +85,6 @@
                     <p class="font-medium">{{ $bulletin->employeur->type_contrat ?? 'N/A' }}</p>
                     <p class="text-gray-600">{{ $bulletin->employeur->horaire ?? 'Temps plein' }}</p>
                     <p class="text-gray-600 mt-1">Catégorie: {{ $bulletin->employeur->categorie ?? 'N/A' }}</p>
-                    <p class="text-gray-600">Echelon: {{ $bulletin->employeur->echelon ?? 'N/A' }}</p>
                 </div>
             </div>
         </div>
@@ -206,97 +205,144 @@
             <div class="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in delay-200">
                 <div class="border-b border-gray-200 p-6">
                     <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-                        <i class="fas fa-calendar-alt text-blue-500 mr-3"></i> Congés & Présences
+                        <i class="fas fa-calendar-alt text-blue-500 mr-3"></i> Congés 
                     </h2>
                 </div>
                 <div class="p-6">
-                    <div class="space-y-6">
-                        <div>
-                            <h3 class="text-lg font-medium text-gray-700 mb-3">Congés</h3>
-                            <div class="space-y-2">
-                                <div class="flex justify-between">
-                                    <span>Congés payés acquis</span>
-                                    <span class="font-medium">{{ $payrollData['conge']['solde_acquis'] ?? 0 }} jours</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Congés pris ce mois</span>
-                                    <span class="font-medium">{{ $payrollData['conge']['conges_pris_periode'] ?? 0 }} jours</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Solde restant</span>
-                                    <span class="font-medium text-green-600">{{ $payrollData['conge']['solde_restant'] ?? 0 }} jours</span>
-                                </div>
-                            </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span>Congés payés acquis</span>
+                            <span class="font-medium">{{ $payrollData['conge']['solde_acquis'] ?? 0 }} jours</span>
                         </div>
-                        
-                        <div class="border-t pt-4">
-                            <h3 class="text-lg font-medium text-gray-700 mb-3">Présences</h3>
-                            <div class="space-y-2">
-                                <div class="flex justify-between">
-                                    <span>Temps de travail total</span>
-                                    <span class="font-medium">{{ $payrollData['presence']['temps_total'] ?? '0h 0m' }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Jours travaillés</span>
-                                    <span class="font-medium">{{ $payrollData['presence']['jours_travailles'] ?? 0 }} jours</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Temps moyen par jour</span>
-                                    <span class="font-medium">{{ $payrollData['presence']['temps_moyen_par_jour'] ?? '0h 0m' }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Retards cumulés</span>
-                                    <span class="font-medium text-amber-600">{{ $payrollData['presence']['retard_total'] ?? '0h 0m' }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Heures supplémentaires</span>
-                                    <span class="font-medium text-blue-600">{{ $payrollData['presence']['heures_supplementaires'] ?? '0h 0m' }}</span>
-                                </div>
-                            </div>
+                        <div class="flex justify-between">
+                            <span>Congés pris ce mois</span>
+                            <span class="font-medium">{{ $payrollData['conge']['conges_pris_periode'] ?? 0 }} jours</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Solde restant</span>
+                            <span class="font-medium text-green-600">{{ $payrollData['conge']['solde_restant'] ?? 0 }} jours</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in delay-200">
+                <div class="border-b border-gray-200 p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-calendar-alt text-blue-500 mr-3"></i> Présences
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span>Temps de travail total</span>
+                            <span class="font-medium">{{ $payrollData['presence']['temps_total'] ?? '0h 0m' }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Jours travaillés</span>
+                            <span class="font-medium">{{ $payrollData['presence']['jours_travailles'] ?? 0 }} jours</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Temps moyen par jour</span>
+                            <span class="font-medium">{{ $payrollData['presence']['temps_moyen_par_jour'] ?? '0h 0m' }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Retards cumulés</span>
+                            <span class="font-medium text-amber-600">{{ $payrollData['presence']['retard_total'] ?? '0h 0m' }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Heures supplémentaires</span>
+                            <span class="font-medium text-blue-600">{{ $payrollData['presence']['heures_supplementaires'] ?? '0h 0m' }}</span>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Tax Info -->
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in delay-300">
-                <div class="border-b border-gray-200 p-6">
-                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-                        <i class="fas fa-file-invoice-dollar text-purple-500 mr-3"></i> Fiscalité
-                    </h2>
+        </div>
+                   <!-- Tax Info -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8 animate-fade-in delay-300">
+            <div class="border-b border-gray-200 p-6">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                    <i class="fas fa-file-invoice-dollar text-purple-500 mr-3"></i> Fiscalité
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex justify-between">
+                        <span>Salaire brut annuel</span>
+                        <span class="font-medium">{{ number_format(($bulletin->salaire_brut ?? 0) * 12, 0, ',', ' ') }} FCFA</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Taux d'imposition</span>
+                        <span class="font-medium">{{ $bulletin->employeur->taux_imposition ?? '0%' }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Parts fiscales</span>
+                        <span class="font-medium">{{ $bulletin->employeur->parts_fiscales ?? 1 }}</span>
+                    </div>
+                    </div>
                 </div>
-                <div class="p-6">
-                    <div class="space-y-4">
-                        <div class="flex justify-between">
-                            <span>Salaire brut annuel</span>
-                            <span class="font-medium">{{ number_format(($bulletin->salaire_brut ?? 0) * 12, 0, ',', ' ') }} FCFA</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Taux d'imposition</span>
-                            <span class="font-medium">{{ $bulletin->employeur->taux_imposition ?? '0%' }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Parts fiscales</span>
-                            <span class="font-medium">{{ $bulletin->employeur->parts_fiscales ?? 1 }}</span>
+        <!-- Informations de Paiement -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8 animate-fade-in delay-300">
+            <div class="border-b border-gray-200 p-6">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                    <i class="fas fa-money-check-alt text-green-600 mr-3"></i> Informations de Paiement
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Moyen de paiement -->
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-700 mb-3">Moyen de Paiement</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <div class="w-5 h-5 border border-gray-400 rounded-sm mr-3 print:border-black"></div>
+                                <span>Espèces</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-5 h-5 border border-gray-400 rounded-sm mr-3 print:border-black"></div>
+                                <span>Virement Bancaire</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-5 h-5 border border-gray-400 rounded-sm mr-3 print:border-black"></div>
+                                <span>Mobile Money</span>
+                            </div>
                         </div>
                     </div>
+                    
+                    <!-- Statut de paiement -->
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-700 mb-3">Statut de Paiement</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <div class="w-5 h-5 border border-gray-400 rounded-sm mr-3 print:border-black"></div>
+                                <span>Payé</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-5 h-5 border border-gray-400 rounded-sm mr-3 print:border-black"></div>
+                                <span>Impayé</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 pt-4 border-t border-gray-200">
+                    <p class="text-gray-600">Date de paiement: <span class="font-medium">{{ $bulletin->date_paiement ? \Carbon\Carbon::parse($bulletin->date_paiement)->format('d/m/Y') : 'N/A' }}</span></p>
                 </div>
             </div>
         </div>
         
-        <!-- Summary & Actions -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in delay-300">
+        <!-- Summary & Actions - masqué à l'impression -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in delay-300 no-print">
             <div class="p-6">
                 <div class="flex flex-col md:flex-row justify-between items-center">
                     <div class="mb-4 md:mb-0">
-                        <p class="text-gray-600">Date de paiement: <span class="font-medium">{{ $bulletin->date_paiement ? \Carbon\Carbon::parse($bulletin->date_paiement)->format('d/m/Y') : 'N/A' }}</span></p>
-                        <p class="text-gray-600">Mode de paiement: <span class="font-medium">{{ $bulletin->mode_paiement ?? 'Virement bancaire' }}</span></p>
+                        <p class="text-gray-600">Document généré le <span class="font-medium">{{ \Carbon\Carbon::now()->format('d/m/Y à H:i') }}</span></p>
                     </div>
                     <div class="flex space-x-3">
-                        <button onclick="window.print()" class="no-print bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+                        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
                             <i class="fas fa-print mr-2"></i> Imprimer
                         </button>
-                        <a href="{{ route('paie.bulletins.pdf', $bulletin->id) }}" target="_blank" class="no-print bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg flex items-center transition-colors">
+                        <a href="{{ route('paie.bulletins.pdf', $bulletin->id) }}" target="_blank" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg flex items-center transition-colors">
                             <i class="fas fa-download mr-2"></i> Télécharger PDF
                         </a>
                     </div>

@@ -446,7 +446,7 @@ class BulletinPaieController extends Controller
             $elementsPrimes = $bulletin->getElementsByType('prime');
             $elementsRetenues = $bulletin->getElementsByType('retenue_salariale');
             $elementsCharges = $bulletin->getElementsByType('charge_patronale');
-
+            
             // Générer le PDF
             $pdf = Pdf::loadView('paie.bulletins.pdf', compact(
                 'bulletin',
@@ -1062,6 +1062,75 @@ class BulletinPaieController extends Controller
     }
     
     /**
+     * Récupère les données de congés pour un bulletin de paie
+     * 
+     * @param BulletinPaie $bulletin
+     * @return array
+     */
+    private function getCongeData(BulletinPaie $bulletin)
+    {
+        try {
+            // Récupérer l'année en cours
+            $annee = \Carbon\Carbon::parse($bulletin->periode_debut)->year;
+            
+            // Récupérer les soldes de congés de l'employé
+            $soldes = \App\Models\SoldeConge::where('employeur_id', $bulletin->employeur_id)
+                ->where('annee', $annee)
+                ->with('typeConge')
+                ->get();
+            
+            // Récupérer les congés pris pendant la période du bulletin
+            $congesPeriode = \App\Models\Conge::where('employeur_id', $bulletin->employeur_id)
+                ->whereBetween('date_debut', [$bulletin->periode_debut, $bulletin->periode_fin])
+                ->orWhereBetween('date_fin', [$bulletin->periode_debut, $bulletin->periode_fin])
+                ->where('statut', 'approuve')
+                ->with('typeConge')
+                ->get();
+            
+            // Si aucun solde n'est trouvé, retourner des valeurs par défaut
+            if ($soldes->isEmpty()) {
+                return [
+                    'solde_acquis' => 0,
+                    'conges_pris_periode' => $congesPeriode->sum('duree_jours'),
+                    'solde_restant' => 0
+                ];
+            }
+            
+            // Calculer les totaux pour tous les types de congés
+            $soldeAcquis = $soldes->sum('solde_acquis');
+            $soldeRestant = $soldes->sum('solde_restant');
+            $congesPrisPeriode = $congesPeriode->sum('duree_jours');
+            
+            return [
+                'solde_acquis' => $soldeAcquis,
+                'conges_pris_periode' => $congesPrisPeriode,
+                'solde_restant' => $soldeRestant,
+                'details' => $soldes->map(function ($solde) {
+                    return [
+                        'type' => $solde->typeConge->nom,
+                        'solde_acquis' => $solde->solde_acquis,
+                        'solde_pris' => $solde->solde_pris,
+                        'solde_restant' => $solde->solde_restant
+                    ];
+                })
+            ];
+            
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération des données de congés', [
+                'bulletin_id' => $bulletin->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'solde_acquis' => 0,
+                'conges_pris_periode' => 0,
+                'solde_restant' => 0
+            ];
+        }
+    }
+    
+    /**
      * Récupère les données de présence pour un bulletin de paie
      * 
      * @param BulletinPaie $bulletin
@@ -1071,40 +1140,21 @@ class BulletinPaieController extends Controller
     {
         try {
             // Récupérer le service de temps de présence
-            $tempsPresenceService = app(\App\Services\TempsPresenceService::class);
+            $tempsPresenceService = app(\App\Services\Presence\TempsPresenceService::class);
             
             // Convertir les dates de début et de fin en objets Carbon
             $dateDebut = \Carbon\Carbon::parse($bulletin->periode_debut);
             $dateFin = \Carbon\Carbon::parse($bulletin->periode_fin);
             
-            // Récupérer l'ID de l'entreprise
-            $entrepriseId = $bulletin->entreprise_id;
+            // Récupérer directement les données de présence pour l'employé spécifique
+            // en utilisant la nouvelle méthode qui accepte des IDs de type string
+            return $tempsPresenceService->getPresenceDataForEmploye(
+                $dateDebut, 
+                $dateFin, 
+                $bulletin->employeur_id, 
+                $bulletin->entreprise_id
+            );
             
-            // Calculer le temps de présence pour l'employé
-            $presences = $tempsPresenceService->calculerTempsPresenceParEmploye($dateDebut, $dateFin, $entrepriseId);
-            
-            // Filtrer pour ne garder que les données de l'employé concerné
-            $presenceEmploye = $presences->first(function ($item) use ($bulletin) {
-                return $item['employe']->id === $bulletin->employeur_id;
-            });
-            
-            if (!$presenceEmploye) {
-                return [
-                    'temps_total' => '0h 0m',
-                    'jours_travailles' => 0,
-                    'temps_moyen_par_jour' => '0h 0m',
-                    'retard_total' => '0h 0m',
-                    'heures_supplementaires' => '0h 0m'
-                ];
-            }
-            
-            return [
-                'temps_total' => $presenceEmploye['temps_total_formate'],
-                'jours_travailles' => $presenceEmploye['jours_travailles'],
-                'temps_moyen_par_jour' => $presenceEmploye['temps_moyen_par_jour_formate'],
-                'retard_total' => $presenceEmploye['retard_total_formate'],
-                'heures_supplementaires' => $presenceEmploye['heures_supplementaires_formate']
-            ];
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des données de présence', [
                 'bulletin_id' => $bulletin->id,
@@ -1122,87 +1172,4 @@ class BulletinPaieController extends Controller
         }
     }
     
-    /**
-     * Récupère les données de congés pour un bulletin de paie
-     * 
-     * @param BulletinPaie $bulletin
-     * @return array
-     */
-    private function getCongeData(BulletinPaie $bulletin)
-    {
-        try {
-            // Récupérer le service de congés
-            $congeService = app(\App\Services\CongeService::class);
-            
-            // Récupérer l'utilisateur associé à l'employeur
-            $user = \App\Models\User::where('employeur_id', $bulletin->employeur_id)->first();
-            
-            if (!$user) {
-                return [
-                    'solde_initial' => 0,
-                    'solde_acquis' => 0,
-                    'solde_pris' => 0,
-                    'solde_restant' => 0,
-                    'conges_pris_periode' => 0
-                ];
-            }
-            
-            // Récupérer l'année du bulletin
-            $annee = \Carbon\Carbon::parse($bulletin->periode_fin)->year;
-            
-            // Récupérer les statistiques de congés
-            $stats = $congeService->getStatistiquesUtilisateur($user, $annee);
-            
-            // Calculer les congés pris sur la période du bulletin
-            $dateDebut = \Carbon\Carbon::parse($bulletin->periode_debut);
-            $dateFin = \Carbon\Carbon::parse($bulletin->periode_fin);
-            
-            $congesPeriode = \App\Models\Conge::where('employeur_id', $bulletin->employeur_id)
-                ->where('statut', 'approuve')
-                ->where(function ($query) use ($dateDebut, $dateFin) {
-                    $query->whereBetween('date_debut', [$dateDebut, $dateFin])
-                        ->orWhereBetween('date_fin', [$dateDebut, $dateFin])
-                        ->orWhere(function ($query) use ($dateDebut, $dateFin) {
-                            $query->where('date_debut', '<', $dateDebut)
-                                ->where('date_fin', '>', $dateFin);
-                        });
-                })
-                ->sum('duree_jours');
-            
-            // Récupérer les données du premier type de congé (congé payé)
-            $congePaye = $stats['soldes']->first();
-            
-            if (!$congePaye) {
-                return [
-                    'solde_initial' => 0,
-                    'solde_acquis' => 0,
-                    'solde_pris' => 0,
-                    'solde_restant' => 0,
-                    'conges_pris_periode' => $congesPeriode
-                ];
-            }
-            
-            return [
-                'solde_initial' => $congePaye['solde_initial'],
-                'solde_acquis' => $congePaye['solde_acquis'],
-                'solde_pris' => $congePaye['solde_pris'],
-                'solde_restant' => $congePaye['solde_restant'],
-                'conges_pris_periode' => $congesPeriode
-            ];
-        } catch (\Exception $e) {
-            Log::error('Erreur lors de la récupération des données de congés', [
-                'bulletin_id' => $bulletin->id,
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return [
-                'solde_initial' => 0,
-                'solde_acquis' => 0,
-                'solde_pris' => 0,
-                'solde_restant' => 0,
-                'conges_pris_periode' => 0
-            ];
-        }
-    }
 }

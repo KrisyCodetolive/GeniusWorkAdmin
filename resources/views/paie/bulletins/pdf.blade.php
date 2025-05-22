@@ -406,6 +406,48 @@
         </table>
         @endif
 
+        <!-- Section de paiement à remplir manuellement -->
+        <div style="margin-top: 30px; margin-bottom: 30px; border: 1px solid #e0e0e0; border-radius: 6px; padding: 15px; background-color: #f9f9f9;">
+            <h3 style="margin-top: 0; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0; color: #2c3e50; font-size: 16px;">Informations de Paiement</h3>
+            
+            <div style="display: flex; justify-content: space-between;">
+                <!-- Moyen de paiement -->
+                <div style="flex: 1;">
+                    <p style="font-weight: bold; margin-bottom: 10px;">Moyen de Paiement:</p>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div>
+                            <span style="display: inline-block; width: 16px; height: 16px; border: 1px solid #555; margin-right: 8px; vertical-align: middle;"></span>
+                            <span>Espèces</span>
+                        </div>
+                        <div>
+                            <span style="display: inline-block; width: 16px; height: 16px; border: 1px solid #555; margin-right: 8px; vertical-align: middle;"></span>
+                            <span>Virement Bancaire</span>
+                        </div>
+                        <div>
+                            <span style="display: inline-block; width: 16px; height: 16px; border: 1px solid #555; margin-right: 8px; vertical-align: middle;"></span>
+                            <span>Mobile Money</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statut de paiement -->
+                <div style="flex: 1;">
+                    <p style="font-weight: bold; margin-bottom: 10px;">Statut de Paiement:</p>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div>
+                            <span style="display: inline-block; width: 16px; height: 16px; border: 1px solid #555; margin-right: 8px; vertical-align: middle;"></span>
+                            <span>Payé</span>
+                        </div>
+                        <div>
+                            <span style="display: inline-block; width: 16px; height: 16px; border: 1px solid #555; margin-right: 8px; vertical-align: middle;"></span>
+                            <span>Impayé</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
         <div class="signature-section">
             <div class="signature-box">
                 <div class="signature-title">Signature de l'employeur</div>
@@ -414,7 +456,6 @@
         </div>
 
         <div class="footer">
-            <p class="text-center">Date de paiement: <strong>{{ \Carbon\Carbon::parse($bulletin->date_paiement)->format('d/m/Y') }}</strong></p>
             <p class="text-center">Ce document est généré automatiquement par l'application <strong>Genius Work</strong> et nécessite une signature manuscrite pour être valide.</p>
             <p class="text-center">Document généré le {{ \Carbon\Carbon::now()->format('d/m/Y à H:i') }}</p>
         </div>

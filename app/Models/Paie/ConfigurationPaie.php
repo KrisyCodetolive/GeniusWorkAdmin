@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use App\Models\Entreprise;
+use Illuminate\Support\Facades\Log;
 
 class ConfigurationPaie extends Model
 {
@@ -102,15 +103,65 @@ class ConfigurationPaie extends Model
      */
     public function getBaremeIGR($montant)
     {
+        // Récupérer les barèmes avec valeur par défaut
         $baremes = $this->baremes_igr ?? [];
         
+        // Journaliser les informations pour le débogage
+        Log::info('Recherche de barème IGR', [
+            'montant' => $montant,
+            'baremes_disponibles' => $baremes,
+            'configuration_id' => $this->id
+        ]);
+        
+        // Si aucun barème n'est défini, utiliser un barème par défaut
+        if (empty($baremes)) {
+            Log::warning('Aucun barème IGR défini dans la configuration, utilisation du barème par défaut');
+            
+            // Barème par défaut simplifié (exemple)
+            $baremeParDefaut = [
+                ['min' => 0, 'max' => 900000, 'taux' => 0, 'description' => 'Tranche 1 (par défaut)'],
+                ['min' => 900001, 'max' => 1500000, 'taux' => 10, 'description' => 'Tranche 2 (par défaut)'],
+                ['min' => 1500001, 'max' => 2500000, 'taux' => 15, 'description' => 'Tranche 3 (par défaut)'],
+                ['min' => 2500001, 'max' => 5000000, 'taux' => 20, 'description' => 'Tranche 4 (par défaut)'],
+                ['min' => 5000001, 'max' => PHP_FLOAT_MAX, 'taux' => 25, 'description' => 'Tranche 5 (par défaut)']
+            ];
+            
+            foreach ($baremeParDefaut as $bareme) {
+                if ($montant >= $bareme['min'] && $montant <= $bareme['max']) {
+                    Log::info('Barème IGR par défaut appliqué', $bareme);
+                    return $bareme;
+                }
+            }
+        }
+        
+        // Parcourir les barèmes définis
         foreach ($baremes as $bareme) {
-            if ($montant >= ($bareme['min'] ?? 0) && $montant <= ($bareme['max'] ?? PHP_FLOAT_MAX)) {
+            // Vérifier que le barème est correctement formaté
+            if (!isset($bareme['min']) || !isset($bareme['max']) || !isset($bareme['taux'])) {
+                Log::warning('Barème IGR mal formaté', $bareme);
+                continue;
+            }
+            
+            // Convertir les valeurs en nombres pour éviter les problèmes de comparaison
+            $min = (float)($bareme['min']);
+            $max = isset($bareme['max']) && $bareme['max'] !== null ? (float)($bareme['max']) : PHP_FLOAT_MAX;
+            
+            if ($montant >= $min && $montant <= $max) {
+                Log::info('Barème IGR trouvé', $bareme);
                 return $bareme;
             }
         }
         
-        return null;
+        // Aucun barème trouvé
+        Log::warning('Aucun barème IGR trouvé pour le montant ' . $montant);
+        
+        // Retourner un barème par défaut avec taux 0% pour éviter les erreurs
+        return [
+            'min' => 0,
+            'max' => PHP_FLOAT_MAX,
+            'taux' => 0,
+            'description' => 'Taux par défaut (aucun barème trouvé)'
+        ];
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Filament\Resources\SoldeCongeResource;
 use App\Filament\Pages\CongesStatistiquesPage;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use App\Filament\Actions\GenerateDemandesCongesAction;
 
 class ListConges extends ListRecords
 {
@@ -23,6 +24,11 @@ class ListConges extends ListRecords
                 ->icon('heroicon-o-chart-bar')
                 ->color('success')
                 ->url(fn (): string => CongesStatistiquesPage::getUrl()),
+            GenerateDemandesCongesAction::make()
+                ->label('Générer des demandes')
+                ->icon('heroicon-o-calendar')
+                ->color('warning')
+                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
             Actions\Action::make('typeConges')
                 ->label('Types de congés')
                 ->icon('heroicon-o-tag')

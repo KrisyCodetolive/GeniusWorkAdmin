@@ -138,15 +138,21 @@ class CalculPaieService implements CalculPaieServiceInterface
         
         // Trouver le barème applicable
         $bareme = $configuration->getBaremeIGR($montantApresAbattement);
-        
+    
         if (!$bareme) {
+            Log::info('Bareme IGR non trouvé', ['montant' => $montantApresAbattement]);
             return 0;
         }
-        
+    
         $tauxIGR = $bareme['taux'] ?? 0;
-        
+    
+        // Journaliser les informations avec un tableau comme second paramètre
+        Log::info('Taux IGR appliqué', ['taux' => $tauxIGR, 'description' => $bareme['description'] ?? '']);
+    
         // Calculer l'IGR
-        return $montantApresAbattement * ($tauxIGR / 100);
+        $montantIGR = $montantApresAbattement * ($tauxIGR / 100);
+        Log::info('Montant IGR calculé', ['montant' => $montantIGR, 'base' => $montantApresAbattement]);
+        return $montantIGR;
     }
 
     /**
