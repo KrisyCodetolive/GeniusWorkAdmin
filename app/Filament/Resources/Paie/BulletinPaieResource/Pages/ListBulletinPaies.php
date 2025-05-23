@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Paie\BulletinPaieResource\Pages;
 
 use App\Filament\Actions\ExporterBulletinsPaieAction;
+use App\Filament\Actions\GenerateBulletinsPaieTestAction;
 use App\Filament\Actions\GenererRapportPaieAction;
 use App\Filament\Resources\Paie\BulletinPaieResource;
 use App\Filament\Resources\Paie\ConfigurationPaieResource;
@@ -122,6 +123,9 @@ class ListBulletinPaies extends ListRecords
                 
             GenererRapportPaieAction::make()
                 ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin()),
+                
+            GenerateBulletinsPaieTestAction::make()
+                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
         ];
     }
     
