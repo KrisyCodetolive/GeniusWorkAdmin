@@ -388,8 +388,8 @@
                                         </svg>
                                     </div>
                                     <div class="ml-4">
-                                        <h3 class="text-lg font-medium text-gray-900">Paystack</h3>
-                                        <p class="text-sm text-gray-500">Paiement sécurisé par carte ou mobile money</p>
+                                        <h3 class="text-lg font-medium text-gray-900">Payez par Carte Visa ou Mobile Money</h3>
+                                        <p class="text-sm text-gray-500">Paiement sécurisé par Carte Visa ou Mobile Money</p>
                                     </div>
                                     <div class="ml-auto">
                                         <svg x-show="isGatewaySelected('paystack')" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -419,7 +419,7 @@
                                 </div>
                             </div>
                             -->
-                            <!-- Manuel Gateway -->
+                            <!-- Manuel Gateway 
                             <div class="payment-card rounded-lg bg-white p-4 border shadow-sm hover:shadow-md cursor-pointer {{ $selectedGateway === 'manuel' ? 'selected' : '' }}" data-gateway="manuel" @click="selectGateway('manuel')">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -437,7 +437,7 @@
                                         </svg>
                                     </div>
                                 </div>
-                            </div>
+                            </div>-->
                         </div>
                         
                         <!-- Méthodes de paiement -->
