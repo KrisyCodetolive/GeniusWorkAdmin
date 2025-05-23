@@ -62,6 +62,10 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 Widgets\AccountWidget::class,
                 // Widgets\FilamentInfoWidget::class, // Supprimé pour ne pas afficher les infos Filament en production
+                //\App\Filament\Widgets\GuideUtilisationWidget::class,
+                \App\Filament\Widgets\WhatsAppSupportWidget::class,
+                //\App\Filament\Widgets\RessourcesExternesWidget::class,
+                \App\Filament\Widgets\OnboardingWidget::class,
                 \App\Filament\Widgets\ImpersonateWidget::class,
                 \App\Filament\Widgets\ImpersonationStatusWidget::class,
                 \App\Filament\Widgets\EntrepriseStatsWidget::class,
