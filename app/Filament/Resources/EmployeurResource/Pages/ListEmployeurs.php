@@ -6,6 +6,7 @@ use App\Filament\Resources\EmployeurResource;
 use App\Filament\Widgets\EmployeurStatsWidget;
 use App\Filament\Widgets\EmployeurDepartementWidget;
 use App\Filament\Widgets\EmployeurTendanceWidget;
+use App\Filament\Widgets\EmployeeLimitWidget;
 use App\Filament\Actions\GenerateEmployeursExemplesAction;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -52,7 +53,7 @@ class ListEmployeurs extends ListRecords
     {
         return [
             EmployeurStatsWidget::class,
-
+            EmployeeLimitWidget::class,
         ];
     }
 }

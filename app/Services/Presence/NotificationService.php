@@ -208,7 +208,7 @@ class NotificationService
             'data' => json_encode($data),
             'lu' => false,
             'status' => 'created',
-            'type_notification' => $type,
+            'type' => $type, // Utiliser 'type' au lieu de 'type_notification'
             'canaux_envoyes' => json_encode([])
         ]);
         

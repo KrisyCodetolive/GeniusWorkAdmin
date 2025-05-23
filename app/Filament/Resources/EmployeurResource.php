@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Filament\Widgets\EmployeurStatsWidget;
 use App\Filament\Widgets\EmployeurDepartementWidget;
 use App\Filament\Widgets\EmployeurTendanceWidget;
+use App\Filament\Widgets\EmployeeLimitWidget;
 
 class EmployeurResource extends Resource
 {
@@ -548,6 +549,7 @@ class EmployeurResource extends Resource
         return [
             EmployeurStatsWidget::class,
             EmployeurDepartementWidget::class,
+            EmployeeLimitWidget::class,
             EmployeurTendanceWidget::class,
         ];
     }

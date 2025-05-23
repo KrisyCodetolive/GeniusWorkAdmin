@@ -5,6 +5,7 @@ namespace App\Filament\Resources\RetardAbsenceResource\Pages;
 use App\Filament\Resources\RetardAbsenceResource;
 use App\Services\Presence\RetardAbsenceService;
 use App\Filament\Widgets\RetardAbsenceStatsWidget;
+use App\Filament\Actions\ExporterRetardAbsenceAction;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,9 @@ class ListRetardAbsences extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            ExporterRetardAbsenceAction::make()
+                ->label('Exporter en Excel')
+                ->tooltip('Exporter les retards et absences en Excel avec filtrage avancé'),
 
             \Filament\Actions\Action::make('heuresSupplementaires')
                 ->label('Heures Supplémentaires')
