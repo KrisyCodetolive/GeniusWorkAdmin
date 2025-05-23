@@ -28,7 +28,29 @@ class ListConges extends ListRecords
                 ->label('Générer des demandes')
                 ->icon('heroicon-o-calendar')
                 ->color('warning')
-                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
+                ->visible(function () {
+                    $user = auth()->user();
+                    
+                    // Vérifier si l'utilisateur a les droits nécessaires
+                    if (!($user->isAdmin() || $user->isSuperAdmin() || $user->isSupport())) {
+                        return false;
+                    }
+                    
+                    $entreprise = $user->entreprise;
+                    if (!$entreprise) {
+                        return false;
+                    }
+                    
+                    // Vérifier si l'entreprise a déjà des demandes de congé
+                    // La table Conge n'a pas de colonne entreprise_id directe
+                    // On doit passer par la relation avec les employeurs
+                    $existingConges = \App\Models\Conge::whereHas('employeur', function($query) use ($entreprise) {
+                        $query->where('entreprise_id', $entreprise->id);
+                    })->count();
+                    
+                    // Ne montrer l'action que si l'entreprise n'a pas encore de demandes de congé
+                    return $existingConges === 0;
+                }),
             Actions\Action::make('typeConges')
                 ->label('Types de congés')
                 ->icon('heroicon-o-tag')

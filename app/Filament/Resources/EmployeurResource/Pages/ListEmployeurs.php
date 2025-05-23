@@ -25,7 +25,26 @@ class ListEmployeurs extends ListRecords
                 ->color('success')
                 ->url(fn () => route('filament.admin.pages.employeurs-stats')),
             // Action pour générer des employés exemples
-            GenerateEmployeursExemplesAction::make(),
+            GenerateEmployeursExemplesAction::make()
+                ->visible(function () {
+                    $user = auth()->user();
+                    
+                    // Vérifier si l'utilisateur a les droits nécessaires
+                    if (!($user->isAdmin() || $user->isSuperAdmin() || $user->isSupport())) {
+                        return false;
+                    }
+                    
+                    $entreprise = $user->entreprise;
+                    if (!$entreprise) {
+                        return false;
+                    }
+                    
+                    // Vérifier si l'entreprise a déjà des employeurs
+                    $existingEmployeurs = \App\Models\Employeur::where('entreprise_id', $entreprise->id)->count();
+                    
+                    // Ne montrer l'action que si l'entreprise n'a pas encore d'employeurs
+                    return $existingEmployeurs === 0;
+                }),
         ];
     }
     

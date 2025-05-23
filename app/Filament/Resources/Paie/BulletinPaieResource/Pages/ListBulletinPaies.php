@@ -125,7 +125,25 @@ class ListBulletinPaies extends ListRecords
                 ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin()),
                 
             GenerateBulletinsPaieTestAction::make()
-                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
+                ->visible(function () {
+                    $user = auth()->user();
+                    
+                    // Vérifier si l'utilisateur a les droits nécessaires
+                    if (!($user->isAdmin() || $user->isSuperAdmin() || $user->isSupport())) {
+                        return false;
+                    }
+                    
+                    $entreprise = $user->entreprise;
+                    if (!$entreprise) {
+                        return false;
+                    }
+                    
+                    // Vérifier si l'entreprise a déjà des bulletins de paie
+                    $existingBulletins = \App\Models\Paie\BulletinPaie::where('entreprise_id', $entreprise->id)->count();
+                    
+                    // Ne montrer l'action que si l'entreprise n'a pas encore de bulletins de paie
+                    return $existingBulletins === 0;
+                }),
         ];
     }
     

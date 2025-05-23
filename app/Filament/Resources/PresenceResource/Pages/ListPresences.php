@@ -30,7 +30,29 @@ class ListPresences extends ListRecords
                 ->icon('heroicon-o-plus'),
                 
             \App\Filament\Actions\GeneratePresencesExemplesAction::make()
-                ->visible(fn (): bool => auth()->user()->isAdmin()),
+                ->visible(function () {
+                    $user = auth()->user();
+                    
+                    // Vérifier si l'utilisateur a les droits nécessaires
+                    if (!$user->isAdmin()) {
+                        return false;
+                    }
+                    
+                    $entreprise = $user->entreprise;
+                    if (!$entreprise) {
+                        return false;
+                    }
+                    
+                    // Vérifier si l'entreprise a déjà des présences
+                    // La table Presence n'a pas de colonne entreprise_id directe
+                    // On doit passer par la relation avec les employeurs
+                    $existingPresences = \App\Models\Presence::whereHas('employeur', function($query) use ($entreprise) {
+                        $query->where('entreprise_id', $entreprise->id);
+                    })->count();
+                    
+                    // Ne montrer l'action que si l'entreprise n'a pas encore de présences
+                    return $existingPresences === 0;
+                }),
                 
             GeneratePresenceReportAction::make()
                 ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
