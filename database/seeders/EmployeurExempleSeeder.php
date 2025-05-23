@@ -217,6 +217,22 @@ class EmployeurExempleSeeder extends Seeder
             return $result;
         }
         
+        // Vérifier si l'entreprise a un abonnement actif et récupérer la limite d'employés
+        $abonnementActif = $entreprise->abonnementActif;
+        if (!$abonnementActif) {
+            $result['message'] = "Votre entreprise n'a pas d'abonnement actif. Veuillez souscrire à un abonnement avant de générer des employés exemples.";
+            return $result;
+        }
+        
+        // Récupérer la limite d'employés depuis l'abonnement
+        $limit = $abonnementActif->nombre_personnels ?? 
+                $abonnementActif->planAbonnement->nombre_employes_max ?? 0;
+        
+        if ($limit <= 0) {
+            $result['message'] = "Votre abonnement ne permet pas de créer des employés. Veuillez contacter le support.";
+            return $result;
+        }
+        
         // Vérifier si des filiales existent, sinon les créer
         $filiales = Filiale::where('entreprise_id', $entreprise->id)->get();
         if ($filiales->isEmpty()) {
@@ -260,7 +276,16 @@ class EmployeurExempleSeeder extends Seeder
         $employeurs = self::getEmployeursExemples($entreprise);
         $created = [];
         
+        // Limiter le nombre d'employés à créer en fonction de la limite d'abonnement
+        $nombreEmployesACreer = min(count($employeurs), $limit);
+        $employeurs = array_slice($employeurs, 0, $nombreEmployesACreer);
+        
         foreach ($employeurs as $index => $employeur) {
+            // Vérifier si le nombre d'employés créés atteint déjà la limite
+            if (count($created) >= $limit) {
+                break; // Arrêter la création si la limite est atteinte
+            }
+            
             // Vérifier si un employé similaire existe déjà pour cette entreprise
             $existant = Employeur::where('entreprise_id', $entreprise->id)
                 ->where('nom', $employeur['nom'])

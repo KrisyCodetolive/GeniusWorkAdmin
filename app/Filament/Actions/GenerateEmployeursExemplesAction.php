@@ -39,6 +39,34 @@ class GenerateEmployeursExemplesAction extends Action
                     return;
                 }
                 
+                // Vérifier si l'entreprise a un abonnement actif
+                if (!$entreprise->abonnementActif) {
+                    Notification::make()
+                        ->title('Erreur')
+                        ->body('Votre entreprise n\'a pas d\'abonnement actif. Veuillez souscrire à un abonnement avant de générer des employés exemples.')
+                        ->danger()
+                        ->send();
+                    return;
+                }
+                
+                // Vérifier la limite d'employés pour l'entreprise
+                $currentEmployeeCount = $entreprise->getEmployeCount();
+                $limit = $entreprise->abonnementActif->nombre_personnels ?? 
+                        $entreprise->abonnementActif->planAbonnement->nombre_employes_max ?? 0;
+                
+                // Nombre d'employés exemples à créer (basé sur le seeder)
+                $nombreEmployesExemples = 10; // Estimation du nombre d'employés dans le seeder
+                
+                // Vérifier si la génération d'employés exemples dépasserait la limite
+                if (($currentEmployeeCount + $nombreEmployesExemples) > $limit) {
+                    Notification::make()
+                        ->title('Limite d\'employés atteinte')
+                        ->body('Votre abonnement actuel permet un maximum de ' . $limit . ' employés. Vous avez déjà ' . $currentEmployeeCount . ' employés. La génération d\'exemples dépasserait cette limite. Veuillez mettre à niveau votre abonnement pour ajouter plus d\'employés.')
+                        ->warning()
+                        ->send();
+                    return;
+                }
+                
                 // Générer les exemples d'employés
                 $result = EmployeurExempleSeeder::createForEntreprise($entreprise);
                 
