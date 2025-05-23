@@ -8,17 +8,26 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\WorkflowService;
+use App\Models\Abonnement;
+use App\Models\Entreprise;
+use App\Models\PlanAbonnement;
+use App\Services\ChangeAbonnementService;
+use App\Services\AbonnementService;
 
 class WorkflowController extends Controller
 {
     protected $workflowService;
+    protected $abonnementService;
+    protected $changeAbonnementService;
 
     /**
      * Constructeur avec injection du service
      */
-    public function __construct(WorkflowService $workflowService)
+    public function __construct(WorkflowService $workflowService, AbonnementService $abonnementService, ChangeAbonnementService $changeAbonnementService)
     {
         $this->workflowService = $workflowService;
+        $this->abonnementService = $abonnementService;
+        $this->changeAbonnementService = $changeAbonnementService;
         
         // Appliquer le middleware auth à toutes les méthodes sauf celles du workflow d'inscription
         $this->middleware('auth')->except([
@@ -257,6 +266,7 @@ class WorkflowController extends Controller
      */
     public function showPayment()
     {
+
         // Vérifier si l'utilisateur a complété l'étape précédente
         if (!session()->has('subscription')) {
             return redirect()->route('workflow.subscription')
@@ -490,6 +500,7 @@ class WorkflowController extends Controller
      * Afficher la page de succès après un paiement validé
      * 
      * Cette méthode est accessible sans authentification.
+     * Gère à la fois les nouveaux abonnements et les changements d'abonnement.
      * 
      * @param string $paiementReference
      * @return \Illuminate\Http\Response
@@ -497,7 +508,9 @@ class WorkflowController extends Controller
     public function showSuccess($paiementReference)
     {
         // Récupérer le paiement
-        $paiement = \App\Models\Paiement::where('reference', $paiementReference)->firstOrFail();
+        $paiement = \App\Models\Paiement::where('reference', $paiementReference)
+            ->orWhere('reference_externe', $paiementReference)
+            ->firstOrFail();
         
         // Vérifier que le paiement est bien validé
         if (!$paiement->estComplete()) {
@@ -510,6 +523,52 @@ class WorkflowController extends Controller
         $abonnement = $paiement->abonnement ?? $facturation->abonnement;
         $entreprise = $paiement->entreprise ?? $abonnement->entreprise;
         
+        // Déterminer s'il s'agit d'un changement d'abonnement
+        $estChangementAbonnement = false;
+        $changementData = session()->get('changement_abonnement');
+        $messageSucces = '';
+            
+        if ($changementData) {
+            $estChangementAbonnement = true;
+            $abonnementChange = Abonnement::findOrFail($changementData['abonnement_id']);
+            $nouveauPlan = PlanAbonnement::findOrFail($changementData['plan_abonnement_id']);
+            $ancienNombreEmployes = $abonnementChange->nombre_personnels;
+            $nouveauNombreEmployes = $changementData['nombre_employes'];
+            $typePeriode = $changementData['type_periode'];
+            
+            try {
+                // Finaliser le changement d'abonnement
+                $resultat = $this->changeAbonnementService->finaliserChangementAbonnement($abonnementChange, $nouveauPlan, [
+                    'type_periode' => $typePeriode,
+                    'nombre_employes' => $nouveauNombreEmployes,
+                    'mode_paiement' => 'carte',
+                    'reference_paiement' => $paiement->reference
+                ]);
+                
+                // Nettoyer la session
+                session()->forget('changement_abonnement');
+                
+                // Préparer un message de succès spécifique pour le changement d'abonnement
+                $messageSucces = "Votre abonnement a été mis à jour avec succès ! ";
+                $messageSucces .= "Vous êtes passé de {$ancienNombreEmployes} à {$nouveauNombreEmployes} employés ";
+                $messageSucces .= "avec un forfait {$nouveauPlan->nom} ";
+                $messageSucces .= "({$typePeriode}).";
+                
+                // Mettre à jour les variables pour la vue
+                $abonnement = $abonnementChange->fresh(); // Recharger l'abonnement avec les données mises à jour
+                
+            } catch (\Exception $e) {
+                Log::error("Erreur lors de la finalisation du changement d'abonnement", [
+                    'abonnement_id' => $abonnementChange->id,
+                    'message' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                return redirect()->route('dashboard')
+                    ->withErrors(['error' => "Une erreur est survenue lors de la finalisation du changement d'abonnement: " . $e->getMessage()]);
+            }
+        }   
+
         // Récupérer l'utilisateur (administrateur de l'entreprise)
         $user = auth()->user();
         
@@ -534,11 +593,12 @@ class WorkflowController extends Controller
             'auth_user' => auth()->check() ? auth()->id() : null,
             'abonnement_user_id' => $abonnement->user_id ?? null,
             'entreprise_id' => $entreprise ? $entreprise->id : null,
-            'user_trouve' => $user ? $user->id : null
+            'user_trouve' => $user ? $user->id : null,
+            'est_changement' => $estChangementAbonnement
         ]);
         
-        // Envoyer les emails de bienvenue via le service d'email seulement si l'utilisateur est disponible
-        if ($user) {
+        // N'envoyer les emails de bienvenue que s'il ne s'agit pas d'un changement d'abonnement
+        if ($user && !$estChangementAbonnement) {
             $emailService = app(\App\Services\Mail\EmailServiceInterface::class);
             $emailsSent = $this->sendWelcomeEmails($emailService, $user, $entreprise, $abonnement);
             
@@ -582,7 +642,10 @@ class WorkflowController extends Controller
             if (!empty($message)) {
                 session()->flash('success', $message);
             }
-        } else {
+        } else if ($estChangementAbonnement && !empty($messageSucces)) {
+            // Utiliser le message de succès spécifique pour le changement d'abonnement
+            session()->flash('success', $messageSucces);
+        } else if (!$user) {
             \Illuminate\Support\Facades\Log::warning('Impossible d\'envoyer les emails de bienvenue : utilisateur non trouvé', [
                 'paiement_reference' => $paiement->reference,
                 'entreprise_id' => $entreprise ? $entreprise->id : null,
@@ -590,11 +653,16 @@ class WorkflowController extends Controller
             ]);
         }
         
+        // Déterminer quelle vue utiliser en fonction du type d'opération
+        $viewName = $estChangementAbonnement ? 'abonnements.change-success' : 'workflow.success';
+        
+
         return view('workflow.success', [
             'paiement' => $paiement,
             'facturation' => $facturation,
             'abonnement' => $abonnement,
-            'entreprise' => $entreprise
+            'entreprise' => $entreprise,
+            'estChangementAbonnement' => $estChangementAbonnement
         ]);
     }
     

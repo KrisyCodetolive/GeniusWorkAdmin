@@ -95,15 +95,9 @@
                     </svg>
                 </div>
                 <h1 class="text-3xl md:text-4xl font-bold mt-6 mb-4">Félicitations !</h1>
-                @if($estChangementAbonnement)
-                <p class="text-lg md:text-xl opacity-90">
-                    Votre changement d'abonnement à GENIUS WORK a été complétée avec succès.
-                </p>
-                @else
                 <p class="text-lg md:text-xl opacity-90">
                     Votre inscription à GENIUS WORK a été complétée avec succès.
                 </p>
-                @endif
             </div>
 
             <!-- Content -->
@@ -162,25 +156,25 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div class="bg-white p-4 rounded-lg shadow-sm">
                                 <h3 class="text-sm font-medium text-gray-500">Numéro de facture</h3>
-                                <p class="mt-1 text-lg font-semibold text-gray-900">{{ $facturation->numero_facture }}</p>
+                                <p class="mt-1 text-lg font-semibold text-gray-900">{{ $facture->numero }}</p>
                             </div>
                             <div class="bg-white p-4 rounded-lg shadow-sm">
                                 <h3 class="text-sm font-medium text-gray-500">Date de facturation</h3>
-                                <p class="mt-1 text-lg font-semibold text-gray-900">{{ $facturation->date_facturation->format('d/m/Y') }}</p>
+                                <p class="mt-1 text-lg font-semibold text-gray-900">{{ $facture->date_facturation->format('d/m/Y') }}</p>
                             </div>
                             <div class="bg-white p-4 rounded-lg shadow-sm">
                                 <h3 class="text-sm font-medium text-gray-500">Méthode de paiement</h3>
                                 <p class="mt-1 text-lg font-semibold text-gray-900">
-                                    <i class="fas fa-mobile-alt mr-1 text-indigo-600"></i> {{ $facturation->mode_paiement }}
+                                    <i class="fas fa-mobile-alt mr-1 text-indigo-600"></i> {{ $facture->methode }}
                                 </p>
                             </div>
                             <div class="bg-white p-4 rounded-lg shadow-sm">
                                 <h3 class="text-sm font-medium text-gray-500">Référence de paiement</h3>
-                                <p class="mt-1 text-lg font-semibold text-gray-900">{{ $facturation->reference_paiement }}</p>
+                                <p class="mt-1 text-lg font-semibold text-gray-900">{{ $facture->reference_paiement }}</p>
                             </div>
                             <div class="bg-white p-4 rounded-lg shadow-sm">
                                 <h3 class="text-sm font-medium text-gray-500">Montant payé</h3>
-                                <p class="mt-1 text-lg font-semibold text-gray-900">{{ number_format($facturation->montant_ht, 0, ',', ' ') }} FCFA</p>
+                                <p class="mt-1 text-lg font-semibold text-gray-900">{{ number_format($facture->montant, 0, ',', ' ') }} FCFA</p>
                             </div>
                             <div class="bg-white p-4 rounded-lg shadow-sm">
                                 <h3 class="text-sm font-medium text-gray-500">Statut</h3>

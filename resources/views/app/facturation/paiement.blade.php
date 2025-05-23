@@ -579,7 +579,7 @@
                                 </div>
                             </div>
                             
-                            <!-- Stripe Gateway -->
+                            <!-- Stripe Gateway
                             <div class="payment-card rounded-lg bg-white p-4 border shadow-sm hover:shadow-md cursor-pointer {{ $selectedGateway === 'stripe' ? 'selected' : '' }}" data-gateway="stripe" @click="selectGateway('stripe')">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
@@ -597,9 +597,9 @@
                                         </svg>
                                     </div>
                                 </div>
-                            </div>
+                            </div> -->
                             
-                            <!-- Manuel Gateway -->
+                            <!-- Manuel Gateway 
                             <div class="payment-card rounded-lg bg-white p-4 border shadow-sm hover:shadow-md cursor-pointer {{ $selectedGateway === 'manuel' ? 'selected' : '' }}" data-gateway="manuel" @click="selectGateway('manuel')">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -617,7 +617,7 @@
                                         </svg>
                                     </div>
                                 </div>
-                            </div>
+                            </div>-->
                         </div>
                         
                         <!-- Méthodes de paiement -->

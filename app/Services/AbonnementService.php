@@ -36,8 +36,30 @@ class AbonnementService
             
             $dateFin = $dateDebut->copy()->addDays($duree);
             
-            // Calculer le montant
-            $montant = $typePeriode === 'mensuel' ? $planAbonnement->prix_mensuel : $planAbonnement->prix_annuel;
+            // Calculer le montant en utilisant la même logique que ChangeAbonnementService
+            $nombreEmployes = $data['nombre_personnels'] ?? $entreprise->employes()->count();
+            
+            // Déterminer le forfait et le coût fixe
+            $coutFixe = 0;
+            
+            if ($nombreEmployes >= 1 && $nombreEmployes <= 50) {
+                $coutFixe = 10000;
+            } elseif ($nombreEmployes > 50 && $nombreEmployes <= 100) {
+                $coutFixe = 15000;
+            } elseif ($nombreEmployes > 100) {
+                $coutFixe = 30000;
+            }
+            
+            // Calculer le coût des utilisateurs
+            $coutUtilisateurs = $nombreEmployes * 100;
+            
+            // Calculer le coût total
+            $montant = $coutFixe + $coutUtilisateurs;
+            
+            // Appliquer une réduction pour la période annuelle (10 mois au lieu de 12)
+            if ($typePeriode === 'annuel') {
+                $montant = $montant * 12;
+            }
             
             // Appliquer le code promo si fourni
             $reductionCodePromo = 0;
@@ -143,7 +165,29 @@ class AbonnementService
         try {
             // Calculer le nouveau montant
             $typePeriode = $data['type_periode'] ?? $abonnement->type_periode;
-            $montant = $typePeriode === 'mensuel' ? $nouveauPlan->prix_mensuel : $nouveauPlan->prix_annuel;
+            $nombreEmployes = $data['nombre_personnels'] ?? $abonnement->nombre_personnels;
+            
+            // Déterminer le forfait et le coût fixe selon la même formule que dans ChangeAbonnementService
+            $coutFixe = 0;
+            
+            if ($nombreEmployes >= 1 && $nombreEmployes <= 50) {
+                $coutFixe = 10000;
+            } elseif ($nombreEmployes > 50 && $nombreEmployes <= 100) {
+                $coutFixe = 15000;
+            } elseif ($nombreEmployes > 100) {
+                $coutFixe = 30000;
+            }
+            
+            // Calculer le coût des utilisateurs
+            $coutUtilisateurs = $nombreEmployes * 100;
+            
+            // Calculer le coût total
+            $montant = $coutFixe + $coutUtilisateurs;
+            
+            // Appliquer une réduction pour la période annuelle (10 mois au lieu de 12)
+            if ($typePeriode === 'annuel') {
+                $montant = $montant * 10;
+            }
             
             // Appliquer le code promo si fourni
             $reductionCodePromo = 0;

@@ -341,25 +341,8 @@ class AbonnementResource extends Resource
                     ->icon('heroicon-o-arrow-up-tray')
                     ->color('warning')
                     ->authorize('changerPlan')
-                    ->form([
-                        Forms\Components\Select::make('plan_abonnement_id')
-                            ->label('Nouveau plan')
-                            ->options(PlanAbonnement::all()->pluck('nom', 'id'))
-                            ->required(),
-                        Forms\Components\Select::make('type_periode')
-                            ->options([
-                                'mensuel' => 'Mensuel',
-                                'annuel' => 'Annuel',
-                            ])
-                            ->required()
-                            ->default('mensuel'),
-                    ])
-                    ->action(function (Abonnement $record, array $data, AbonnementService $abonnementService) {
-                        $nouveauPlan = PlanAbonnement::find($data['plan_abonnement_id']);
-                        $abonnementService->changerPlanAbonnement($record, $nouveauPlan, [
-                            'type_periode' => $data['type_periode'],
-                        ]);
-                    }),
+                    ->url(fn (Abonnement $record): string => route('abonnements.change.form', ['abonnementId' => $record->id]))
+                    ->openUrlInNewTab(false),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

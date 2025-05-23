@@ -39,7 +39,7 @@ class PaystackService implements PasserelleInterface
                 'entreprise_id' => $facturation->entreprise_id,
                 'initiateur_id' => $initiateur->id,
                 'reference' => Paiement::genererReference(),
-                'montant' => $facturation->montant_ttc,
+                'montant' => $facturation->montant_ht,
                 'devise' => $facturation->devise,
                 'methode' => $options['methode'] ?? Paiement::METHODE_CARTE,
                 'passerelle' => Paiement::PASSERELLE_PAYSTACK,
@@ -55,7 +55,7 @@ class PaystackService implements PasserelleInterface
             ]);
 
             // Préparer les données pour Paystack
-            $amount = $facturation->montant_ttc * 100; // Paystack utilise les centimes
+            $amount = $facturation->montant_ht * 100; // Paystack utilise les centimes
             $currency = $facturation->devise === 'FCFA' ? 'XOF' : $facturation->devise;
             
             // Faire l'appel API à Paystack

@@ -10,6 +10,7 @@ use App\Http\Controllers\FacturationController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WebPointageController;
 use App\Http\Controllers\SmartClockController;
+use App\Http\Controllers\AbonnementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -286,44 +287,7 @@ Route::prefix('facturations')->name('facturations.')->group(function () {
         ->name('generer-automatique');
 });
 
-// Routes pour la gestion des abonnements
-Route::prefix('abonnements')->name('abonnements.')->middleware(['auth', 'verified'])->group(function () {
-    // Tableau de bord des abonnements (admin)
-    Route::get('/dashboard', [AbonnementController::class, 'dashboard'])
-        ->name('dashboard');
-    
-    // Routes pour les abonnements d'une entreprise spécifique
-    Route::get('/{entreprise}', [AbonnementController::class, 'index'])
-        ->name('index');
-    Route::get('/{entreprise}/create', [AbonnementController::class, 'create'])
-        ->name('create');
-    Route::post('/{entreprise}', [AbonnementController::class, 'store'])
-        ->name('store');
-    Route::get('/{entreprise}/{abonnement}', [AbonnementController::class, 'show'])
-        ->name('show');
-    Route::get('/{entreprise}/{abonnement}/edit', [AbonnementController::class, 'edit'])
-        ->name('edit');
-    Route::put('/{entreprise}/{abonnement}', [AbonnementController::class, 'update'])
-        ->name('update');
-    
-    // Activation/désactivation d'un abonnement
-    Route::patch('/{entreprise}/{abonnement}/activer', [AbonnementController::class, 'activer'])
-        ->name('activer');
-    Route::patch('/{entreprise}/{abonnement}/desactiver', [AbonnementController::class, 'desactiver'])
-        ->name('desactiver');
-    
-    // Renouvellement d'un abonnement
-    Route::get('/{entreprise}/{abonnement}/renouveler', [AbonnementController::class, 'renouvelerForm'])
-        ->name('renouveler.form');
-    Route::patch('/{entreprise}/{abonnement}/renouveler', [AbonnementController::class, 'renouveler'])
-        ->name('renouveler');
-    
-    // Changement de plan d'abonnement
-    Route::get('/{entreprise}/{abonnement}/changer-plan', [AbonnementController::class, 'changerPlanForm'])
-        ->name('changer-plan.form');
-    Route::patch('/{entreprise}/{abonnement}/changer-plan', [AbonnementController::class, 'changerPlan'])
-        ->name('changer-plan');
-});
+
 
 // Routes pour les frais d'usage
 Route::prefix('frais-usages')->name('frais-usages.')->middleware(['auth', 'verified'])->group(function () {
@@ -421,3 +385,4 @@ Route::middleware(['auth'])->group(function () {
 require __DIR__.'/auth.php';
 require __DIR__.'/workflow.php';
 require __DIR__.'/paie.php'; // Routes du module de paie
+require __DIR__.'/abonnement.php'; // Routes du module de changement d'abonnement

@@ -488,6 +488,7 @@ class PaiementController extends Controller
         
         Log::info('Statut du paiement Paystack vérifié', [
             'paiement_id' => $paiement->id,
+            'montant' => $paiement->montant,
             'reference' => $paiement->reference,
             'statut' => $paiement->statut,
             'est_complete' => $paiement->estComplete(),
