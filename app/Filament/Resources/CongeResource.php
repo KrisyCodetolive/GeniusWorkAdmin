@@ -457,12 +457,7 @@ class CongeResource extends Resource
                 $query->whereHas('employeur', function ($query) {
                     $query->where('entreprise_id', auth()->user()->entreprise_id);
                 });
-            } else {
-                // Utilisateur standard, ne voir que ses propres congés
-                $query->whereHas('employeur', function ($query) {
-                    $query->where('user_id', auth()->id());
-                });
-            }
+            } 
         }
         
         // Trier les congés par ordre du plus récent au plus ancien

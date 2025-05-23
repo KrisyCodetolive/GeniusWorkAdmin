@@ -77,6 +77,20 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->userMenuItems([
+                //Websites
+                MenuItem::make()
+                    ->label('Site Web')
+                    ->url('https://work.genius.ci')
+                    ->icon('heroicon-o-wrench'),
+                MenuItem::make()
+                    ->label('Politique de confidentialité')
+                    ->url('https://work.genius.ci/politique-confidentialite/')
+                    ->icon('heroicon-o-shield-check'),
+                MenuItem::make()
+                    ->label('Conditions d\'utilisation')
+                    ->url('https://work.genius.ci/cgu/')
+                    ->icon('heroicon-o-shield-check'),
+
                 MenuItem::make()
                     ->label('Telescope')
                     ->url('/telescope')
