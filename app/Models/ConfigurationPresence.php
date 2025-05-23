@@ -5,12 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use App\Traits\BelongsToEntreprise;
 
 class ConfigurationPresence extends Model
 {
-    use HasFactory, SoftDeletes, HasUuids, BelongsToEntreprise;
+    use HasFactory, SoftDeletes, BelongsToEntreprise;
 
     /**
      * La table associée au modèle.
@@ -25,6 +24,7 @@ class ConfigurationPresence extends Model
      * @var array
      */
     protected $fillable = [
+        'uuid',
         'entreprise_id',
         'heures_supplementaires_actives',
         'nombre_pointages_par_jour',

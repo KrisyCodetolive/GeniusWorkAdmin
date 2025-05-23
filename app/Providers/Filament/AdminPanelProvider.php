@@ -30,6 +30,8 @@ use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
 use Swis\Filament\Backgrounds\FilamentBackgroundsPlugin;
 use Swis\Filament\Backgrounds\ImageProviders\MyImages;
 use Filament\Navigation\MenuItem;
+
+
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -155,7 +157,10 @@ class AdminPanelProvider extends PanelProvider
                     ->imageProvider(
                         MyImages::make()
                             ->directory('images/backgrounds') // Utiliser des images personnalisées dans ce répertoire
-                    )
+                    ),
+                    
+               
+
                 ]);
     }
 }

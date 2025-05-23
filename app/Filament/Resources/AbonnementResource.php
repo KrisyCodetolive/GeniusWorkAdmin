@@ -363,11 +363,12 @@ class AbonnementResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()->visible(fn ($livewire) => auth()->user()->isSuperAdmin()),
                     Tables\Actions\BulkAction::make('activer_multiple')
                         ->label('Activer sélectionnés')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
+                        ->visible(fn ($livewire) => auth()->user()->isSuperAdmin())
                         ->requiresConfirmation()
                         ->action(function (AbonnementService $abonnementService, \Illuminate\Database\Eloquent\Collection $records) {
                             foreach ($records as $record) {
@@ -380,6 +381,7 @@ class AbonnementResource extends Resource
                         ->label('Désactiver sélectionnés')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
+                        ->visible(fn ($livewire) => auth()->user()->isSuperAdmin())
                         ->requiresConfirmation()
                         ->action(function (AbonnementService $abonnementService, \Illuminate\Database\Eloquent\Collection $records) {
                             foreach ($records as $record) {

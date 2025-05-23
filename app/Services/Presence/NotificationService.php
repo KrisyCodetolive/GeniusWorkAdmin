@@ -6,6 +6,10 @@ use App\Models\Employeur;
 use App\Models\Entreprise;
 use App\Models\Notification;
 use App\Models\ConfigurationPresence;
+use App\Services\SMS\OrangeSMSService;
+use App\Services\SMS\SMSLogService;
+use App\Services\Mail\SmtpEmailService;
+use App\Mail\PresenceNotificationEmail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -18,16 +22,47 @@ class NotificationService
      * @var ConfigurationPresenceService
      */
     protected $configurationPresenceService;
+    
+    /**
+     * Service d'envoi de SMS Orange.
+     *
+     * @var OrangeSMSService
+     */
+    protected $orangeSMSService;
+    
+    /**
+     * Service de journalisation des SMS.
+     *
+     * @var SMSLogService
+     */
+    protected $smsLogService;
+    
+    /**
+     * Service d'envoi d'emails SMTP.
+     *
+     * @var SmtpEmailService
+     */
+    protected $smtpEmailService;
 
     /**
      * Crée une nouvelle instance du service.
      *
      * @param ConfigurationPresenceService $configurationPresenceService
+     * @param OrangeSMSService $orangeSMSService
+     * @param SMSLogService $smsLogService
+     * @param SmtpEmailService $smtpEmailService
      * @return void
      */
-    public function __construct(ConfigurationPresenceService $configurationPresenceService)
-    {
+    public function __construct(
+        ConfigurationPresenceService $configurationPresenceService,
+        OrangeSMSService $orangeSMSService,
+        SMSLogService $smsLogService,
+        SmtpEmailService $smtpEmailService
+    ) {
         $this->configurationPresenceService = $configurationPresenceService;
+        $this->orangeSMSService = $orangeSMSService;
+        $this->smsLogService = $smsLogService;
+        $this->smtpEmailService = $smtpEmailService;
     }
 
     /**
@@ -232,32 +267,63 @@ class NotificationService
         try {
             // Vérifier si l'email est valide
             if (!filter_var($employeur->email, FILTER_VALIDATE_EMAIL)) {
-                Log::warning("Adresse email invalide", ['email' => $employeur->email]);
+                Log::channel('presences')->warning("Adresse email invalide", [
+                    'email' => $employeur->email,
+                    'employeur_id' => $employeur->id,
+                    'employeur_nom' => $employeur->nom_complet
+                ]);
                 return false;
             }
             
-            // Utiliser Laravel Mail avec une vue Blade
-            Mail::send('emails.notification', [
+            // Préparer les données pour l'email
+            $emailData = [
                 'message' => $message,
-                'data' => $data,
-                'sujet' => $type
-            ], function ($m) use ($employeur, $type) {
-                $m->to($employeur->email)->subject($type);
-                // Ajouter l'expéditeur depuis la configuration
-                $m->from(config('mail.from.address'), config('mail.from.name'));
-            });
+                'employeur' => $employeur,
+                'entreprise' => $employeur->entreprise,
+                'type' => $type,
+                'date' => now()->format('d/m/Y H:i:s'),
+                'data' => $data
+            ];
             
-            Log::info("Email envoyé", [
-                'to' => $employeur->email,
-                'subject' => $type
-            ]);
+            // Créer le mailable
+            $mailable = new PresenceNotificationEmail($emailData);
+            $mailable->subject("Notification GENIUS WORK: " . ucfirst($type));
             
-            return !Mail::failures();
+            // Options supplémentaires pour l'envoi
+            $options = [];
+            
+            // Ajouter des BCC si configurés
+            $configBcc = config('mail_service.notifications.bcc');
+            if (!empty($configBcc)) {
+                $options['bcc'] = $configBcc;
+            }
+            
+            // Envoyer l'email via le service SMTP
+            $result = $this->smtpEmailService->send($employeur->email, $mailable, $options);
+            
+            if ($result) {
+                Log::channel('presences')->info("Email de notification envoyé", [
+                    'to' => $employeur->email,
+                    'employeur_id' => $employeur->id,
+                    'type' => $type,
+                    'subject' => "Notification GENIUS WORK: " . ucfirst($type)
+                ]);
+            } else {
+                Log::channel('presences')->error("Échec de l'envoi de l'email de notification", [
+                    'to' => $employeur->email,
+                    'employeur_id' => $employeur->id,
+                    'type' => $type
+                ]);
+            }
+            
+            return $result;
         } catch (\Exception $e) {
-            Log::error("Erreur lors de l'envoi de l'email", [
+            Log::channel('presences')->error("Erreur lors de l'envoi de l'email", [
                 'to' => $employeur->email,
-                'subject' => $type,
-                'error' => $e->getMessage()
+                'employeur_id' => $employeur->id,
+                'type' => $type,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             
             return false;
@@ -279,67 +345,54 @@ class NotificationService
             
             // Vérifier si le service SMS est configuré
             if (!config('services.sms.enabled', false)) {
-                Log::info("Service SMS désactivé, message enregistré uniquement", [
-                    'to' => $telephone
+                Log::channel('presences')->info("Service SMS désactivé, message enregistré uniquement", [
+                    'to' => $telephone,
+                    'employeur_id' => $employeur->id,
+                    'employeur_nom' => $employeur->nom_complet
                 ]);
+                
+                // Enregistrer le SMS comme non envoyé mais sans erreur
+                $this->smsLogService->logSMS($telephone, $message, 'presence_notification', [
+                    'employeur_id' => $employeur->id,
+                    'type' => 'presence',
+                    'status' => 'skipped'
+                ]);
+                
                 return true; // Retourne true car ce n'est pas une erreur
             }
             
-            // Utiliser Twilio si configuré
-            if (config('services.twilio.enabled', false)) {
-                $twilioSid = config('services.twilio.sid');
-                $twilioToken = config('services.twilio.token');
-                $twilioFrom = config('services.twilio.from');
-                
-                if (!empty($twilioSid) && !empty($twilioToken) && !empty($twilioFrom)) {
-                    $twilio = new \Twilio\Rest\Client($twilioSid, $twilioToken);
-                    $twilio->messages->create($telephone, [
-                        'from' => $twilioFrom, 
-                        'body' => $message
-                    ]);
-                    
-                    Log::info("SMS envoyé via Twilio", [
-                        'to' => $telephone
-                    ]);
-                    
-                    return true;
-                }
-            }
+            // Utiliser le service Orange SMS
+            $result = $this->orangeSMSService->sendSMS($telephone, $message);
             
-            // Utiliser un autre service SMS si Twilio n'est pas configuré
-            // Exemple avec Nexmo/Vonage
-            if (config('services.vonage.enabled', false)) {
-                $vonage = new \Vonage\Client(new \Vonage\Client\Credentials\Basic(
-                    config('services.vonage.key'),
-                    config('services.vonage.secret')
-                ));
-                
-                $vonage->sms()->send(
-                    new \Vonage\SMS\Message\SMS(
-                        $telephone,
-                        config('services.vonage.from'),
-                        $message
-                    )
-                );
-                
-                Log::info("SMS envoyé via Vonage", [
-                    'to' => $telephone
+            if ($result['success']) {
+                Log::channel('presences')->info("SMS envoyé via Orange SMS", [
+                    'to' => $telephone,
+                    'employeur_id' => $employeur->id,
+                    'message_id' => $result['message_id'] ?? null
                 ]);
-                
                 return true;
+            } else {
+                Log::channel('presences')->error("Échec de l'envoi du SMS via Orange SMS", [
+                    'to' => $telephone,
+                    'employeur_id' => $employeur->id,
+                    'error' => $result['error']
+                ]);
+                return false;
             }
-            
-            // Si aucun service n'est configuré, on log simplement
-            Log::info("SMS simulé (aucun service configuré)", [
-                'to' => $telephone,
-                'message' => $message
+        } catch (\Exception $e) {
+            Log::channel('presences')->error("Erreur lors de l'envoi du SMS", [
+                'to' => $employeur->telephone,
+                'employeur_id' => $employeur->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             
-            return true;
-        } catch (\Exception $e) {
-            Log::error("Erreur lors de l'envoi du SMS", [
-                'to' => $employeur->telephone,
-                'error' => $e->getMessage()
+            // Enregistrer l'erreur dans les logs SMS
+            $this->smsLogService->logSMS($employeur->telephone, $message, 'presence_notification', [
+                'employeur_id' => $employeur->id,
+                'type' => 'presence',
+                'status' => 'error',
+                'error_message' => $e->getMessage()
             ]);
             
             return false;
@@ -403,7 +456,7 @@ class NotificationService
         
         $notification->save();
         
-        Log::info("Notification créée", [
+        Log::channel('presences')->info("Notification créée", [
             'id' => $notification->id,
             'employeur_id' => $employeurId,
             'type' => $type,
@@ -449,7 +502,7 @@ class NotificationService
             
             return !Mail::failures();
         } catch (\Exception $e) {
-            Log::error("Erreur lors de l'envoi de l'email", [
+            Log::channel('presences')->error("Erreur lors de l'envoi de l'email", [
                 'to' => $email,
                 'subject' => $sujet,
                 'error' => $e->getMessage()
@@ -703,7 +756,7 @@ class NotificationService
                 );
                 $notification->marquerEmailEnvoye();
             } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi de l'email de retard: " . $e->getMessage());
+                \Log::channel('presences')->error("Erreur lors de l'envoi de l'email de retard: " . $e->getMessage());
             }
         }
         
@@ -716,7 +769,7 @@ class NotificationService
                 );
                 $notification->marquerSmsEnvoye();
             } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi du SMS de retard: " . $e->getMessage());
+                \Log::channel('presences')->error("Erreur lors de l'envoi du SMS de retard: " . $e->getMessage());
             }
         }
         
@@ -778,7 +831,7 @@ class NotificationService
                 );
                 $notification->marquerEmailEnvoye();
             } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi de l'email d'absence: " . $e->getMessage());
+                \Log::channel('presences')->error("Erreur lors de l'envoi de l'email d'absence: " . $e->getMessage());
             }
         }
         
@@ -791,7 +844,7 @@ class NotificationService
                 );
                 $notification->marquerSmsEnvoye();
             } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi du SMS d'absence: " . $e->getMessage());
+                \Log::channel('presences')->error("Erreur lors de l'envoi du SMS d'absence: " . $e->getMessage());
             }
         }
         
@@ -855,7 +908,7 @@ class NotificationService
                 );
                 $notification->marquerEmailEnvoye();
             } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi de l'email de sortie manquante: " . $e->getMessage());
+                \Log::channel('presences')->error("Erreur lors de l'envoi de l'email de sortie manquante: " . $e->getMessage());
             }
         }
         
@@ -868,7 +921,7 @@ class NotificationService
                 );
                 $notification->marquerSmsEnvoye();
             } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi du SMS de sortie manquante: " . $e->getMessage());
+                \Log::channel('presences')->error("Erreur lors de l'envoi du SMS de sortie manquante: " . $e->getMessage());
             }
         }
         

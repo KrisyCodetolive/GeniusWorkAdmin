@@ -182,7 +182,7 @@ class WebPointageService
                         // Ajouter ce temps aux minutes de pause déjà enregistrées
                         $presence->minutes_pause = ($presence->minutes_pause ?? 0) + $tempsPause;
                         
-                        Log::info('Temps de pause calculé pour retour', [
+                        Log::channel('presences')->debug('Temps de pause calculé pour retour', [
                             'temps_pause' => $tempsPause,
                             'total_pauses' => $presence->minutes_pause
                         ]);
@@ -200,7 +200,7 @@ class WebPointageService
                     $tempsTravail = $tempsTotal - ($presence->minutes_pause ?? 0);
                     $presence->minutes_travaillees = $tempsTravail;
                     
-                    Log::info('Temps de travail calculé', [
+                    Log::channel('presences')->debug('Temps de travail calculé', [
                         'temps_total' => $tempsTotal,
                         'temps_pause' => $presence->minutes_pause,
                         'temps_travail' => $tempsTravail
@@ -219,7 +219,7 @@ class WebPointageService
                     // Ajouter ce temps aux minutes de pause déjà enregistrées
                     $presence->minutes_pause = ($presence->minutes_pause ?? 0) + $tempsPause;
                     
-                    Log::info('Temps de pause calculé', [
+                    Log::channel('presences')->debug('Temps de pause calculé', [
                         'temps_pause' => $tempsPause,
                         'total_pauses' => $presence->minutes_pause
                     ]);
@@ -265,23 +265,23 @@ class WebPointageService
             }
             
             // Vérifier si c'est un retard (uniquement pour les entrées et nouvelles présences)
-            Log::info('Vérification du retard pour le type: ' . $type);
+            Log::channel('presences')->debug('Vérification du retard pour le type: ' . $type);
             if ($type === 'entree' && $isNewPresence) {
                 // Récupérer la plage horaire de l'employeur pour aujourd'hui
                 $plageHoraire = $this->getPlageHoraireForEmployeur($employeur, Carbon::now());
-                Log::info('Plage horaire récupérée', ['heure_debut' => $plageHoraire->heure_debut ?? null, 'heure_fin' => $plageHoraire->heure_fin ?? null]);
+                Log::channel('presences')->debug('Plage horaire récupérée', ['heure_debut' => $plageHoraire->heure_debut ?? null, 'heure_fin' => $plageHoraire->heure_fin ?? null]);
                 
                 if ($plageHoraire) {
                     $heureDebut = Carbon::parse($plageHoraire->heure_debut)->format('H:i');
                     $heureActuelle = Carbon::now()->format('H:i');
-                    Log::info('Comparaison des heures', ['heure_actuelle' => $heureActuelle, 'heure_debut' => $heureDebut]);
+                    Log::channel('presences')->debug('Comparaison des heures', ['heure_actuelle' => $heureActuelle, 'heure_debut' => $heureDebut]);
                     
                     // Vérifier si l'employé est en retard
                     if ($heureActuelle > $heureDebut) {
                         $minutesRetard = Carbon::parse($heureActuelle)->diffInMinutes(Carbon::parse($heureDebut));
                         $presence->minutes_retard = $minutesRetard;
                         $presence->retard = true;
-                        Log::info('Retard détecté', ['minutes_retard' => $minutesRetard]);
+                        Log::channel('presences')->debug('Retard détecté', ['minutes_retard' => $minutesRetard]);
                     }
                 }
             }
@@ -302,7 +302,7 @@ class WebPointageService
                         $minutesSupplementaires = $heureActuelle->diffInMinutes($heureFin);
                         $presence->minutes_supplementaires = $minutesSupplementaires;
                         
-                        Log::info('Heures supplémentaires détectées', [
+                        Log::channel('presences')->debug('Heures supplémentaires détectées', [
                             'minutes_supplementaires' => $minutesSupplementaires,
                             'heure_fin_prevue' => $heureFin->format('H:i'),
                             'heure_sortie' => $heureActuelle->format('H:i')
@@ -324,7 +324,7 @@ class WebPointageService
             }
             
             // Enregistrer la présence
-            Log::info('Tentative d\'enregistrement de la présence', [
+            Log::channel('presences')->debug('Tentative d\'enregistrement de la présence', [
                 'type' => $presence->type,
                 'statut' => $presence->statut,
                 'employeur_id' => $presence->employeur_id,
@@ -334,7 +334,7 @@ class WebPointageService
                 'minutes_travaillees' => $presence->minutes_travaillees ?? 0
             ]);
             $presence->save();
-            Log::info('Présence enregistrée avec succès', ['presence_id' => $presence->id]);
+            Log::channel('presences')->debug('Présence enregistrée avec succès', ['presence_id' => $presence->id]);
             
             // Préparer le message de bienvenue/au revoir
             $message = $this->getWelcomeMessage($employeur, $type);
@@ -358,7 +358,7 @@ class WebPointageService
                 $infoSupplementaire = "Temps de pause: {$heuresPause}h{$minutesPause}min";
             }
             
-            Log::info('Préparation de la réponse');
+            Log::channel('presences')->debug('Préparation de la réponse');
             // Retourner les données
             return [
                 'status' => 'success',
@@ -379,7 +379,7 @@ class WebPointageService
             ];
             
         } catch (\Exception $e) {
-            Log::error('Erreur lors du traitement du pointage: ' . $e->getMessage(), [
+            Log::channel('presences')->debug('Erreur lors du traitement du pointage: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
@@ -399,13 +399,13 @@ class WebPointageService
      * @param Carbon $date
      * @return PlageHoraire|null
      */
-    protected function getPlageHoraireForEmployeur(Employeur $employeur, Carbon $date)
+    public function getPlageHoraireForEmployeur(Employeur $employeur, Carbon $date)
     {
         // Récupérer la plage horaire spécifique pour ce jour de la semaine
         $jourSemaine = strtolower($date->locale('fr')->dayName);
         
         try {
-            Log::info('Recherche de plage horaire pour employeur', [
+            Log::channel('presences')->debug('Recherche de plage horaire pour employeur', [
                 'employeur_id' => $employeur->id,
                 'jour_semaine' => $jourSemaine,
                 'date' => $date->format('Y-m-d')
@@ -430,15 +430,15 @@ class WebPointageService
             ->first();
             
             if ($plageHoraire) {
-                Log::info('Plage horaire trouvée', ['plage_horaire_id' => $plageHoraire->id]);
+                Log::channel('presences')->debug('Plage horaire trouvée', ['plage_horaire_id' => $plageHoraire->id]);
                 return $plageHoraire;
             }
         } catch (\Exception $e) {
-            Log::warning('Erreur lors de la recherche de plage horaire: ' . $e->getMessage());
+            Log::channel('presences')->debug('Erreur lors de la recherche de plage horaire: ' . $e->getMessage());
         }
         
         // Si aucune plage horaire n'est trouvée ou en cas d'erreur, utiliser les valeurs par défaut
-        Log::info('Utilisation de la plage horaire par défaut');
+        Log::channel('presences')->debug('Utilisation de la plage horaire par défaut');
         return (object)[
             'heure_debut' => '08:00',
             'heure_fin' => '18:00',

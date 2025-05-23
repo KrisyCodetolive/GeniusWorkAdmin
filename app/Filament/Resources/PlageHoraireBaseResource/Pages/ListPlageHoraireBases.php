@@ -6,7 +6,7 @@ use App\Filament\Resources\PlageHoraireBaseResource;
 use App\Filament\Resources\JourResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Notifications;
+use Filament\Notifications\Notification;
 
 class ListPlageHoraireBases extends ListRecords
 {
@@ -37,7 +37,7 @@ class ListPlageHoraireBases extends ListRecords
                     $entreprise = $user->entreprise;
                     
                     if (!$entreprise) {
-                        Notifications\Notification::make()
+                        Notification::make()
                             ->title('Erreur')
                             ->body('Vous devez être associé à une entreprise pour générer des exemples de plages horaires.')
                             ->danger()
@@ -49,7 +49,7 @@ class ListPlageHoraireBases extends ListRecords
                     $result = \Database\Seeders\PlageHoraireExempleSeeder::createForEntreprise($entreprise);
                     
                     // Notification de succès
-                    Notifications\Notification::make()
+                    Notification::make()
                         ->title('Exemples générés')
                         ->body(count($result['created']) . ' plages horaires exemples ont été créées pour votre entreprise.' . 
                                ($result['existants'] > 0 ? ' ' . $result['existants'] . ' plages horaires existaient déjà.' : ''))

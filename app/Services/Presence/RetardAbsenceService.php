@@ -80,19 +80,19 @@ class RetardAbsenceService
                 try {
                     // Vérifier si les notifications de retard sont activées pour cet employeur
                     if (!$this->configurationPresenceService->notificationsActives($employeur->entreprise_id, 'retard')) {
-                        Log::info("Notifications de retard désactivées pour l'employeur {$employeur->id} ({$employeur->nom_complet})");
+                        Log::channel('presences')->info("Notifications de retard désactivées pour l'employeur {$employeur->id} ({$employeur->nom_complet})");
                         continue;
                     }
 
                     // Vérifier si l'employeur doit travailler aujourd'hui
                     if (!$this->doitTravaillerAujourdhui($employeur, $date)) {
-                        Log::debug("L'employeur {$employeur->id} ({$employeur->nom_complet}) ne travaille pas le {$date->format('d/m/Y')}");
+                        Log::channel('presences')->debug("L'employeur {$employeur->id} ({$employeur->nom_complet}) ne travaille pas le {$date->format('d/m/Y')}");
                         continue;
                     }
 
                     // Vérifier si l'employeur est en congé
                     if ($this->estEnConge($employeur, $date)) {
-                        Log::debug("L'employeur {$employeur->id} ({$employeur->nom_complet}) est en congé le {$date->format('d/m/Y')}");
+                        Log::channel('presences')->debug("L'employeur {$employeur->id} ({$employeur->nom_complet}) est en congé le {$date->format('d/m/Y')}");
                         continue;
                     }
 
@@ -115,7 +115,7 @@ class RetardAbsenceService
                         $stats['retards_detectes']++;
 
                         // Vérifier si une notification a déjà été envoyée pour ce retard
-                        $notificationExistante = Notification::where('employeur_id', $employeur->id)
+                        $notificationExistante = Notification::where('user_id', $employeur->id)
                             ->where('type', 'retard')
                             ->whereDate('created_at', $date)
                             ->exists();
@@ -137,17 +137,17 @@ class RetardAbsenceService
 
                             if ($success) {
                                 $stats['notifications_envoyees']++;
-                                Log::info("Notification de retard envoyée à l'employeur {$employeur->id} ({$employeur->nom_complet}) pour un retard de {$minutesRetard} minutes le {$date->format('d/m/Y')}");
+                                Log::channel('presences')->info("Notification de retard envoyée à l'employeur {$employeur->id} ({$employeur->nom_complet}) pour un retard de {$minutesRetard} minutes le {$date->format('d/m/Y')}");
                             } else {
-                                Log::warning("Échec de l'envoi de notification de retard à l'employeur {$employeur->id} ({$employeur->nom_complet})");
+                                Log::channel('presences')->warning("Échec de l'envoi de notification de retard à l'employeur {$employeur->id} ({$employeur->nom_complet})");
                             }
                         } else {
-                            Log::debug("Une notification de retard a déjà été envoyée à l'employeur {$employeur->id} ({$employeur->nom_complet}) aujourd'hui");
+                            Log::channel('presences')->debug("Une notification de retard a déjà été envoyée à l'employeur {$employeur->id} ({$employeur->nom_complet}) aujourd'hui");
                         }
                     }
                 } catch (\Exception $e) {
                     $stats['erreurs']++;
-                    Log::error("Erreur lors de la vérification des retards pour l'employeur {$employeur->id}: " . $e->getMessage(), [
+                    Log::channel('presences')->error("Erreur lors de la vérification des retards pour l'employeur {$employeur->id}: " . $e->getMessage(), [
                         'exception' => $e,
                         'trace' => $e->getTraceAsString()
                     ]);
@@ -155,7 +155,7 @@ class RetardAbsenceService
             }
         } catch (\Exception $e) {
             $stats['erreurs']++;
-            Log::error("Erreur générale lors de la vérification des retards: " . $e->getMessage(), [
+            Log::channel('presences')->error("Erreur générale lors de la vérification des retards: " . $e->getMessage(), [
                 'exception' => $e,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -189,19 +189,19 @@ class RetardAbsenceService
                 try {
                     // Vérifier si les notifications d'absence sont activées pour cet employeur
                     if (!$this->configurationPresenceService->notificationsActives($employeur->entreprise_id, 'absence')) {
-                        Log::info("Notifications d'absence désactivées pour l'employeur {$employeur->id} ({$employeur->nom_complet})");
+                        Log::channel('presences')->info("Notifications d'absence désactivées pour l'employeur {$employeur->id} ({$employeur->nom_complet})");
                         continue;
                     }
 
                     // Vérifier si l'employeur doit travailler aujourd'hui
                     if (!$this->doitTravaillerAujourdhui($employeur, $date)) {
-                        Log::debug("L'employeur {$employeur->id} ({$employeur->nom_complet}) ne travaille pas le {$date->format('d/m/Y')}");
+                        Log::channel('presences')->debug("L'employeur {$employeur->id} ({$employeur->nom_complet}) ne travaille pas le {$date->format('d/m/Y')}");
                         continue;
                     }
 
                     // Vérifier si l'employeur est en congé
                     if ($this->estEnConge($employeur, $date)) {
-                        Log::debug("L'employeur {$employeur->id} ({$employeur->nom_complet}) est en congé le {$date->format('d/m/Y')}");
+                        Log::channel('presences')->debug("L'employeur {$employeur->id} ({$employeur->nom_complet}) est en congé le {$date->format('d/m/Y')}");
                         continue;
                     }
 
@@ -217,7 +217,7 @@ class RetardAbsenceService
                         $stats['absences_detectees']++;
 
                         // Vérifier si une notification a déjà été envoyée pour cette absence
-                        $notificationExistante = Notification::where('employeur_id', $employeur->id)
+                        $notificationExistante = Notification::where('user_id', $employeur->id)
                             ->where('type', 'absence')
                             ->whereDate('created_at', $date)
                             ->exists();
@@ -235,20 +235,20 @@ class RetardAbsenceService
 
                                 if ($success) {
                                     $stats['notifications_envoyees']++;
-                                    Log::info("Notification d'absence envoyée à l'employeur {$employeur->id} ({$employeur->nom_complet}) pour le {$date->format('d/m/Y')}");
+                                    Log::channel('presences')->info("Notification d'absence envoyée à l'employeur {$employeur->id} ({$employeur->nom_complet}) pour le {$date->format('d/m/Y')}");
                                 } else {
-                                    Log::warning("Échec de l'envoi de notification d'absence à l'employeur {$employeur->id} ({$employeur->nom_complet})");
+                                    Log::channel('presences')->warning("Échec de l'envoi de notification d'absence à l'employeur {$employeur->id} ({$employeur->nom_complet})");
                                 }
                             } else {
-                                Log::debug("L'heure actuelle n'a pas encore dépassé l'heure limite ({$heureLimite->format('H:i')}) pour considérer l'absence de l'employeur {$employeur->id}");
+                                Log::channel('presences')->debug("L'heure actuelle n'a pas encore dépassé l'heure limite ({$heureLimite->format('H:i')}) pour considérer l'absence de l'employeur {$employeur->id}");
                             }
                         } else {
-                            Log::debug("Une notification d'absence a déjà été envoyée à l'employeur {$employeur->id} ({$employeur->nom_complet}) aujourd'hui");
+                            Log::channel('presences')->debug("Une notification d'absence a déjà été envoyée à l'employeur {$employeur->id} ({$employeur->nom_complet}) aujourd'hui");
                         }
                     }
                 } catch (\Exception $e) {
                     $stats['erreurs']++;
-                    Log::error("Erreur lors de la vérification des absences pour l'employeur {$employeur->id}: " . $e->getMessage(), [
+                    Log::channel('presences')->error("Erreur lors de la vérification des absences pour l'employeur {$employeur->id}: " . $e->getMessage(), [
                         'exception' => $e,
                         'trace' => $e->getTraceAsString()
                     ]);
@@ -256,7 +256,7 @@ class RetardAbsenceService
             }
         } catch (\Exception $e) {
             $stats['erreurs']++;
-            Log::error("Erreur générale lors de la vérification des absences: " . $e->getMessage(), [
+            Log::channel('presences')->error("Erreur générale lors de la vérification des absences: " . $e->getMessage(), [
                 'exception' => $e,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -290,19 +290,19 @@ class RetardAbsenceService
                 try {
                     // Vérifier si les notifications sont activées pour cet employeur
                     if (!$this->configurationPresenceService->notificationsActives($employeur->entreprise_id, 'sortie_manquante')) {
-                        Log::info("Notifications de sortie manquante désactivées pour l'employeur {$employeur->id} ({$employeur->nom_complet})");
+                        Log::channel('presences')->info("Notifications de sortie manquante désactivées pour l'employeur {$employeur->id} ({$employeur->nom_complet})");
                         continue;
                     }
 
                     // Vérifier si l'employeur doit travailler aujourd'hui
                     if (!$this->doitTravaillerAujourdhui($employeur, $date)) {
-                        Log::debug("L'employeur {$employeur->id} ({$employeur->nom_complet}) ne travaille pas le {$date->format('d/m/Y')}");
+                        Log::channel('presences')->debug("L'employeur {$employeur->id} ({$employeur->nom_complet}) ne travaille pas le {$date->format('d/m/Y')}");
                         continue;
                     }
 
                     // Vérifier si l'employeur est en congé
                     if ($this->estEnConge($employeur, $date)) {
-                        Log::debug("L'employeur {$employeur->id} ({$employeur->nom_complet}) est en congé le {$date->format('d/m/Y')}");
+                        Log::channel('presences')->debug("L'employeur {$employeur->id} ({$employeur->nom_complet}) est en congé le {$date->format('d/m/Y')}");
                         continue;
                     }
 
@@ -334,7 +334,7 @@ class RetardAbsenceService
                         
                         if (Carbon::now()->gt($heureLimite)) {
                             // Vérifier si une notification a déjà été envoyée pour cette sortie manquante
-                            $notificationExistante = Notification::where('employeur_id', $employeur->id)
+                            $notificationExistante = Notification::where('user_id', $employeur->id)
                                 ->where('type', 'sortie_manquante')
                                 ->whereDate('created_at', $date)
                                 ->exists();
@@ -363,20 +363,20 @@ class RetardAbsenceService
 
                                 if ($success) {
                                     $stats['notifications_envoyees']++;
-                                    Log::info("Notification de sortie manquante envoyée à l'employeur {$employeur->id} ({$employeur->nom_complet}) pour le {$date->format('d/m/Y')}");
+                                    Log::channel('presences')->info("Notification de sortie manquante envoyée à l'employeur {$employeur->id} ({$employeur->nom_complet}) pour le {$date->format('d/m/Y')}");
                                 } else {
-                                    Log::warning("Échec de l'envoi de notification de sortie manquante à l'employeur {$employeur->id} ({$employeur->nom_complet})");
+                                    Log::channel('presences')->warning("Échec de l'envoi de notification de sortie manquante à l'employeur {$employeur->id} ({$employeur->nom_complet})");
                                 }
                             } else {
-                                Log::debug("Une notification de sortie manquante a déjà été envoyée à l'employeur {$employeur->id} ({$employeur->nom_complet}) aujourd'hui");
+                                Log::channel('presences')->debug("Une notification de sortie manquante a déjà été envoyée à l'employeur {$employeur->id} ({$employeur->nom_complet}) aujourd'hui");
                             }
                         } else {
-                            Log::debug("L'heure actuelle n'a pas encore dépassé l'heure limite ({$heureLimite->format('H:i')}) pour considérer une sortie manquante pour l'employeur {$employeur->id}");
+                            Log::channel('presences')->debug("L'heure actuelle n'a pas encore dépassé l'heure limite ({$heureLimite->format('H:i')}) pour considérer une sortie manquante pour l'employeur {$employeur->id}");
                         }
                     }
                 } catch (\Exception $e) {
                     $stats['erreurs']++;
-                    Log::error("Erreur lors de la vérification des sorties manquantes pour l'employeur {$employeur->id}: " . $e->getMessage(), [
+                    Log::channel('presences')->error("Erreur lors de la vérification des sorties manquantes pour l'employeur {$employeur->id}: " . $e->getMessage(), [
                         'exception' => $e,
                         'trace' => $e->getTraceAsString()
                     ]);
@@ -384,7 +384,7 @@ class RetardAbsenceService
             }
         } catch (\Exception $e) {
             $stats['erreurs']++;
-            Log::error("Erreur générale lors de la vérification des sorties manquantes: " . $e->getMessage(), [
+            Log::channel('presences')->error("Erreur générale lors de la vérification des sorties manquantes: " . $e->getMessage(), [
                 'exception' => $e,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -403,27 +403,18 @@ class RetardAbsenceService
     protected function doitTravaillerAujourdhui(Employeur $employeur, Carbon $date): bool
     {
         try {
-            $jourSemaine = $date->dayOfWeekIso; // 1 (lundi) à 7 (dimanche)
+            // Dans la version 2.0, utiliser directement la méthode du WebPointageService 
+            // pour récupérer la plage horaire de l'employeur pour ce jour
+            $plageHoraire = $this->webPointageService->getPlageHoraireForEmployeur($employeur, $date);
             
-            // Vérifier si l'employeur a un jour de travail défini pour ce jour de la semaine
-            $jourTravail = $employeur->joursTravail()->where('jour', $jourSemaine)->first();
-            
-            // Si pas de jour de travail défini, vérifier les plages horaires
-            if (!$jourTravail) {
-                // Utiliser la méthode du WebPointageService pour récupérer la plage horaire
-                $plageHoraire = $this->webPointageService->getPlageHoraireForEmployeur($employeur, $date);
-                
-                // Si une plage horaire est définie, l'employeur doit travailler
-                return $plageHoraire !== null;
-            }
-            
-            return true;
+            // Si une plage horaire est définie, l'employeur doit travailler
+            return $plageHoraire !== null;
         } catch (\Exception $e) {
-            Log::error("Erreur lors de la vérification si l'employeur {$employeur->id} doit travailler: " . $e->getMessage());
-            return false;
+            Log::channel('presences')->error("Erreur lors de la vérification si l'employeur {$employeur->id} doit travailler: " . $e->getMessage());
+            return false; // Par défaut, on considère que l'employeur ne travaille pas en cas d'erreur
         }
     }
-
+    
     /**
      * Vérifie si un employeur est en congé à une date donnée.
      *
@@ -443,7 +434,7 @@ class RetardAbsenceService
                 })
                 ->exists();
         } catch (\Exception $e) {
-            Log::error("Erreur lors de la vérification si l'employeur {$employeur->id} est en congé: " . $e->getMessage());
+            Log::channel('presences')->error("Erreur lors de la vérification si l'employeur {$employeur->id} est en congé: " . $e->getMessage());
             return false; // Par défaut, on considère que l'employeur n'est pas en congé en cas d'erreur
         }
     }
@@ -462,7 +453,7 @@ class RetardAbsenceService
             $plageHoraire = $this->webPointageService->getPlageHoraireForEmployeur($employeur, $date);
             
             if (!$plageHoraire) {
-                Log::info("Aucune plage horaire définie pour l'employeur {$employeur->id} le {$date->format('d/m/Y')}");
+                Log::channel('presences')->info("Aucune plage horaire définie pour l'employeur {$employeur->id} le {$date->format('d/m/Y')}");
                 // Par défaut, utiliser 10h du matin si aucune plage horaire n'est définie
                 return Carbon::parse($date->format('Y-m-d') . ' 10:00:00');
             }
@@ -473,7 +464,7 @@ class RetardAbsenceService
             
             return $heureDebut->addMinutes($toleranceMinutes);
         } catch (\Exception $e) {
-            Log::error("Erreur lors de la récupération de l'heure limite d'absence pour l'employeur {$employeur->id}: " . $e->getMessage());
+            Log::channel('presences')->error("Erreur lors de la récupération de l'heure limite d'absence pour l'employeur {$employeur->id}: " . $e->getMessage());
             // Par défaut, utiliser 10h du matin en cas d'erreur
             return Carbon::parse($date->format('Y-m-d') . ' 10:00:00');
         }
@@ -493,14 +484,14 @@ class RetardAbsenceService
             $plageHoraire = $this->webPointageService->getPlageHoraireForEmployeur($employeur, $date);
             
             if (!$plageHoraire) {
-                Log::info("Aucune plage horaire définie pour l'employeur {$employeur->id} le {$date->format('d/m/Y')}");
+                Log::channel('presences')->info("Aucune plage horaire définie pour l'employeur {$employeur->id} le {$date->format('d/m/Y')}");
                 // Par défaut, utiliser 18h si aucune plage horaire n'est définie
                 return Carbon::parse($date->format('Y-m-d') . ' 18:00:00');
             }
             
             return Carbon::parse($date->format('Y-m-d') . ' ' . $plageHoraire->heure_fin);
         } catch (\Exception $e) {
-            Log::error("Erreur lors de la récupération de l'heure de fin de travail pour l'employeur {$employeur->id}: " . $e->getMessage());
+            Log::channel('presences')->error("Erreur lors de la récupération de l'heure de fin de travail pour l'employeur {$employeur->id}: " . $e->getMessage());
             // Par défaut, utiliser 18h en cas d'erreur
             return Carbon::parse($date->format('Y-m-d') . ' 18:00:00');
         }
@@ -517,7 +508,7 @@ class RetardAbsenceService
         $date = $date ?? Carbon::today();
         
         try {
-            Log::info("Début de l'exécution de toutes les vérifications pour le {$date->format('d/m/Y')}");
+            Log::channel('presences')->info("Début de l'exécution de toutes les vérifications pour le {$date->format('d/m/Y')}");
             
             $statsRetards = $this->verifierRetards($date);
             $statsAbsences = $this->verifierAbsences($date);
@@ -531,7 +522,7 @@ class RetardAbsenceService
                            $statsAbsences['erreurs'] + 
                            $statsSorties['erreurs'];
             
-            Log::info("Fin de l'exécution de toutes les vérifications pour le {$date->format('d/m/Y')}. " . 
+            Log::channel('presences')->info("Fin de l'exécution de toutes les vérifications pour le {$date->format('d/m/Y')}. " . 
                      "Total notifications: {$totalNotifications}, Total erreurs: {$totalErreurs}");
             
             return [
@@ -543,7 +534,7 @@ class RetardAbsenceService
                 'total_erreurs' => $totalErreurs
             ];
         } catch (\Exception $e) {
-            Log::error("Erreur lors de l'exécution de toutes les vérifications: " . $e->getMessage(), [
+            Log::channel('presences')->error("Erreur lors de l'exécution de toutes les vérifications: " . $e->getMessage(), [
                 'exception' => $e,
                 'trace' => $e->getTraceAsString()
             ]);

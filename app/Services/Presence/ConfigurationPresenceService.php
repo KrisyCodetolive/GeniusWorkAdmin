@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Politique;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ConfigurationPresenceService
 {
@@ -40,21 +41,38 @@ class ConfigurationPresenceService
      */
     public function creerConfigurationParDefaut($entrepriseId)
     {
-        return ConfigurationPresence::create([
-            'entreprise_id' => $entrepriseId,
-            'heures_supplementaires_actives' => true,
-            'nombre_pointages_par_jour' => 2,
-            'pauses_actives' => true,
-            'annuler_presence_sans_sortie' => true,
-            'delai_annulation_heures' => 24,
-            'notifications_actives' => true,
-            'notification_absence' => true,
-            'notification_retard' => true,
-            'notification_conge' => true,
-            'message_absence' => 'Nous avons remarqué votre absence aujourd\'hui. Veuillez contacter votre responsable.',
-            'message_retard' => 'Nous avons remarqué votre retard aujourd\'hui. Veuillez respecter les horaires de travail.',
-            'message_conge' => 'Votre demande de congé a été traitée. Veuillez consulter votre espace personnel pour plus d\'informations.',
-        ]);
+        // Créer la configuration avec les valeurs par défaut
+        $configuration = new ConfigurationPresence();
+        $configuration->uuid = (string) Str::uuid();
+        $configuration->entreprise_id = $entrepriseId;
+        $configuration->heures_supplementaires_actives = true;
+        $configuration->nombre_pointages_par_jour = 2;
+        $configuration->pauses_actives = true;
+        $configuration->annuler_presence_sans_sortie = true;
+        $configuration->delai_annulation_heures = 24;
+        $configuration->notifications_actives = true;
+        $configuration->notification_absence = true;
+        $configuration->notification_retard = true;
+        $configuration->notification_conge = true;
+        $configuration->message_absence = 'Nous avons remarqué votre absence aujourd\'hui. Veuillez contacter votre responsable.';
+        $configuration->message_retard = 'Nous avons remarqué votre retard aujourd\'hui. Veuillez respecter les horaires de travail.';
+        $configuration->message_conge = 'Votre demande de congé a été traitée. Veuillez consulter votre espace personnel pour plus d\'informations.';
+        
+        // Configurer les options avancées via le champ JSON
+        $configuration->configuration_avancee = [
+            'notifier_retards' => true,
+            'notifier_absences' => true,
+            'notifier_sorties_manquantes' => true,
+            'notifier_par_email' => true,
+            'notifier_par_sms' => false,
+            'tolerance_retard_minutes' => 15,
+            'tolerance_absence_minutes' => 30,
+            'tolerance_sortie_minutes' => 60,
+            'message_sortie_manquante' => 'Nous avons remarqué que vous n\'avez pas enregistré votre sortie hier. Veuillez veiller à bien enregistrer vos heures de travail.'
+        ];
+        
+        $configuration->save();
+        return $configuration;
     }
     
     /**
@@ -198,7 +216,7 @@ class ConfigurationPresenceService
                 
                 $presencesAnnulees++;
                 
-                Log::info("Présence ID {$presence->id} annulée automatiquement pour l'utilisateur ID {$presence->user_id} après {$delaiHeures} heures sans pointage de sortie.");
+                Log::channel('presences')->debug("Présence ID {$presence->id} annulée automatiquement pour l'utilisateur ID {$presence->user_id} après {$delaiHeures} heures sans pointage de sortie.");
             }
         }
         
@@ -237,9 +255,9 @@ class ConfigurationPresenceService
             // Logique d'envoi d'email à implémenter
             // Mail::to($user->email)->send(new NotificationPresence($message, $type));
             
-            Log::info("Email de notification '{$type}' envoyé à l'utilisateur ID {$user->id} : {$message}");
+            Log::channel('presences')->debug("Email de notification '{$type}' envoyé à l'utilisateur ID {$user->id} : {$message}");
         } catch (\Exception $e) {
-            Log::error("Erreur lors de l'envoi de l'email de notification '{$type}' à l'utilisateur ID {$user->id} : " . $e->getMessage());
+            Log::channel('presences')->debug("Erreur lors de l'envoi de l'email de notification '{$type}' à l'utilisateur ID {$user->id} : " . $e->getMessage());
             return false;
         }
         
@@ -249,9 +267,9 @@ class ConfigurationPresenceService
                 // Logique d'envoi de SMS à implémenter
                 // SmsService::send($user->telephone, $message);
                 
-                Log::info("SMS de notification '{$type}' envoyé à l'utilisateur ID {$user->id} : {$message}");
+                Log::channel('presences')->debug("SMS de notification '{$type}' envoyé à l'utilisateur ID {$user->id} : {$message}");
             } catch (\Exception $e) {
-                Log::error("Erreur lors de l'envoi du SMS de notification '{$type}' à l'utilisateur ID {$user->id} : " . $e->getMessage());
+                Log::channel('presences')->debug("Erreur lors de l'envoi du SMS de notification '{$type}' à l'utilisateur ID {$user->id} : " . $e->getMessage());
                 // Continuer même si l'envoi du SMS échoue
             }
         }
@@ -280,7 +298,7 @@ class ConfigurationPresenceService
     public function notificationsRetardActivees($entrepriseId)
     {
         $config = $this->getConfigurationForEntreprise($entrepriseId);
-        return $config && $config->notifications_actives && $config->notifier_retards;
+        return $config && $config->notifications_actives && $config->getConfigurationAvancee('notifier_retards', true);
     }
 
     /**
@@ -292,7 +310,7 @@ class ConfigurationPresenceService
     public function notificationsAbsenceActivees($entrepriseId)
     {
         $config = $this->getConfigurationForEntreprise($entrepriseId);
-        return $config && $config->notifications_actives && $config->notifier_absences;
+        return $config && $config->notifications_actives && $config->getConfigurationAvancee('notifier_absences', true);
     }
 
     /**
@@ -304,7 +322,7 @@ class ConfigurationPresenceService
     public function notificationsSortieManquanteActivees($entrepriseId)
     {
         $config = $this->getConfigurationForEntreprise($entrepriseId);
-        return $config && $config->notifications_actives && $config->notifier_sorties_manquantes;
+        return $config && $config->notifications_actives && $config->getConfigurationAvancee('notifier_sorties_manquantes', true);
     }
 
     /**
@@ -316,7 +334,7 @@ class ConfigurationPresenceService
     public function getToleranceRetard($entrepriseId)
     {
         $config = $this->getConfigurationForEntreprise($entrepriseId);
-        return $config ? ($config->tolerance_retard_minutes ?? 0) : 0;
+        return $config ? $config->getConfigurationAvancee('tolerance_retard_minutes', 15) : 15;
     }
 
     /**
@@ -328,7 +346,7 @@ class ConfigurationPresenceService
     public function getToleranceAbsence($entrepriseId)
     {
         $config = $this->getConfigurationForEntreprise($entrepriseId);
-        return $config ? ($config->tolerance_absence_minutes ?? 0) : 0;
+        return $config ? $config->getConfigurationAvancee('tolerance_absence_minutes', 30) : 30;
     }
 
     /**
@@ -340,7 +358,7 @@ class ConfigurationPresenceService
     public function getToleranceSortieManquante($entrepriseId)
     {
         $config = $this->getConfigurationForEntreprise($entrepriseId);
-        return $config ? ($config->tolerance_sortie_minutes ?? 0) : 0;
+        return $config ? $config->getConfigurationAvancee('tolerance_sortie_minutes', 60) : 60;
     }
 
     /**
@@ -352,7 +370,7 @@ class ConfigurationPresenceService
     public function notificationsEmailActivees($entrepriseId)
     {
         $config = $this->getConfigurationForEntreprise($entrepriseId);
-        return $config && $config->notifications_actives && $config->notifier_par_email;
+        return $config && $config->notifications_actives && $config->getConfigurationAvancee('notifier_par_email', true);
     }
 
     /**
@@ -364,7 +382,7 @@ class ConfigurationPresenceService
     public function notificationsSmsActivees($entrepriseId)
     {
         $config = $this->getConfigurationForEntreprise($entrepriseId);
-        return $config && $config->notifications_actives && $config->notifier_par_sms;
+        return $config && $config->notifications_actives && $config->getConfigurationAvancee('notifier_par_sms', false);
     }
 
     /**
@@ -400,7 +418,8 @@ class ConfigurationPresenceService
     public function getMessageSortieManquante($entrepriseId)
     {
         $config = $this->getConfigurationForEntreprise($entrepriseId);
-        return $config ? $config->message_sortie_manquante : null;
+        $messageDefaut = 'Nous avons remarqué que vous n\'avez pas enregistré votre sortie hier. Veuillez veiller à bien enregistrer vos heures de travail.';
+        return $config ? $config->getConfigurationAvancee('message_sortie_manquante', $messageDefaut) : $messageDefaut;
     }
 
     /**

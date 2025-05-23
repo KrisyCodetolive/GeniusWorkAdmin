@@ -25,9 +25,10 @@ class OrangeSMSService
         $this->clientSecret = Config::get('sms.orange.client_secret');
         $this->devPhoneNumber = Config::get('sms.orange.dev_phone_number');
         
-        Log::info('Orange SMS Config par défaut chargée', [
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
+        // Utiliser le canal de log SMS pour les informations de configuration
+        Log::channel('sms')->info('Orange SMS Config par défaut chargée', [
+            'client_id' => $this->clientId ? '****' . substr($this->clientId, -4) : null,
+            'client_secret' => $this->clientSecret ? '****' . substr($this->clientSecret, -4) : null,
             'dev_phone_number' => $this->devPhoneNumber
         ]);
         
@@ -139,12 +140,23 @@ class OrangeSMSService
                     ]
                 ]);
 
-            Log::info('Requête Orange SMS', [
+            // Utiliser le canal de log SMS pour les informations de requête
+            Log::channel('sms')->info('Requête Orange SMS', [
                 'url' => "https://api.orange.com/smsmessaging/v1/outbound/tel%3A{$senderId}/requests",
                 'recipient' => $recipientNumber,
                 'sender' => $senderId,
-                'response' => $response->json()
+                'response' => $response->json(),
+                'context' => 'presence_notification'
             ]);
+            
+            // Si le contexte est une notification de présence, logger aussi dans le canal des présences
+            if (isset($log->data['context']) && $log->data['context'] === 'presence_notification') {
+                Log::channel('presences')->info('Envoi de SMS de notification de présence', [
+                    'recipient' => $recipientNumber,
+                    'message_type' => $log->data['type'] ?? 'notification',
+                    'message_id' => $response->json()['requestId'] ?? null
+                ]);
+            }
 
             if ($response->successful()) {
                 $this->smsLogService->markAsSent($log);

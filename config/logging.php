@@ -147,6 +147,14 @@ return [
             'permission' => 0664,
         ],
 
+        'presences' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/presences.log'),
+            'level' => 'debug',
+            'days' => 30,
+            'permission' => 0664,
+        ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
