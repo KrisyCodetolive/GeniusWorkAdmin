@@ -73,9 +73,9 @@
                 <div class="animate-fade-in delay-200">
                     <h3 class="text-gray-500 uppercase text-sm font-semibold mb-2">Entreprise</h3>
                     <p class="font-medium">{{ $bulletin->employeur->entreprise->nom ?? 'N/A' }}</p>
-                    <p class="text-gray-600">RCCM: {{ $bulletin->employeur->entreprise->rccm ?? 'N/A' }}</p>
-                    <p class="text-gray-600 mt-1">Adresse: {{ $bulletin->employeur->entreprise->adresse ?? 'N/A' }}</p>
-                    <p class="text-gray-600">CC: {{ $bulletin->employeur->entreprise->compte_contribuable ?? 'N/A' }}</p>
+                    <p class="text-gray-600 mt-1">Siège social: {{ $bulletin->employeur->entreprise->adresse ?? 'N/A' }}</p>
+                    <p class="text-gray-600">N° CC: {{ $bulletin->employeur->entreprise->configuration['numero_contribuable'] ?? 'N/A' }}</p>
+                    <p class="text-gray-600">N° CNPS: {{ $bulletin->employeur->entreprise->configuration['cnps'] ?? 'N/A' }}</p>
                     <p class="text-gray-600">Téléphone: {{ $bulletin->employeur->entreprise->telephone ?? 'N/A' }}</p>
                     <p class="text-gray-600">Email: {{ $bulletin->employeur->entreprise->email ?? 'N/A' }}</p>  
                 </div>

@@ -146,6 +146,14 @@ class MonEntrepriseResource extends Resource
                         TextInput::make('nif')
                             ->label('NIF')
                             ->maxLength(50),
+                            
+                        TextInput::make('configuration.numero_contribuable')
+                            ->label('Numéro Contribuable')
+                            ->maxLength(50),
+                            
+                        TextInput::make('configuration.cnps')
+                            ->label('CNPS')
+                            ->maxLength(50),
                     ])
                     ->columns(2),
                 

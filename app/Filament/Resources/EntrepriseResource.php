@@ -97,6 +97,12 @@ class EntrepriseResource extends Resource
                 ->required()
                 ->maxLength(255)
                 ->prefixIcon('heroicon-o-globe-americas'),
+            TextInput::make('configuration.numero_contribuable')
+                ->label('Numéro Contribuable')
+                ->maxLength(50),
+            TextInput::make('configuration.cnps')
+                ->label('CNPS')
+                ->maxLength(50),
 
             Select::make('statut')
                 ->options([
