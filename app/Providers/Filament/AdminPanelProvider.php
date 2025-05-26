@@ -30,6 +30,7 @@ use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
 use Swis\Filament\Backgrounds\FilamentBackgroundsPlugin;
 use Swis\Filament\Backgrounds\ImageProviders\MyImages;
 use Filament\Navigation\MenuItem;
+use Afsakar\LeafletMapPicker\LeafletMapPicker;
 
 
 class AdminPanelProvider extends PanelProvider
@@ -177,8 +178,7 @@ class AdminPanelProvider extends PanelProvider
                             ->directory('images/backgrounds') // Utiliser des images personnalisées dans ce répertoire
                     ),
                     
-               
-
+                   
                 ]);
     }
 }

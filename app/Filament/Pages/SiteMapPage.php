@@ -52,7 +52,7 @@ class SiteMapPage extends Page
     {
         // Déterminer si l'utilisateur est un administrateur ou un super-admin
         $user = Auth::user();
-        $isAdmin = $user && ($user->isAdmin() || $user->isSuperAdmin());
+        $isAdmin = $user && ($user->isSuperAdmin() );
         
         $formSchema = [];
         
@@ -88,7 +88,7 @@ class SiteMapPage extends Page
             ->whereNotNull('longitude');
         
         // Si l'utilisateur n'est pas admin, filtrer par son entreprise
-        if ($user && !($user->isAdmin() || $user->isSuperAdmin())) {
+        if ($user && !($user->isSuperAdmin())) {
             if ($user->entreprise_id) {
                 $query->where('entreprise_id', $user->entreprise_id);
             }

@@ -146,40 +146,54 @@ class CreateSite extends CreateRecord
                                         ->reactive(),
                                 ]),
                                 
-                            Grid::make(3)
+                            Grid::make(2)
                                 ->schema([
+                                    \Filament\Forms\Components\Hidden::make('map_coordinates'),
+                                    
+                                    \Afsakar\LeafletMapPicker\LeafletMapPicker::make('coordinates')
+                                        ->label('Sélectionner l\'emplacement sur la carte')
+                                        ->defaultLocation([14.716677, -17.467686]) // Coordonnées par défaut (Dakar)
+                                        ->draggable()
+                                        ->myLocationButtonLabel('Ma position actuelle')
+                                        ->tileProvider('google') // default options: openstreetmap, google, googleSatellite, googleTerrain, googleHybrid, esri
+                                        ->clickable()
+                                        ->defaultZoom(13)
+                                        ->live()
+                                        ->afterStateUpdated(function ($state, callable $set) {
+                                            // Mettre à jour les champs quand la carte est cliquée
+                                            if (is_array($state) && isset($state[0]) && isset($state[1])) {
+                                                $set('latitude', (string)$state[0]);
+                                                $set('longitude', (string)$state[1]);
+                                            }
+                                        })
+                                        ->customMarker([
+                                            'iconUrl' => asset('images/logo/Icon.png'),
+                                            'iconSize' => [25, 25],
+                                            'iconAnchor' => [12, 25],
+                                            'popupAnchor' => [0, -25]
+                                        ])
+                                        ->columnSpanFull(),
+                                        
                                     TextInput::make('latitude')
                                         ->label('Latitude')
                                         ->numeric()
                                         ->required()
-                                        ->helperText('Ex: 48.8566')
-                                        ->placeholder('48.8566'),
+                                        ->helperText('Coordonnée automatiquement remplie via la carte')
+                                        ->disabled(false),
+                                        
                                     TextInput::make('longitude')
                                         ->label('Longitude')
                                         ->numeric()
                                         ->required()
-                                        ->helperText('Ex: 2.3522')
-                                        ->placeholder('2.3522'),
+                                        ->helperText('Coordonnée automatiquement remplie via la carte')
+                                        ->disabled(false),
+                                        
                                     TextInput::make('rayon_geofencing')
                                         ->label('Rayon (mètres)')
                                         ->numeric()
                                         ->default(100)
                                         ->required()
                                         ->helperText('Rayon de la zone en mètres'),
-                                ])
-                                ->visible(fn (callable $get) => $get('has_geofencing')),
-                                
-                            Section::make('Aide')
-                                ->schema([
-                                    Textarea::make('geofencing_help')
-                                        ->label('Comment obtenir les coordonnées GPS')
-                                        ->default('1. Allez sur Google Maps
-2. Faites un clic droit sur l\'emplacement du site
-3. Sélectionnez "Plus d\'infos sur cet endroit"
-4. Les coordonnées apparaîtront en bas de l\'écran (ex: 48.8566, 2.3522)
-5. Copiez ces valeurs dans les champs latitude et longitude')
-                                        ->disabled()
-                                        ->rows(6),
                                 ])
                                 ->visible(fn (callable $get) => $get('has_geofencing')),
                         ]),
