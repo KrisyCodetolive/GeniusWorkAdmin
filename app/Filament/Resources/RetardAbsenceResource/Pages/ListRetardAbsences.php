@@ -22,9 +22,10 @@ class ListRetardAbsences extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            ExporterRetardAbsenceAction::make()
-                ->label('Exporter en Excel')
-                ->tooltip('Exporter les retards et absences en Excel avec filtrage avancé'),
+          
+          //  ExporterRetardAbsenceAction::make()
+           //     ->label('Exporter en Excel')
+           //     ->tooltip('Exporter les retards et absences en Excel avec filtrage avancé'),
 
             \Filament\Actions\Action::make('heuresSupplementaires')
                 ->label('Heures Supplémentaires')

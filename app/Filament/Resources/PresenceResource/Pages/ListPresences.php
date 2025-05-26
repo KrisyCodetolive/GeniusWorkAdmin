@@ -6,6 +6,7 @@ use App\Filament\Resources\PresenceResource;
 use App\Filament\Resources\RetardAbsenceResource;
 use App\Filament\Actions\GeneratePresenceReportAction;
 use App\Filament\Actions\GenerateHeuresTravailReportAction;
+use App\Filament\Actions\ImporterAnalyserPresenceAction;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
@@ -58,6 +59,9 @@ class ListPresences extends ListRecords
                 ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
                 
             GenerateHeuresTravailReportAction::make()
+                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
+                
+            ImporterAnalyserPresenceAction::make()
                 ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
                 
             \Filament\Actions\Action::make('retardsAbsences')
