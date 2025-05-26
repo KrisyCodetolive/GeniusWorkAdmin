@@ -55,16 +55,7 @@ class RetardAbsenceResource extends Resource
                             ->schema([
                                 Forms\Components\Grid::make(2)
                                     ->schema([
-                                        Forms\Components\Select::make('user_id')
-                                            ->label('Employé')
-                                            ->relationship('user', 'nom')
-                                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->nom . ' ' . $record->prenom)
-                                            ->searchable()
-                                            ->preload()
-                                            ->required()
-                                            ->disabled()
-                                            ->helperText('Employé concerné par le retard ou l\'absence'),
-                                        
+                                             
                                         Forms\Components\Select::make('employeur_id')
                                             ->label('Employeur')
                                             ->relationship('employeur', 'nom')
@@ -131,8 +122,8 @@ class RetardAbsenceResource extends Resource
                                     ->schema([
                                         Forms\Components\Select::make('validateur_id')
                                             ->label('Validé par')
-                                            ->relationship('validateur', 'nom')
-                                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->nom . ' ' . $record->prenom)
+                                            ->relationship('validateur', 'name')
+                                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->name . ' ' . $record->prenom)
                                             ->searchable()
                                             ->preload()
                                             ->helperText('Personne ayant validé cette entrée'),
@@ -169,14 +160,7 @@ class RetardAbsenceResource extends Resource
                     ->icon('heroicon-o-calendar')
                     ->weight(FontWeight::Bold),
                 
-                Tables\Columns\TextColumn::make('user.nom')
-                    ->label('Employé')
-                    ->formatStateUsing(fn ($record) => $record->user ? $record->user->nom . ' ' . $record->user->prenom : 'Non défini')
-                    ->searchable()
-                    ->sortable()
-                    ->icon('heroicon-o-user')
-                    ->description(fn ($record) => $record->user ? $record->user->email : null),
-                
+               
                 Tables\Columns\TextColumn::make('employeur.nom')
                     ->label('Employeur')
                     ->searchable()
@@ -238,9 +222,9 @@ class RetardAbsenceResource extends Resource
                     ->searchable()
                     ->sortable(),
                 
-                Tables\Columns\TextColumn::make('validateur.nom')
+                Tables\Columns\TextColumn::make('validateur.name')
                     ->label('Validé par')
-                    ->formatStateUsing(fn ($record) => $record->validateur ? $record->validateur->nom . ' ' . $record->validateur->prenom : '-')
+                    ->formatStateUsing(fn ($record) => $record->validateur ? $record->validateur->name : '-')
                     ->searchable()
                     ->sortable()
                     ->toggleable()

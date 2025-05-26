@@ -40,7 +40,7 @@ class ViewSite extends ViewRecord
                             ->schema([
                                 TextEntry::make('statut')
                                     ->badge()
-                                    ->color(fn (string $state): string => match ($state) {
+                                    ->color(fn (?string $state): string => match ($state ?? '') {
                                         'actif' => 'success',
                                         'inactif' => 'danger',
                                         default => 'gray',
@@ -76,10 +76,10 @@ class ViewSite extends ViewRecord
                                     ->label('Nom du contact'),
                                 TextEntry::make('contact_email')
                                     ->label('Email du contact')
-                                    ->url(fn (string $state): string => "mailto:{$state}"),
+                                    ->url(fn (?string $state): ?string => $state ? "mailto:{$state}" : null),
                                 TextEntry::make('contact_telephone')
                                     ->label('Téléphone du contact')
-                                    ->url(fn (string $state): string => "tel:{$state}"),
+                                    ->url(fn (?string $state): ?string => $state ? "tel:{$state}" : null),
                             ]),
                     ]),
                 
