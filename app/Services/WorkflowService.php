@@ -39,9 +39,11 @@ class WorkflowService
                 'name' => $userData['full_name'] ?? 'Admin User',
                 'email' => $userData['email'],
                 'password' => Hash::make($userData['password']),
+                'telephone' => $userData['telephone'],
+                'phone' => $userData['telephone'],
                 'statut' => 'actif',
                 'role' => 'admin', // L'utilisateur initial est admin
-                'langue' => 'fr',
+                'langue' => 'fr',   
                 'fuseau_horaire' => 'Africa/Abidjan',
                 'settings' => json_encode([
                     'notifications_email' => true,
@@ -71,7 +73,7 @@ class WorkflowService
                 $user->assignRole($adminRole);
             }
             
-            Log::info('User account created in database', ['user_id' => $user->id]);
+            Log::info('User account created in database', ['user' => $user]);
             
             return $user;
         });
