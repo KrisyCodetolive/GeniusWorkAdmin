@@ -25,17 +25,17 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolesAndPermissionsSeeder::class,
-            EntrepriseSeeder::class,
+            //EntrepriseSeeder::class,
             PlanAbonnementSeeder::class,
-            JourTravailSeeder::class,
-            TypeCongeSeeder::class,
-            MethodePointageSeeder::class,
-            WebPointageSeeder::class,
-            DepartementSeeder::class,
+            //JourTravailSeeder::class,
+            //TypeCongeSeeder::class,
+            //MethodePointageSeeder::class,
+            //WebPointageSeeder::class,
+            //DepartementSeeder::class,
             UserSeeder::class,
-            EmployeurSeeder::class,
-            FilialeSeeder::class,
-            SiteSeeder::class,
+            //EmployeurSeeder::class,
+            //FilialeSeeder::class,
+            //SiteSeeder::class,
         ]);
     }
 }

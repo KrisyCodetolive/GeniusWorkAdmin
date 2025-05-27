@@ -15,7 +15,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Support\Enums\FontWeight;
-use Filament\Support\Colors\Color;
+use Filament\Notifications\Notification;
 
 class TypeCongeResource extends Resource
 {

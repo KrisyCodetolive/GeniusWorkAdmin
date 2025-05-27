@@ -99,6 +99,7 @@ class WorkflowService
                 'telephone' => $companyData['contact_phone'],
                 'adresse' => $companyData['address'],
                 'statut' => 'actif',
+                'nombre_employes' => $companyData['company_size'],
                 'configuration' => json_encode([
                     'nombre_employes' => $companyData['company_size'],
                     'date_creation' => Carbon::now()->format('Y-m-d')
@@ -145,7 +146,7 @@ class WorkflowService
                 'periode_facturation' => 'mensuel',
                 'renouvellement_automatique' => true,
                 'facture_automatique' => true,
-                'nombre_personnels' => $entreprise->configuration['nombre_employes'] ?? 0
+                'nombre_personnels' => $entreprise->nombre_employes ?? 0
             ]);
             
             return $abonnement;
@@ -188,7 +189,7 @@ class WorkflowService
                     break;
                 case 'Enterprise':
                     $plan->nombre_employes_min = 101;
-                    $plan->nombre_employes_max = null; // Illimité
+                    $plan->nombre_employes_max = 1000; // Illimité
                     break;
             }
             

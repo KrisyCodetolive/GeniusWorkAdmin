@@ -10,6 +10,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use App\Policies\PlanAbonnementPolicy;
+use Illuminate\Support\Str;
 
 class PlanAbonnementResource extends Resource
 {
@@ -34,6 +35,12 @@ class PlanAbonnementResource extends Resource
                             ->maxLength(1000)
                             ->rows(3)
                             ->placeholder('Description détaillée du plan'),
+                        Forms\Components\TextInput::make('cout_par_employe')
+                            ->numeric()
+                            ->required()
+                            ->prefix('XOF')
+                            ->placeholder('99.99')
+                            ->label('Cout par employe'),
                         Forms\Components\TextInput::make('prix_mensuel')
                             ->numeric()
                             ->required()
@@ -127,13 +134,13 @@ class PlanAbonnementResource extends Resource
                 Tables\Columns\TextColumn::make('nom')
                     ->searchable()
                     ->sortable()
-                    ->description(fn ($record): string => \Str::limit($record->description, 50)),
+                    ->description(fn ($record): string => Str::limit($record->description, 50)),
                 Tables\Columns\TextColumn::make('prix_mensuel')
-                    ->money('EUR')
+                    ->money('XOF')
                     ->sortable()
                     ->label('Prix mensuel'),
                 Tables\Columns\TextColumn::make('prix_annuel')
-                    ->money('EUR')
+                    ->money('XOF')
                     ->sortable()
                     ->label('Prix annuel'),
                 Tables\Columns\TextColumn::make('periode_facturation')
@@ -148,6 +155,10 @@ class PlanAbonnementResource extends Resource
                     ->numeric()
                     ->sortable()
                     ->label('Max Employés'),
+                Tables\Columns\TextColumn::make('cout_par_employe')
+                    ->numeric()
+                    ->sortable()
+                    ->label('Cout par employe'),
                 Tables\Columns\IconColumn::make('rapports_avances')
                     ->boolean()
                     ->label('Rapports'),

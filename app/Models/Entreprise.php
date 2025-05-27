@@ -63,7 +63,8 @@ class Entreprise extends Model
         'ville',
         'pays',
         'latitude',
-        'longitude'
+        'longitude',
+        'nombre_employes'
     ];
 
     protected $casts = [
