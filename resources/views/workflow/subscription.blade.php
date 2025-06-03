@@ -9,10 +9,23 @@
             coutFixe: {{ $coutFixe }},
             coutUtilisateurs: {{ $coutUtilisateurs }},
             coutTotal: {{ $coutTotal }},
+            coutMensuelParEmploye: {{ $coutMensuelParEmploye ?? 'Math.round(coutTotal/companySize)' }},
+            coutAnnuel: {{ $coutAnnuel ?? 'coutTotal * 12' }},
             isLoading: false,
             
             formatNumber(number) {
                 return new Intl.NumberFormat('fr-FR').format(number);
+            },
+            
+            getPlanIcon() {
+                if (this.forfait.includes('Starter')) {
+                    return 'https://cdn-icons-png.flaticon.com/512/8088/8088179.png';
+                } else if (this.forfait.includes('Business')) {
+                    return 'https://cdn-icons-png.flaticon.com/512/8088/8088117.png';
+                } else if (this.forfait.includes('Enterprise')) {
+                    return 'https://cdn-icons-png.flaticon.com/512/8088/8088522.png';
+                }
+                return 'https://cdn-icons-png.flaticon.com/512/8088/8088117.png';
             },
             
             submitForm() {
@@ -94,20 +107,18 @@
                     <div class="flex flex-col md:flex-row md:items-center justify-between">
                         <div>
                             <div class="flex items-center mb-4">
-                                <span class="text-xl font-bold text-indigo-600 mr-3" x-text="forfait"></span>
-                                <span class="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full font-medium">Recommandé</span>
+                                <h3 class="text-2xl font-bold text-indigo-700" x-text="forfait"></h3>
+                                <span class="ml-3 px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-semibold rounded-full">Recommandé</span>
                             </div>
-                            <p class="text-gray-700 mb-4">Idéal pour les entreprises de <span x-text="forfait === 'Starter' ? '1 à 50' : forfait === 'Side Business' ? '51 à 100' : '100+'"></span> employés</p>
-                            <div class="flex items-baseline mb-1">
-                                <span class="text-3xl font-bold text-gray-900" x-text="formatNumber(coutTotal)"></span>
-                                <span class="text-gray-600 ml-1">FCFA / mois</span>
+                            <div class="text-3xl font-bold text-gray-800 mb-2">
+                                <span x-text="formatNumber(coutTotal)"></span> FCFA<span class="text-gray-500 text-lg font-normal">/mois</span>
                             </div>
-                            <p class="text-gray-600 text-sm mb-4">Soit <span x-text="formatNumber(Math.round(coutTotal/companySize))"></span> FCFA par utilisateur/mois</p>
+                            <p class="text-gray-600 text-sm mb-4">Soit <span x-text="formatNumber(coutMensuelParEmploye)"></span> FCFA par utilisateur/mois</p>
+                            <p class="text-gray-600 text-sm mb-4">Adapté pour <span class="font-semibold">{{ $forfait }}</span> (<span x-text="companySize"></span> employés)</p>
                         </div>
+                        
                         <div class="mt-4 md:mt-0">
-                            <img x-show="forfait === 'Starter'" src="https://cdn-icons-png.flaticon.com/512/8088/8088179.png" alt="Starter" class="h-24 w-24 mx-auto md:mx-0">
-                            <img x-show="forfait === 'Side Business'" src="https://cdn-icons-png.flaticon.com/512/8090/8090156.png" alt="Side Business" class="h-24 w-24 mx-auto md:mx-0">
-                            <img x-show="forfait === 'Enterprise'" src="https://cdn-icons-png.flaticon.com/512/8088/8088522.png" alt="Enterprise" class="h-24 w-24 mx-auto md:mx-0">
+                            <img :src="getPlanIcon()" :alt="forfait" class="h-24 w-24 mx-auto md:mx-0">
                         </div>
                     </div>
                 </div>
@@ -117,22 +128,24 @@
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Détails de votre abonnement</h3>
                     <div class="space-y-3">
                         <div class="flex justify-between py-2 border-b border-gray-100">
-                            <span class="text-gray-600">Coût fixe</span>
-                            <span class="font-medium text-gray-800" x-text="formatNumber(coutFixe) + ' FCFA'"></span>
+                            <span class="text-gray-600">Coût fixe ({{ $forfait }})</span>
+                            <span x-text="formatNumber(coutFixe) + ' FCFA'"></span>
                         </div>
                         <div class="flex justify-between py-2 border-b border-gray-100">
-                            <span class="text-gray-600">
-                                Coût par utilisateur (<span x-text="companySize"></span> x 100 FCFA)
-                            </span>
-                            <span class="font-medium text-gray-800" x-text="formatNumber(coutUtilisateurs) + ' FCFA'"></span>
+                            <span class="text-gray-600">Coût par utilisateur</span>
+                            <span>{{ $planDetails['cout_par_employe'] ?? 100 }} FCFA × <span x-text="companySize"></span> utilisateurs = <span x-text="formatNumber(coutUtilisateurs) + ' FCFA'"></span></span>
                         </div>
-                        <div class="flex justify-between py-2 font-bold">
-                            <span class="text-gray-800">Total mensuel</span>
-                            <span class="text-indigo-600" x-text="formatNumber(coutTotal) + ' FCFA'"></span>
+                        <div class="flex justify-between py-2 border-b border-gray-100 font-semibold">
+                            <span>Total mensuel</span>
+                            <span x-text="formatNumber(coutTotal) + ' FCFA'"></span>
                         </div>
-                        <div class="flex justify-between py-2 text-sm text-gray-500 italic">
+                        <div class="flex justify-between py-2 border-b border-gray-100 text-gray-600">
+                            <span>Coût mensuel par employé</span>
+                            <span x-text="formatNumber(coutMensuelParEmploye) + ' FCFA'"></span>
+                        </div>
+                        <div class="flex justify-between py-2 text-gray-600">
                             <span>Total annuel (12 mois)</span>
-                            <span x-text="formatNumber(coutTotal * 12) + ' FCFA'"></span>
+                            <span x-text="formatNumber(coutAnnuel) + ' FCFA'"></span>
                         </div>
                     </div>
                 </div>
@@ -140,7 +153,8 @@
                 <!-- Included Features -->
                 <div class="mb-8">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Fonctionnalités incluses</h3>
-                    <div class="grid md:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- Fonctionnalités de base pour tous les plans -->
                         <div class="flex items-center">
                             <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -151,25 +165,7 @@
                             <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            <span class="text-gray-700">Gestion des congés</span>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span class="text-gray-700">Rapports de présence</span>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span class="text-gray-700">Application mobile</span>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span class="text-gray-700">Support technique</span>
+                            <span class="text-gray-700">Rapports basiques</span>
                         </div>
                         <div class="flex items-center">
                             <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -177,25 +173,35 @@
                             </svg>
                             <span class="text-gray-700">Mises à jour gratuites</span>
                         </div>
-                        <div x-show="forfait !== 'Starter'" class="flex items-center">
+                        
+                        <!-- Fonctionnalités pour Business et Enterprise -->
+                        <div x-show="forfait.includes('Business') || forfait.includes('Enterprise')" class="flex items-center">
                             <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                             <span class="text-gray-700">Rapports avancés</span>
                         </div>
-                        <div x-show="forfait !== 'Starter'" class="flex items-center">
+                        <div x-show="forfait.includes('Business') || forfait.includes('Enterprise')" class="flex items-center">
                             <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                             <span class="text-gray-700">Intégration système externe</span>
                         </div>
-                        <div x-show="forfait === 'Enterprise'" class="flex items-center">
+                        <div x-show="forfait.includes('Business') || forfait.includes('Enterprise')" class="flex items-center">
+                            <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-gray-700">Personnalisation workflow</span>
+                        </div>
+                        
+                        <!-- Fonctionnalités exclusives Enterprise -->
+                        <div x-show="forfait.includes('Enterprise')" class="flex items-center">
                             <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                             <span class="text-gray-700">Support dédié</span>
                         </div>
-                        <div x-show="forfait === 'Enterprise'" class="flex items-center">
+                        <div x-show="forfait.includes('Enterprise')" class="flex items-center">
                             <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
@@ -205,38 +211,40 @@
                 </div>
                 
                 <!-- Form for Subscription Selection -->
-                <form id="subscription-form" action="{{ route('workflow.subscription.store') }}" method="POST">
+                <form id="subscription-form" action="{{ route('workflow.subscription.store') }}" method="POST" x-on:submit="isLoading = true">
                     @csrf
                     <input type="hidden" name="subscription_plan" :value="forfait">
                     <input type="hidden" name="base_cost" :value="coutFixe">
                     <input type="hidden" name="user_cost" :value="coutUtilisateurs">
                     <input type="hidden" name="total_cost" :value="coutTotal">
+                    <input type="hidden" name="company_size" :value="companySize">
+                    <input type="hidden" name="monthly_cost_per_employee" :value="coutMensuelParEmploye">
+                    <input type="hidden" name="annual_cost" :value="coutAnnuel">
+                    <input type="hidden" name="plan_level" value="{{ strpos($forfait, 'Enterprise') !== false ? 3 : (strpos($forfait, 'Business') !== false ? 2 : 1) }}">
+                    <input type="hidden" name="plan_features" value="{{ json_encode($planDetails['fonctionnalites'] ?? []) }}">
                     
-                    <!-- Navigation Buttons -->
+                    <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                        <p class="text-sm text-gray-700 mb-2">Vous avez sélectionné le plan <span class="font-semibold" x-text="forfait"></span> pour <span x-text="companySize"></span> employés.</p>
+                        <p class="text-sm text-gray-700">Cliquez sur le bouton ci-dessous pour continuer vers le paiement.</p>
+                    </div>
+                    
                     <div class="flex justify-between mt-8">
-                        <a 
-                            href="{{ route('workflow.company') }}" 
-                            class="inline-flex items-center px-4 py-2 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                        <a href="{{ route('workflow.company') }}" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 inline-flex items-center text-sm font-medium">
+                            <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                             </svg>
                             Retour
                         </a>
-                        <button 
-                            type="button" 
-                            @click="submitForm()"
-                            class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            :disabled="isLoading"
-                        >
-                            <span x-show="!isLoading">Choisir cet abonnement</span>
+                        
+                        <button type="submit" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 inline-flex items-center text-sm font-medium" :disabled="isLoading">
+                            <span x-show="!isLoading">Continuer vers le paiement</span>
                             <svg x-show="isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                             <span x-show="isLoading">Chargement...</span>
-                            <svg x-show="!isLoading" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            <svg x-show="!isLoading" class="ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg>
                         </button>
                     </div>

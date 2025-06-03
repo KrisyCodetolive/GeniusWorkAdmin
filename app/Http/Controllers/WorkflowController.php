@@ -203,26 +203,15 @@ class WorkflowController extends Controller
 
         $companySize = session('company_account.company_size');
         
-        // Déterminer le forfait et le coût fixe
-        $forfait = '';
-        $coutFixe = 0;
+        // Utiliser le service de tarification pour calculer les coûts
+        $tarificationService = app(\App\Services\TarificationService::class);
+        $coutDetails = $tarificationService->calculerCout($companySize);
         
-        if ($companySize >= 1 && $companySize <= 50) {
-            $forfait = 'Starter';
-            $coutFixe = 10000;
-        } elseif ($companySize > 50 && $companySize <= 100) {
-            $forfait = 'Side Business';
-            $coutFixe = 15000;
-        } elseif ($companySize > 100) {
-            $forfait = 'Enterprise';
-            $coutFixe = 30000;
-        }
-        
-        // Calculer le coût des utilisateurs
-        $coutUtilisateurs = $companySize * 100;
-        
-        // Calculer le coût total
-        $coutTotal = $coutFixe + $coutUtilisateurs;
+        // Extraire les valeurs pour la vue
+        $forfait = $coutDetails['plan'];
+        $coutFixe = $coutDetails['cout_fixe'];
+        $coutUtilisateurs = $coutDetails['cout_employes'];
+        $coutTotal = $coutDetails['cout_total'];
 
         return view('workflow.subscription', [
             'forfait' => $forfait,
@@ -230,6 +219,9 @@ class WorkflowController extends Controller
             'coutUtilisateurs' => $coutUtilisateurs,
             'coutTotal' => $coutTotal,
             'companySize' => $companySize,
+            'coutMensuelParEmploye' => $coutDetails['cout_mensuel_par_employe'],
+            'coutAnnuel' => $coutDetails['cout_annuel'],
+            'planDetails' => $coutDetails
         ]);
     }
 
@@ -243,18 +235,40 @@ class WorkflowController extends Controller
             'base_cost' => 'required|numeric',
             'user_cost' => 'required|numeric',
             'total_cost' => 'required|numeric',
+            'company_size' => 'required|numeric',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
+        
+        // Récupérer la taille de l'entreprise
+        $companySize = $request->company_size;
+        
+        // Utiliser le service de tarification pour calculer les coûts
+        $tarificationService = app(\App\Services\TarificationService::class);
+        $coutDetails = $tarificationService->calculerCout($companySize);
+        
+        // Vérifier que les coûts correspondent
+        if (abs($coutDetails['cout_total'] - $request->total_cost) > 1) { // Tolérance de 1 FCFA pour les erreurs d'arrondi
+            Log::warning('Discrepancy in subscription costs', [
+                'calculated' => $coutDetails['cout_total'],
+                'submitted' => $request->total_cost,
+                'company_size' => $companySize
+            ]);
+        }
 
-        // Stocker les données dans la session pour l'étape suivante
+        // Stocker les données détaillées dans la session pour l'étape suivante
         $request->session()->put('subscription', [
-            'subscription_plan' => $request->subscription_plan,
-            'base_cost' => $request->base_cost,
-            'user_cost' => $request->user_cost,
-            'total_cost' => $request->total_cost,
+            'subscription_plan' => $coutDetails['plan'],
+            'base_cost' => $coutDetails['cout_fixe'],
+            'user_cost' => $coutDetails['cout_employes'],
+            'total_cost' => $coutDetails['cout_total'],
+            'cout_par_employe' => $coutDetails['cout_par_employe'],
+            'nombre_employes' => $coutDetails['nombre_employes'],
+            'cout_mensuel_par_employe' => $coutDetails['cout_mensuel_par_employe'],
+            'cout_annuel' => $coutDetails['cout_annuel'],
+            'plan_details' => $coutDetails
         ]);
 
         // Créer l'abonnement dans la base de données si l'option est activée
@@ -365,6 +379,8 @@ class WorkflowController extends Controller
             return redirect()->route('workflow.subscription')
                 ->with('error', 'Une erreur est survenue lors de la préparation du paiement. Veuillez réessayer.');
         }
+
+        //dd('subscription', session('subscription'));
 
         return view('workflow.payment', [
             'subscription' => session('subscription'),

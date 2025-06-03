@@ -129,6 +129,7 @@ class WorkflowService
             'entreprise' => $entreprise->nom,
             'plan' => $subscriptionData['subscription_plan']
         ]);
+
         
         return DB::transaction(function () use ($subscriptionData, $entreprise) {
             // Trouver le plan d'abonnement correspondant
