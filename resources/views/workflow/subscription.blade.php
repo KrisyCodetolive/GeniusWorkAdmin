@@ -117,7 +117,6 @@
                             <div class="text-3xl font-bold text-gray-800 mb-2">
                                 <span x-text="formatNumber(coutTotal)"></span> FCFA<span class="text-gray-500 text-lg font-normal">/mois</span>
                             </div>
-                            <p class="text-gray-600 text-sm mb-4">Soit <span x-text="formatNumber(coutMensuelParEmploye)"></span> FCFA par utilisateur/mois</p>
                             <p class="text-gray-600 text-sm mb-4">Adapté pour <span class="font-semibold">{{ $forfait }}</span> (<span x-text="companySize"></span> employés)</p>
                         </div>
                         
@@ -128,28 +127,7 @@
                 </div>
                 
                 <!-- Cost Breakdown -->
-                <div class="mb-8">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Détails de votre abonnement</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between py-2 border-b border-gray-100">
-                            <span class="text-gray-600">Coût fixe ({{ $forfait }})</span>
-                            <span x-text="formatNumber(coutFixe) + ' FCFA'"></span>
-                        </div>
-                        <div class="flex justify-between py-2 border-b border-gray-100">
-                            <span class="text-gray-600">Coût par utilisateur</span>
-                            <span>{{ $planDetails['cout_par_employe'] ?? 100 }} FCFA × <span x-text="companySize"></span> utilisateurs = <span x-text="formatNumber(coutUtilisateurs) + ' FCFA'"></span></span>
-                        </div>
-                        <div class="flex justify-between py-2 border-b border-gray-100 font-semibold">
-                            <span>Total mensuel</span>
-                            <span x-text="formatNumber(coutTotal) + ' FCFA'"></span>
-                        </div>
-                        <div class="flex justify-between py-2 text-gray-600">
-                            <span>Total annuel (12 mois)</span>
-                            <span x-text="formatNumber(coutAnnuel) + ' FCFA'"></span>
-                        </div>
-                    </div>
-                </div>
-                
+                @include('workflow.component.coast')
                <!-- Fonctionnalités incluses -->
                 @include('workflow.component.features')
                 <!-- Form for Subscription Selection -->
