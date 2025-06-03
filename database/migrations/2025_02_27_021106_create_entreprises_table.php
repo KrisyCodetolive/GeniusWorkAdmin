@@ -32,7 +32,7 @@ return new class extends Migration
             $table->string('adresse')->nullable();
             $table->string('code_postal', 10)->nullable();
             $table->string('ville')->nullable();
-            $table->string('pays')->default('France');
+            $table->string('pays')->default('Côte d\'Ivoire');
             $table->decimal('latitude', 10, 6)->nullable();
             $table->decimal('longitude', 10, 6)->nullable();
             $table->timestamps();

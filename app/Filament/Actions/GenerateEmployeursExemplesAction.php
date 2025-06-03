@@ -51,7 +51,7 @@ class GenerateEmployeursExemplesAction extends Action
                 
                 // Vérifier la limite d'employés pour l'entreprise
                 $currentEmployeeCount = $entreprise->getEmployeCount();
-                $limit = $entreprise->abonnementActif->nombre_personnels ?? 
+                $limit = $entreprise->nombre_employes ?? $entreprise->abonnementActif->nombre_personnels ?? 
                         $entreprise->abonnementActif->planAbonnement->nombre_employes_max ?? 0;
                 
                 // Nombre d'employés exemples à créer (basé sur le seeder)

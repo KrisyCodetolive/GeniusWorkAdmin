@@ -19,13 +19,17 @@
             
             getPlanIcon() {
                 if (this.forfait.includes('Starter')) {
-                    return 'https://cdn-icons-png.flaticon.com/512/8088/8088179.png';
+                    // Icône représentant un démarrage simple avec quelques employés
+                    return 'https://cdn-icons-png.flaticon.com/512/3126/3126647.png';
                 } else if (this.forfait.includes('Business')) {
-                    return 'https://cdn-icons-png.flaticon.com/512/8088/8088117.png';
+                    // Icône représentant une équipe en croissance
+                    return 'https://cdn-icons-png.flaticon.com/512/3281/3281289.png';
                 } else if (this.forfait.includes('Enterprise')) {
-                    return 'https://cdn-icons-png.flaticon.com/512/8088/8088522.png';
+                    // Icône représentant une grande entreprise avec structure organisationnelle
+                    return 'https://cdn-icons-png.flaticon.com/512/1256/1256650.png';
                 }
-                return 'https://cdn-icons-png.flaticon.com/512/8088/8088117.png';
+                // Icône par défaut
+                return 'https://cdn-icons-png.flaticon.com/512/3281/3281289.png';
             },
             
             submitForm() {
@@ -139,10 +143,6 @@
                             <span>Total mensuel</span>
                             <span x-text="formatNumber(coutTotal) + ' FCFA'"></span>
                         </div>
-                        <div class="flex justify-between py-2 border-b border-gray-100 text-gray-600">
-                            <span>Coût mensuel par employé</span>
-                            <span x-text="formatNumber(coutMensuelParEmploye) + ' FCFA'"></span>
-                        </div>
                         <div class="flex justify-between py-2 text-gray-600">
                             <span>Total annuel (12 mois)</span>
                             <span x-text="formatNumber(coutAnnuel) + ' FCFA'"></span>
@@ -150,66 +150,8 @@
                     </div>
                 </div>
                 
-                <!-- Included Features -->
-                <div class="mb-8">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Fonctionnalités incluses</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <!-- Fonctionnalités de base pour tous les plans -->
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span class="text-gray-700">Gestion des présences</span>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span class="text-gray-700">Rapports basiques</span>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span class="text-gray-700">Mises à jour gratuites</span>
-                        </div>
-                        
-                        <!-- Fonctionnalités pour Business et Enterprise -->
-                        <div x-show="forfait.includes('Business') || forfait.includes('Enterprise')" class="flex items-center">
-                            <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span class="text-gray-700">Rapports avancés</span>
-                        </div>
-                        <div x-show="forfait.includes('Business') || forfait.includes('Enterprise')" class="flex items-center">
-                            <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span class="text-gray-700">Intégration système externe</span>
-                        </div>
-                        <div x-show="forfait.includes('Business') || forfait.includes('Enterprise')" class="flex items-center">
-                            <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span class="text-gray-700">Personnalisation workflow</span>
-                        </div>
-                        
-                        <!-- Fonctionnalités exclusives Enterprise -->
-                        <div x-show="forfait.includes('Enterprise')" class="flex items-center">
-                            <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span class="text-gray-700">Support dédié</span>
-                        </div>
-                        <div x-show="forfait.includes('Enterprise')" class="flex items-center">
-                            <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span class="text-gray-700">API complète</span>
-                        </div>
-                    </div>
-                </div>
-                
+               <!-- Fonctionnalités incluses -->
+                @include('workflow.component.features')
                 <!-- Form for Subscription Selection -->
                 <form id="subscription-form" action="{{ route('workflow.subscription.store') }}" method="POST" x-on:submit="isLoading = true">
                     @csrf

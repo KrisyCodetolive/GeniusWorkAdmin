@@ -66,7 +66,7 @@ class CreateEmployeur extends CreateRecord
         $currentEmployeeCount = $entreprise->getEmployeCount();
         
         // Récupérer la limite d'employés depuis l'abonnement
-        $limit = $entreprise->abonnementActif->nombre_personnels ?? 
+        $limit = $entreprise->nombre_employes ?? $entreprise->abonnementActif->nombre_personnels ?? 
                 $entreprise->abonnementActif->planAbonnement->nombre_employes_max ?? 0;
         
         // Vérifier si le nombre actuel d'employés atteint la limite

@@ -13,8 +13,8 @@ return new class extends Migration
     public function up(): void
     {
         // Modifier la colonne mode_paiement pour ajouter 'non_specifie' comme valeur valide
-        DB::statement("ALTER TABLE facturations MODIFY COLUMN mode_paiement ENUM('carte', 'virement', 'especes', 'non_specifie', 'wave', 'mobile_money') NULL");
-    }
+        DB::statement("ALTER TABLE facturations MODIFY COLUMN mode_paiement ENUM('carte', 'card', 'virement', 'especes', 'non_specifie', 'wave', 'mobile_money') NULL");
+    }   
 
     /**
      * Reverse the migrations.
@@ -22,6 +22,6 @@ return new class extends Migration
     public function down(): void
     {
         // Revenir à l'état précédent
-        DB::statement("ALTER TABLE facturations MODIFY COLUMN mode_paiement ENUM('carte', 'virement', 'especes', 'non_specifie', 'wave', 'mobile_money') NULL");
+        DB::statement("ALTER TABLE facturations MODIFY COLUMN mode_paiement ENUM('carte', 'card','virement', 'especes', 'non_specifie', 'wave', 'mobile_money') NULL");
     }
 };

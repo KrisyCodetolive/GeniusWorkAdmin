@@ -225,7 +225,7 @@ class EmployeurExempleSeeder extends Seeder
         }
         
         // Récupérer la limite d'employés depuis l'abonnement
-        $limit = $abonnementActif->nombre_personnels ?? 
+        $limit = $entreprise->nombre_employes ?? $abonnementActif->nombre_personnels ?? 
                 $abonnementActif->planAbonnement->nombre_employes_max ?? 0;
         
         if ($limit <= 0) {
