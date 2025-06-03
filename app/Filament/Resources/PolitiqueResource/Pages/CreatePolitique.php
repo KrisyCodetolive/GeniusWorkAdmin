@@ -21,9 +21,11 @@ class CreatePolitique extends CreateRecord
     {
         $user = auth()->user();
         
-        // Si l'utilisateur n'est ni SuperAdmin ni Support, vérifier si son entreprise a déjà une politique
+        // Si l'utilisateur n'est ni SuperAdmin ni Support
         if (!$user->isSuperAdmin() && !$user->isSupport()) {
             $entrepriseId = $user->entreprise_id;
+            
+            // Vérifier si son entreprise a déjà une politique
             $politiqueExiste = Politique::where('entreprise_id', $entrepriseId)->exists();
             
             if ($politiqueExiste) {
@@ -36,6 +38,9 @@ class CreatePolitique extends CreateRecord
                 $this->redirect($this->getResource()::getUrl('index'));
                 return new Politique(); // Retourner un modèle vide pour éviter les erreurs
             }
+            
+            // Définir automatiquement l'entreprise_id pour les utilisateurs normaux
+            $data['entreprise_id'] = $entrepriseId;
         }
         
         return parent::handleRecordCreation($data);
