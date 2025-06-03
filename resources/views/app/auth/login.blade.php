@@ -89,43 +89,110 @@
             </div>
             
             <div class="mt-8 bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-100">
-                <!-- Session Status -->
-                @if (session('status'))
-                    <div class="mb-4 font-medium text-sm text-green-600">
-                        {{ session('status') }}
-                    </div>
-                @endif
-                
-                <!-- Info Message (for redirects from registration) -->
-                @if (session('info'))
-                    <div class="mb-4 p-4 rounded-md bg-blue-50 border border-blue-100">
+                <!-- Notifications -->
+                <div x-data="{ 
+                    showStatus: {{ session('status') ? 'true' : 'false' }}, 
+                    showInfo: {{ session('info') ? 'true' : 'false' }}, 
+                    showErrors: {{ $errors->any() ? 'true' : 'false' }},
+                    autoClose(type, delay = 5000) {
+                        if (this[type]) {
+                            setTimeout(() => { this[type] = false }, delay);
+                        }
+                    }
+                }" 
+                x-init="
+                    autoClose('showStatus', 5000);
+                    autoClose('showInfo', 8000);
+                    // Erreurs ne se ferment pas automatiquement
+                ">
+                    <!-- Success Message -->
+                    <div x-show="showStatus" 
+                         x-transition:enter="transform ease-out duration-300 transition" 
+                         x-transition:enter-start="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2" 
+                         x-transition:enter-end="translate-y-0 opacity-100 sm:translate-x-0"
+                         x-transition:leave="transition ease-in duration-200"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="mb-4 p-4 rounded-md bg-green-50 border border-green-100 shadow-sm">
                         <div class="flex">
                             <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clip-rule="evenodd" />
-                                </svg>
+                                <i data-lucide="check-circle" class="h-5 w-5 text-green-500"></i>
                             </div>
-                            <div class="ml-3">
+                            <div class="ml-3 flex-1">
+                                <p class="text-sm font-medium text-green-800">{{ session('status') }}</p>
+                            </div>
+                            <div class="ml-auto pl-3">
+                                <div class="-mx-1.5 -my-1.5">
+                                    <button @click="showStatus = false" type="button" class="inline-flex rounded-md p-1.5 text-green-500 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2">
+                                        <span class="sr-only">Fermer</span>
+                                        <i data-lucide="x" class="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Info Message -->
+                    <div x-show="showInfo"
+                         x-transition:enter="transform ease-out duration-300 transition" 
+                         x-transition:enter-start="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2" 
+                         x-transition:enter-end="translate-y-0 opacity-100 sm:translate-x-0"
+                         x-transition:leave="transition ease-in duration-200"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="mb-4 p-4 rounded-md bg-blue-50 border border-blue-100 shadow-sm">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i data-lucide="info" class="h-5 w-5 text-blue-500"></i>
+                            </div>
+                            <div class="ml-3 flex-1">
                                 <p class="text-sm font-medium text-blue-800">{{ session('info') }}</p>
                             </div>
+                            <div class="ml-auto pl-3">
+                                <div class="-mx-1.5 -my-1.5">
+                                    <button @click="showInfo = false" type="button" class="inline-flex rounded-md p-1.5 text-blue-500 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2">
+                                        <span class="sr-only">Fermer</span>
+                                        <i data-lucide="x" class="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                @endif
-                
-                <!-- Validation Errors -->
-                @if ($errors->any())
-                    <div class="mb-4">
-                        <div class="font-medium text-red-600">
-                            {{ __('Oups! Quelque chose s\'est mal passé.') }}
+                    
+                    <!-- Validation Errors -->
+                    <div x-show="showErrors"
+                         x-transition:enter="transform ease-out duration-300 transition" 
+                         x-transition:enter-start="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2" 
+                         x-transition:enter-end="translate-y-0 opacity-100 sm:translate-x-0"
+                         x-transition:leave="transition ease-in duration-200"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="mb-4 p-4 rounded-md bg-red-50 border border-red-100 shadow-sm">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i data-lucide="alert-triangle" class="h-5 w-5 text-red-500"></i>
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <h3 class="text-sm font-medium text-red-800">{{ __('Oups! Quelque chose s\'est mal passé.') }}</h3>
+                                <div class="mt-2">
+                                    <ul class="list-disc pl-5 space-y-1 text-sm text-red-700">
+                                        @foreach ($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="ml-auto pl-3">
+                                <div class="-mx-1.5 -my-1.5">
+                                    <button @click="showErrors = false" type="button" class="inline-flex rounded-md p-1.5 text-red-500 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2">
+                                        <span class="sr-only">Fermer</span>
+                                        <i data-lucide="x" class="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-
-                        <ul class="mt-3 list-disc list-inside text-sm text-red-600">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
                     </div>
-                @endif
+                </div>
                 
                 <!-- Login Tabs -->
                 <div x-data="{ activeTab: 'email' }">
@@ -228,10 +295,10 @@
                     
                     <!-- Phone Login Form -->
                     <div x-show="activeTab === 'phone'" x-cloak>
-                        <div x-data="{ step: 1 }">
+                        <div x-data="{ step: {{ session('show_otp_step') ? 2 : 1 }} }">
                             <!-- Step 1: Enter Phone Number -->
                             <div x-show="step === 1" class="space-y-6">
-                                <form method="POST" action="{{ route('login.send-otp') }}" class="space-y-6">
+                                <form method="POST" action="{{ route('login.send-otp') }}" class="space-y-6" id="phone-form">
                                     @csrf
                                     <input type="hidden" name="login_type" value="phone">
                                     
@@ -260,7 +327,6 @@
                                     <div>
                                         <button 
                                             type="submit"
-                                            @click.prevent="step = 2"
                                             class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                                         >
                                             Recevoir le code OTP
@@ -270,49 +336,112 @@
                             </div>
                             
                             <!-- Step 2: Enter OTP -->
-                            <div x-show="step === 2" x-cloak class="space-y-6">
-                                <div class="text-center mb-4">
-                                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 mb-3">
-                                        <i data-lucide="check" class="h-6 w-6 text-green-600"></i>
+                            <div x-show="step === 2" x-cloak class="space-y-6"
+                                 x-transition:enter="transform ease-out duration-300 transition" 
+                                 x-transition:enter-start="opacity-0 translate-y-4" 
+                                 x-transition:enter-end="opacity-100 translate-y-0">
+                                <div class="text-center mb-6">
+                                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4 animate-pulse">
+                                        <i data-lucide="smartphone" class="h-8 w-8 text-green-600"></i>
                                     </div>
-                                    <p class="text-sm text-gray-600">Fonctionnalité pas encore disponible</p>
+                                    <h3 class="text-lg font-medium text-gray-900 mb-1">Vérification OTP</h3>
+                                    <p class="text-sm text-gray-600">Un code de vérification à 6 chiffres a été envoyé au numéro</p>
+                                    <p class="text-base font-semibold text-indigo-600 mt-1">{{ session('phone') }}</p>
                                 </div>
                                 
-                                <form method="POST" action="#" class="space-y-6">
+                                <form method="POST" action="{{ route('login.verify-otp') }}" class="space-y-6" id="otp-form">
                                     @csrf
                                     <input type="hidden" name="login_type" value="phone">
-                                    <input type="hidden" name="phone" x-bind:value="document.getElementById('phone')?.value || ''">
+                                    <input type="hidden" name="phone" value="{{ session('phone') }}">
                                     
-                                    <div>
-                                        <label for="otp" class="block text-sm font-medium text-gray-700">
-                                            Code de vérification (OTP)
+                                    <div x-data="{ 
+                                        focusNext(index, event) {
+                                            // Seulement les chiffres
+                                            if (!/^\d+$/.test(event.target.value)) {
+                                                event.target.value = '';
+                                                return;
+                                            }
+                                            
+                                            // Avancer au champ suivant
+                                            if (index < 5) {
+                                                this.$refs['otp-' + (index + 1)].focus();
+                                            }
+                                        },
+                                        handleKeyDown(index, event) {
+                                            // Gérer la touche Backspace
+                                            if (event.key === 'Backspace' && !event.target.value && index > 0) {
+                                                this.$refs['otp-' + (index - 1)].focus();
+                                            }
+                                        },
+                                        handlePaste(event) {
+                                            event.preventDefault();
+                                            const paste = (event.clipboardData || window.clipboardData).getData('text');
+                                            if (!/^\d+$/.test(paste)) return; // Seulement les chiffres
+                                            
+                                            const inputs = Array.from(this.$el.querySelectorAll('input[type="text"]'));
+                                            const digits = paste.split('').slice(0, inputs.length);
+                                            
+                                            inputs.forEach((input, i) => {
+                                                if (digits[i]) {
+                                                    input.value = digits[i];
+                                                    if (i === inputs.length - 1) {
+                                                        input.focus();
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    }">
+                                        <label class="block text-sm font-medium text-gray-700 mb-3 text-center">
+                                            Entrez le code à 6 chiffres
                                         </label>
-                                        <div class="mt-1">
-                                            <div class="flex justify-between space-x-2">
-                                                <input type="text" maxlength="1" class="w-full h-12 text-center text-lg font-semibold border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" oninput="this.nextElementSibling?.focus()">
-                                                <input type="text" maxlength="1" class="w-full h-12 text-center text-lg font-semibold border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" oninput="this.nextElementSibling?.focus()">
-                                                <input type="text" maxlength="1" class="w-full h-12 text-center text-lg font-semibold border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" oninput="this.nextElementSibling?.focus()">
-                                                <input type="text" maxlength="1" class="w-full h-12 text-center text-lg font-semibold border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" oninput="this.nextElementSibling?.focus()">
-                                                <input type="text" maxlength="1" class="w-full h-12 text-center text-lg font-semibold border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" oninput="this.nextElementSibling?.focus()">
-                                                <input type="text" maxlength="1" class="w-full h-12 text-center text-lg font-semibold border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                            </div>
-                                            <input type="hidden" id="otp" name="otp">
+                                        <div class="flex justify-between space-x-2" @paste="handlePaste($event)">
+                                            <template x-for="(_, index) in [0,1,2,3,4,5]" :key="index">
+                                                <div class="relative">
+                                                    <input 
+                                                        type="text" 
+                                                        maxlength="1" 
+                                                        x-ref="'otp-' + index"
+                                                        x-on:input="focusNext(index, $event)"
+                                                        x-on:keydown="handleKeyDown(index, $event)"
+                                                        x-init="index === 0 && $nextTick(() => $el.focus())"
+                                                        class="w-10 h-12 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 shadow-sm"
+                                                        :class="{'border-indigo-500 bg-indigo-50': $el.value.length > 0}"
+                                                    >
+                                                    <div x-show="index < 5" class="absolute top-1/2 -right-2 transform -translate-y-1/2 text-gray-300 pointer-events-none">
+                                                        <span>-</span>
+                                                    </div>
+                                                </div>
+                                            </template>
                                         </div>
-                                        <p class="mt-2 text-xs text-gray-500 text-center">
-                                            Vous n'avez pas reçu de code? 
-                                            <button type="button" @click="step = 1" class="text-indigo-600 hover:text-indigo-500 font-medium">
-                                                Réessayer
-                                            </button>
-                                        </p>
+                                        <input type="hidden" id="otp" name="otp">
                                     </div>
-
+                                    
+                                    <div class="flex items-center justify-between mt-6">
+                                        <button type="button" @click="step = 1" class="inline-flex items-center text-sm text-gray-600 hover:text-indigo-600">
+                                            <i data-lucide="arrow-left" class="h-4 w-4 mr-1"></i> Retour
+                                        </button>
+                                        
+                                        <button type="button" @click="step = 1" class="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                                            <i data-lucide="refresh-cw" class="h-4 w-4 mr-1"></i> Renvoyer le code
+                                        </button>
+                                    </div>
                                     <div>
                                         <button 
                                             type="submit" 
-                                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                            onclick="combineOTP()"
+                                            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-4"
+                                            @click.prevent="
+                                                const inputs = $el.closest('form').querySelectorAll('input[maxlength="1"]');
+                                                let otpValue = '';
+                                                inputs.forEach(input => { otpValue += input.value });
+                                                document.getElementById('otp').value = otpValue;
+                                                if (otpValue.length === 6) {
+                                                    $el.closest('form').submit();
+                                                } else {
+                                                    alert('Veuillez entrer les 6 chiffres du code OTP');
+                                                }
+                                            "
                                         >
-                                            Vérifier et se connecter
+                                            <i data-lucide="lock" class="h-5 w-5 mr-2"></i> Vérifier et se connecter
                                         </button>
                                     </div>
                                 </form>
