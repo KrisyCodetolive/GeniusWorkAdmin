@@ -42,7 +42,7 @@
                         <i class="fas fa-info-circle text-blue-500 mr-2 text-lg"></i>
                         <span class="font-semibold text-blue-800">Votre configuration actuelle</span>
                     </div>
-                    <p class="mt-2 text-gray-700">Vous avez actuellement l'abonnement <span class="font-bold">{{ $planAbonnementActuel->nom }}</span> avec un nombre maximum de<span class="font-bold"> {{ $planAbonnementActuel->nombre_employes_max }}</span> employés.</p>
+                    <p class="mt-2 text-gray-700">Vous avez actuellement l'abonnement <span class="font-bold">{{ $planAbonnementActuel->nom }}</span> avec un nombre maximum de<span class="font-bold"> {{$nombreEmployesActuel }}</span> employés.</p>
                 </div>
                 
                 <!-- Employee Count Selection -->
@@ -57,7 +57,7 @@
                                 <i class="fas fa-minus"></i>
                             </button>
                             <div class="relative flex-grow">
-                                <input type="number" id="custom-employees" min="{{ $planAbonnementActuel->nombre_employes_max }}" class="w-full px-4 py-4 text-lg border-y border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-center" placeholder="Ex: {{ $planAbonnementActuel->nombre_employes_max + 10 }}">
+                                <input type="number" id="custom-employees" min="{{ $nombreEmployesActuel }}" class="w-full px-4 py-4 text-lg border-y border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-center" placeholder="Ex: {{ $nombreEmployesActuel + 10 }}">
                                 <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                     <span class="text-gray-500">employés</span>
                                 </div>
@@ -66,7 +66,7 @@
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
-                        <p class="text-sm text-amber-600 mb-4"><i class="fas fa-info-circle mr-1"></i> Le nombre d'employés doit être supérieur ou égal à {{ $planAbonnementActuel->nombre_employes_max }} (votre forfait actuel).</p>
+                        <p class="text-sm text-amber-600 mb-4"><i class="fas fa-info-circle mr-1"></i> Le nombre d'employés doit être supérieur ou égal à {{ $nombreEmployesActuel }} (votre forfait actuel).</p>
                         
                         <button onclick="useCustomValue()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg smooth-transition text-lg font-medium">
                             <i class="fas fa-calculator mr-2"></i>Calculer mon abonnement
@@ -77,22 +77,22 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Suggestions rapides</label>
                         <div class="flex flex-wrap gap-2">
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 25 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 10 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 50 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 50 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 75 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 75 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 100 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 100 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 150 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 150 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 200 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 200 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 500 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 500 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 600 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 600 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 800 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 800 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 1000 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 1000 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 1500 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 1500 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 2000 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 2000 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 2500 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 2500 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 3000 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 3000 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 3500 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 3500 }}</span><span class="block text-sm text-gray-500">employés</span></button>
-                            <button onclick="selectEmployeeCount({{ $planAbonnementActuel->nombre_employes_max + 4000 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $planAbonnementActuel->nombre_employes_max + 4000 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 10 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 10 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 50 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 50 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 75 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 75 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 100 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 100 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 150 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 150 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 200 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 200 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 500 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 500 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 600 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 600 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 800 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 800 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 1000 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 1000 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 1500 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 1500 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 2000 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 2000 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 2500 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 2500 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 3000 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 3000 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 3500 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 3500 }}</span><span class="block text-sm text-gray-500">employés</span></button>
+                            <button onclick="selectEmployeeCount({{ $nombreEmployesActuel + 4000 }})" class="employee-quick-select bg-white border border-gray-200 rounded-lg py-3 px-4 text-center hover:bg-gray-50 smooth-transition focus:outline-none focus:ring-2 focus:ring-blue-500"><span class="block text-lg font-medium text-gray-800">{{ $nombreEmployesActuel + 4000 }}</span><span class="block text-sm text-gray-500">employés</span></button>
                         </div>
                     </div>
                 </div>
@@ -198,7 +198,7 @@
     <script>
         let selectedEmployeeCount = 0;
         let selectedPeriode = 'mensuel';
-        const minEmployees = {{ $planAbonnementActuel->nombre_employes_max }};
+        const minEmployees = {{ $nombreEmployesActuel }};
         
         function selectEmployeeCount(count) {
             selectedEmployeeCount = count;
@@ -261,23 +261,58 @@
                 // Update displayed values
                 document.getElementById('new-employee-count').textContent = selectedEmployeeCount + ' employés';
                 
-                // Déterminer le forfait et le coût fixe selon la même formule que le service PHP
+                // Déterminer le forfait et le coût fixe selon la même formule que le service TarificationService
                 let forfait = '';
                 let coutFixe = 0;
+                const COUT_PAR_EMPLOYE = 100; // Coût fixe par employé défini dans TarificationService
                 
-                if (selectedEmployeeCount >= 1 && selectedEmployeeCount <= 50) {
-                    forfait = 'Starter';
-                    coutFixe = 10000;
-                } else if (selectedEmployeeCount > 50 && selectedEmployeeCount <= 100) {
-                    forfait = 'Side Business';
-                    coutFixe = 15000;
-                } else if (selectedEmployeeCount > 100) {
-                    forfait = 'Enterprise';
-                    coutFixe = 30000;
+                // Structure des plans d'abonnement selon TarificationService
+                const PLANS = [
+                    // Starter
+                    {min: 0, max: 14, nom: 'Starter Level 1', cout_fixe: 15000},
+                    {min: 15, max: 24, nom: 'Starter Level 2', cout_fixe: 25000},
+                    
+                    // Business
+                    {min: 25, max: 49, nom: 'Business Level 1', cout_fixe: 35000},
+                    {min: 50, max: 74, nom: 'Business Level 2', cout_fixe: 50000},
+                    {min: 75, max: 99, nom: 'Business Level 3', cout_fixe: 75000},
+                    
+                    // Enterprise
+                    {min: 100, max: 199, nom: 'Enterprise Level 1', cout_fixe: 100000},
+                    {min: 200, max: 299, nom: 'Enterprise Level 2', cout_fixe: 200000},
+                    {min: 300, max: 399, nom: 'Enterprise Level 3', cout_fixe: 300000},
+                    {min: 400, max: 499, nom: 'Enterprise Level 4', cout_fixe: 400000},
+                    {min: 500, max: 599, nom: 'Enterprise Level 5', cout_fixe: 500000},
+                    {min: 600, max: 699, nom: 'Enterprise Level 6', cout_fixe: 600000},
+                    {min: 700, max: 799, nom: 'Enterprise Level 7', cout_fixe: 700000},
+                    {min: 800, max: 899, nom: 'Enterprise Level 8', cout_fixe: 800000},
+                    {min: 900, max: 999, nom: 'Enterprise Level 9', cout_fixe: 900000},
+                    {min: 1000, max: 1099, nom: 'Enterprise Level 10', cout_fixe: 1000000},
+                ];
+                
+                // Déterminer le plan approprié
+                let plan = null;
+                for (const p of PLANS) {
+                    if (selectedEmployeeCount >= p.min && selectedEmployeeCount <= p.max) {
+                        plan = p;
+                        break;
+                    }
+                }
+                
+                // Si le nombre d'employés dépasse les plans prédéfinis, calculer dynamiquement
+                if (!plan) {
+                    const niveau = Math.floor(selectedEmployeeCount / 100) + 1;
+                    const min = (niveau - 1) * 100;
+                    const max = min + 99;
+                    coutFixe = niveau * 100000;
+                    forfait = 'Enterprise Level ' + niveau;
+                } else {
+                    forfait = plan.nom;
+                    coutFixe = plan.cout_fixe;
                 }
                 
                 // Calculer le coût des utilisateurs
-                const coutUtilisateurs = selectedEmployeeCount * 100;
+                const coutUtilisateurs = selectedEmployeeCount * COUT_PAR_EMPLOYE;
                 
                 // Calculer le coût total en fonction de la période
                 let newPrice = coutFixe + coutUtilisateurs;

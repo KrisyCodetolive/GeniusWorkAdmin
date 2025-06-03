@@ -41,13 +41,14 @@ class ChangeAbonnementController extends Controller
         
         // Récupérer les plans d'abonnement disponibles
         $plansAbonnement = PlanAbonnement::actif()->parPriorite()->get();
-        
+
+
         return view('abonnements.change-form', [
             'abonnement' => $abonnement,
             'planAbonnementActuel' => $planAbonnementActuel,
             'entreprise' => $entreprise,
             'plansAbonnement' => $plansAbonnement,
-            'nombreEmployesActuel' => $abonnement->nombre_personnels ?? $entreprise->employes()->count(),
+            'nombreEmployesActuel' => $entreprise->nombre_employes,
             'typePeriodeActuel' => $abonnement->type_periode
         ]);
     }
@@ -63,19 +64,18 @@ class ChangeAbonnementController extends Controller
     {
         $abonnement = Abonnement::findOrFail($abonnementId);
         $planAbonnementActuel = $abonnement->planAbonnement;
-
+        $entreprise = $abonnement->entreprise;
         
         // Validation avec règle personnalisée pour le nombre d'employés
         $validated = $request->validate([
             'nombre_employes' => [
                 'required',
                 'integer',
-                'min:' . $planAbonnementActuel->nombre_employes_max // Doit être au moins égal au max du plan actuel
+                'min:' . $entreprise->nombre_employes // Doit être au moins égal au max du plan actuel
             ],
             'type_periode' => 'required|in:mensuel,annuel'
         ]);
-        
-        $entreprise = $abonnement->entreprise;
+
         
         try {
             // Préparer le changement d'abonnement
@@ -85,6 +85,7 @@ class ChangeAbonnementController extends Controller
                 $validated['type_periode']
             );
             
+
             // Stocker les informations dans la session pour les récupérer à l'étape suivante
             session()->put('changement_abonnement', [
                 'abonnement_id' => $abonnement->id,
@@ -95,6 +96,7 @@ class ChangeAbonnementController extends Controller
                 'montant' => $changementData['calcul_cout']
             ]);
             
+
             // Rediriger vers la page de paiement 
             return redirect()->route('abonnements.change.payment');
             

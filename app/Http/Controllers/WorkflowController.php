@@ -380,7 +380,6 @@ class WorkflowController extends Controller
                 ->with('error', 'Une erreur est survenue lors de la préparation du paiement. Veuillez réessayer.');
         }
 
-        //dd('subscription', session('subscription'));
 
         return view('workflow.payment', [
             'subscription' => session('subscription'),

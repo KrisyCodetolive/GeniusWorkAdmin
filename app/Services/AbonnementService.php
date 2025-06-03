@@ -39,26 +39,64 @@ class AbonnementService
             // Calculer le montant en utilisant la même logique que ChangeAbonnementService
             $nombreEmployes = $data['nombre_personnels'] ?? $entreprise->employes()->count();
             
+            // Coût par employé (fixe)
+            $coutParEmploye = 100;
+            
+            // Structure des plans d'abonnement selon TarificationService
+            $plans = [
+                // Starter
+                ['min' => 0, 'max' => 14, 'nom' => 'Starter Level 1', 'cout_fixe' => 15000],
+                ['min' => 15, 'max' => 24, 'nom' => 'Starter Level 2', 'cout_fixe' => 25000],
+                
+                // Business
+                ['min' => 25, 'max' => 49, 'nom' => 'Business Level 1', 'cout_fixe' => 35000],
+                ['min' => 50, 'max' => 74, 'nom' => 'Business Level 2', 'cout_fixe' => 50000],
+                ['min' => 75, 'max' => 99, 'nom' => 'Business Level 3', 'cout_fixe' => 75000],
+                
+                // Enterprise
+                ['min' => 100, 'max' => 199, 'nom' => 'Enterprise Level 1', 'cout_fixe' => 100000],
+                ['min' => 200, 'max' => 299, 'nom' => 'Enterprise Level 2', 'cout_fixe' => 200000],
+                ['min' => 300, 'max' => 399, 'nom' => 'Enterprise Level 3', 'cout_fixe' => 300000],
+                ['min' => 400, 'max' => 499, 'nom' => 'Enterprise Level 4', 'cout_fixe' => 400000],
+                ['min' => 500, 'max' => 599, 'nom' => 'Enterprise Level 5', 'cout_fixe' => 500000],
+                ['min' => 600, 'max' => 699, 'nom' => 'Enterprise Level 6', 'cout_fixe' => 600000],
+                ['min' => 700, 'max' => 799, 'nom' => 'Enterprise Level 7', 'cout_fixe' => 700000],
+                ['min' => 800, 'max' => 899, 'nom' => 'Enterprise Level 8', 'cout_fixe' => 800000],
+                ['min' => 900, 'max' => 999, 'nom' => 'Enterprise Level 9', 'cout_fixe' => 900000],
+                ['min' => 1000, 'max' => 1099, 'nom' => 'Enterprise Level 10', 'cout_fixe' => 1000000],
+            ];
+            
             // Déterminer le forfait et le coût fixe
             $coutFixe = 0;
+            $plan = null;
             
-            if ($nombreEmployes >= 1 && $nombreEmployes <= 50) {
-                $coutFixe = 10000;
-            } elseif ($nombreEmployes > 50 && $nombreEmployes <= 100) {
-                $coutFixe = 15000;
-            } elseif ($nombreEmployes > 100) {
-                $coutFixe = 30000;
+            // Trouver le plan approprié
+            foreach ($plans as $p) {
+                if ($nombreEmployes >= $p['min'] && $nombreEmployes <= $p['max']) {
+                    $plan = $p;
+                    break;
+                }
+            }
+            
+            // Si le nombre d'employés dépasse les plans prédéfinis, calculer dynamiquement
+            if ($plan === null) {
+                $niveau = floor($nombreEmployes / 100) + 1;
+                $min = ($niveau - 1) * 100;
+                $max = $min + 99;
+                $coutFixe = $niveau * 100000;
+            } else {
+                $coutFixe = $plan['cout_fixe'];
             }
             
             // Calculer le coût des utilisateurs
-            $coutUtilisateurs = $nombreEmployes * 100;
+            $coutUtilisateurs = $nombreEmployes * $coutParEmploye;
             
             // Calculer le coût total
             $montant = $coutFixe + $coutUtilisateurs;
             
             // Appliquer une réduction pour la période annuelle (10 mois au lieu de 12)
             if ($typePeriode === 'annuel') {
-                $montant = $montant * 12;
+                $montant = $montant * 10; // Correction: 10 mois au lieu de 12
             }
             
             // Appliquer le code promo si fourni
@@ -167,19 +205,57 @@ class AbonnementService
             $typePeriode = $data['type_periode'] ?? $abonnement->type_periode;
             $nombreEmployes = $data['nombre_personnels'] ?? $abonnement->nombre_personnels;
             
-            // Déterminer le forfait et le coût fixe selon la même formule que dans ChangeAbonnementService
-            $coutFixe = 0;
+            // Coût par employé (fixe)
+            $coutParEmploye = 100;
             
-            if ($nombreEmployes >= 1 && $nombreEmployes <= 50) {
-                $coutFixe = 10000;
-            } elseif ($nombreEmployes > 50 && $nombreEmployes <= 100) {
-                $coutFixe = 15000;
-            } elseif ($nombreEmployes > 100) {
-                $coutFixe = 30000;
+            // Structure des plans d'abonnement selon TarificationService
+            $plans = [
+                // Starter
+                ['min' => 0, 'max' => 14, 'nom' => 'Starter Level 1', 'cout_fixe' => 15000],
+                ['min' => 15, 'max' => 24, 'nom' => 'Starter Level 2', 'cout_fixe' => 25000],
+                
+                // Business
+                ['min' => 25, 'max' => 49, 'nom' => 'Business Level 1', 'cout_fixe' => 35000],
+                ['min' => 50, 'max' => 74, 'nom' => 'Business Level 2', 'cout_fixe' => 50000],
+                ['min' => 75, 'max' => 99, 'nom' => 'Business Level 3', 'cout_fixe' => 75000],
+                
+                // Enterprise
+                ['min' => 100, 'max' => 199, 'nom' => 'Enterprise Level 1', 'cout_fixe' => 100000],
+                ['min' => 200, 'max' => 299, 'nom' => 'Enterprise Level 2', 'cout_fixe' => 200000],
+                ['min' => 300, 'max' => 399, 'nom' => 'Enterprise Level 3', 'cout_fixe' => 300000],
+                ['min' => 400, 'max' => 499, 'nom' => 'Enterprise Level 4', 'cout_fixe' => 400000],
+                ['min' => 500, 'max' => 599, 'nom' => 'Enterprise Level 5', 'cout_fixe' => 500000],
+                ['min' => 600, 'max' => 699, 'nom' => 'Enterprise Level 6', 'cout_fixe' => 600000],
+                ['min' => 700, 'max' => 799, 'nom' => 'Enterprise Level 7', 'cout_fixe' => 700000],
+                ['min' => 800, 'max' => 899, 'nom' => 'Enterprise Level 8', 'cout_fixe' => 800000],
+                ['min' => 900, 'max' => 999, 'nom' => 'Enterprise Level 9', 'cout_fixe' => 900000],
+                ['min' => 1000, 'max' => 1099, 'nom' => 'Enterprise Level 10', 'cout_fixe' => 1000000],
+            ];
+            
+            // Déterminer le forfait et le coût fixe
+            $coutFixe = 0;
+            $plan = null;
+            
+            // Trouver le plan approprié
+            foreach ($plans as $p) {
+                if ($nombreEmployes >= $p['min'] && $nombreEmployes <= $p['max']) {
+                    $plan = $p;
+                    break;
+                }
+            }
+            
+            // Si le nombre d'employés dépasse les plans prédéfinis, calculer dynamiquement
+            if ($plan === null) {
+                $niveau = floor($nombreEmployes / 100) + 1;
+                $min = ($niveau - 1) * 100;
+                $max = $min + 99;
+                $coutFixe = $niveau * 100000;
+            } else {
+                $coutFixe = $plan['cout_fixe'];
             }
             
             // Calculer le coût des utilisateurs
-            $coutUtilisateurs = $nombreEmployes * 100;
+            $coutUtilisateurs = $nombreEmployes * $coutParEmploye;
             
             // Calculer le coût total
             $montant = $coutFixe + $coutUtilisateurs;

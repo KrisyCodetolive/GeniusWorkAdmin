@@ -130,8 +130,8 @@
                                 <p class="mt-1 text-lg font-semibold text-gray-900">{{ $abonnement->date_fin->format('d/m/Y') }}</p>
                             </div>
                             <div class="bg-white p-4 rounded-lg shadow-sm">
-                                <h3 class="text-sm font-medium text-gray-500">Montant</h3>
-                                <p class="mt-1 text-lg font-semibold text-gray-900">{{ number_format($abonnement->montant, 0, ',', ' ') }} FCFA</p>
+                                <h3 class="text-sm font-medium text-gray-500">Nombre d'employés</h3>
+                                <p class="mt-1 text-lg font-semibold text-gray-900">{{ $abonnement->nombre_employes }}</p>
                             </div>
                             <div class="bg-white p-4 rounded-lg shadow-sm">
                                 <h3 class="text-sm font-medium text-gray-500">Statut</h3>

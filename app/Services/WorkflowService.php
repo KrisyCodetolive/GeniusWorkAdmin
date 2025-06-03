@@ -194,19 +194,44 @@ class WorkflowService
             ]);
             
             // Définir les limites du nombre d'employés selon le plan
-            switch ($subscriptionData['subscription_plan']) {
-                case 'Starter':
-                    $plan->nombre_employes_min = 1;
-                    $plan->nombre_employes_max = 50;
-                    break;
-                case 'Side Business':
-                    $plan->nombre_employes_min = 51;
-                    $plan->nombre_employes_max = 100;
-                    break;
-                case 'Enterprise':
-                    $plan->nombre_employes_min = 101;
-                    $plan->nombre_employes_max = 1000; // Illimité
-                    break;
+            if (strpos($subscriptionData['subscription_plan'], 'Starter Level 1') !== false) {
+                $plan->nombre_employes_min = 0;
+                $plan->nombre_employes_max = 14;
+            } elseif (strpos($subscriptionData['subscription_plan'], 'Starter Level 2') !== false) {
+                $plan->nombre_employes_min = 15;
+                $plan->nombre_employes_max = 24;
+            } elseif (strpos($subscriptionData['subscription_plan'], 'Business Level 1') !== false) {
+                $plan->nombre_employes_min = 25;
+                $plan->nombre_employes_max = 49;
+            } elseif (strpos($subscriptionData['subscription_plan'], 'Business Level 2') !== false) {
+                $plan->nombre_employes_min = 50;
+                $plan->nombre_employes_max = 74;
+            } elseif (strpos($subscriptionData['subscription_plan'], 'Business Level 3') !== false) {
+                $plan->nombre_employes_min = 75;
+                $plan->nombre_employes_max = 99;
+            } elseif (preg_match('/Enterprise Level (\d+)/', $subscriptionData['subscription_plan'], $matches)) {
+                $level = (int)$matches[1];
+                $minEmployes = 100 + ($level - 1) * 100;
+                $maxEmployes = $minEmployes + 99;
+                $plan->nombre_employes_min = $minEmployes;
+                $plan->nombre_employes_max = $maxEmployes;
+            } else {
+                // Fallback pour les anciens plans
+                switch ($subscriptionData['subscription_plan']) {
+                    case 'Starter':
+                        $plan->nombre_employes_min = 0;
+                        $plan->nombre_employes_max = 24;
+                        break;
+                    case 'Business':
+                    case 'Side Business': // Pour compatibilité avec les anciens plans
+                        $plan->nombre_employes_min = 25;
+                        $plan->nombre_employes_max = 99;
+                        break;
+                    case 'Enterprise':
+                        $plan->nombre_employes_min = 100;
+                        $plan->nombre_employes_max = 1099;
+                        break;
+                }
             }
             
             $plan->save();
