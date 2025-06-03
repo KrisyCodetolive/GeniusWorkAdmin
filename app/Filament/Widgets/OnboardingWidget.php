@@ -75,14 +75,6 @@ class OnboardingWidget extends Widget
                 'complete' => $this->verifierSites(),
             ],
             [
-                'id' => 'departements',
-                'titre' => 'Départements',
-                'description' => 'Créez les départements de votre entreprise',
-                'icone' => 'heroicon-o-user-group',
-                'url' => route('filament.admin.resources.departements.index'),
-                'complete' => $this->verifierDepartements(),
-            ],
-            [
                 'id' => 'filiales',
                 'titre' => 'Filiales',
                 'description' => 'Ajoutez les filiales de votre entreprise (si applicable)',
@@ -90,6 +82,15 @@ class OnboardingWidget extends Widget
                 'url' => route('filament.admin.resources.filiales.index'),
                 'complete' => $this->verifierFiliales(),
             ],
+            [
+                'id' => 'departements',
+                'titre' => 'Départements',
+                'description' => 'Créez les départements de votre entreprise',
+                'icone' => 'heroicon-o-user-group',
+                'url' => route('filament.admin.resources.departements.index'),
+                'complete' => $this->verifierDepartements(),
+            ],
+       
             [
                 'id' => 'plages_horaires',
                 'titre' => 'Plages horaires',
@@ -115,8 +116,8 @@ class OnboardingWidget extends Widget
         
         $this->statistiques = [
             'sites' => Site::where('entreprise_id', $entrepriseId)->count(),
-            'departements' => Departement::where('entreprise_id', $entrepriseId)->count(),
             'filiales' => Filiale::where('entreprise_id', $entrepriseId)->count(),
+            'departements' => Departement::where('entreprise_id', $entrepriseId)->count(),
             'plages_horaires' => PlageHoraire::where('entreprise_id', $entrepriseId)->count(),
             'employes' => Employeur::where('entreprise_id', $entrepriseId)->count(),
         ];

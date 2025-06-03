@@ -96,23 +96,6 @@ class Onboarding extends Page
                 ]
             ],
             [
-                'id' => 'departements',
-                'titre' => 'Départements',
-                'description' => 'Créez les départements de votre entreprise',
-                'icone' => 'heroicon-o-user-group',
-                'url' => route('filament.admin.resources.departements.index'),
-                'complete' => $this->verifierDepartements(),
-                'statistiques' => [
-                    'total' => $this->statistiques['departements'] ?? 0,
-                    'objectif' => 'Au moins 1 département'
-                ],
-                'conseils' => [
-                    'Structurez vos départements selon votre organigramme',
-                    'Désignez un responsable pour chaque département',
-                    'Définissez clairement les missions de chaque département'
-                ]
-            ],
-            [
                 'id' => 'filiales',
                 'titre' => 'Filiales',
                 'description' => 'Ajoutez les filiales de votre entreprise (si applicable)',
@@ -129,6 +112,24 @@ class Onboarding extends Page
                     'Définissez les relations entre l\'entreprise mère et ses filiales'
                 ]
             ],
+            [
+                'id' => 'departements',
+                'titre' => 'Départements',
+                'description' => 'Créez les départements de votre entreprise',
+                'icone' => 'heroicon-o-user-group',
+                'url' => route('filament.admin.resources.departements.index'),
+                'complete' => $this->verifierDepartements(),
+                'statistiques' => [
+                    'total' => $this->statistiques['departements'] ?? 0,
+                    'objectif' => 'Au moins 1 département'
+                ],
+                'conseils' => [
+                    'Structurez vos départements selon votre organigramme',
+                    'Désignez un responsable pour chaque département',
+                    'Définissez clairement les missions de chaque département'
+                ]
+            ],
+        
             [
                 'id' => 'plages_horaires',
                 'titre' => 'Plages horaires',

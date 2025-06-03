@@ -20,18 +20,20 @@ class PresencesRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                Forms\Components\DateTimePicker::make('date_debut')
+                Forms\Components\DateTimePicker::make('date_heure_entree')
                     ->label('Date et heure de début')
                     ->required(),
-                Forms\Components\DateTimePicker::make('date_fin')
+                Forms\Components\DateTimePicker::make('date_heure_sortie')
                     ->label('Date et heure de fin')
                     ->required(),
                 Forms\Components\Select::make('statut')
                     ->label('Statut')
                     ->options([
-                        'en_attente' => 'En attente',
-                        'validee' => 'Validée',
+                        'present' => 'Présent',
+                        'absent' => 'Absent',
                         'rejetee' => 'Rejetée',
+                        'sortie' => 'Sortie',
+                        'conge' => 'Congé',
                     ])
                     ->required(),
                 Forms\Components\Select::make('site_id')
@@ -51,19 +53,19 @@ class PresencesRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('id')
             ->columns([
-                Tables\Columns\TextColumn::make('date_debut')
+                Tables\Columns\TextColumn::make('date_heure_entree')
                     ->label('Début')
                     ->dateTime()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('date_fin')
+                Tables\Columns\TextColumn::make('date_heure_sortie')
                     ->label('Fin')
                     ->dateTime()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('duree')
                     ->label('Durée')
                     ->getStateUsing(function ($record) {
-                        $debut = $record->date_debut;
-                        $fin = $record->date_fin;
+                        $debut = $record->date_heure_entree;
+                        $fin = $record->date_heure_sortie;
                         if (!$debut || !$fin) return '-';
                         
                         $interval = $debut->diff($fin);
@@ -73,9 +75,11 @@ class PresencesRelationManager extends RelationManager
                     ->label('Statut')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'validee' => 'success',
-                        'en_attente' => 'warning',
+                        'present' => 'success',
+                        'absent' => 'danger',
+                        'sortie' => 'warning',
                         'rejetee' => 'danger',
+                        'conge' => 'info',
                         default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('site.nom')
@@ -94,29 +98,31 @@ class PresencesRelationManager extends RelationManager
                 SelectFilter::make('statut')
                     ->label('Statut')
                     ->options([
-                        'en_attente' => 'En attente',
-                        'validee' => 'Validée',
+                        'present' => 'Présent',
+                        'absent' => 'Absent',
+                        'sortie' => 'Sortie',
                         'rejetee' => 'Rejetée',
+                        'conge' => 'Congé',
                     ]),
                 SelectFilter::make('site_id')
                     ->label('Site')
                     ->relationship('site', 'nom'),
-                Tables\Filters\Filter::make('date_debut')
+                Tables\Filters\Filter::make('date_heure_entree')
                     ->form([
-                        Forms\Components\DatePicker::make('date_debut_depuis')
+                        Forms\Components\DatePicker::make('date_heure_entree_depuis')
                             ->label('Depuis'),
-                        Forms\Components\DatePicker::make('date_debut_jusqua')
+                        Forms\Components\DatePicker::make('date_heure_entree_jusqua')
                             ->label('Jusqu\'à'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['date_debut_depuis'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('date_debut', '>=', $date),
+                                $data['date_heure_entree_depuis'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('date_heure_entree', '>=', $date),
                             )
                             ->when(
-                                $data['date_debut_jusqua'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('date_debut', '<=', $date),
+                                $data['date_heure_entree_jusqua'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('date_heure_entree', '<=', $date),
                             );
                     }),
             ])
@@ -132,6 +138,6 @@ class PresencesRelationManager extends RelationManager
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('date_debut', 'desc');
+            ->defaultSort('date_heure_entree', 'desc');
     }
 }
