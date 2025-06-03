@@ -448,16 +448,15 @@ class CongeResource extends Resource
     {
         $query = parent::getEloquentQuery();
         
-        // Si l'utilisateur n'est pas admin, filtrer les congés par employeur
-        if (!auth()->user()->isAdmin()) {
-            // Si l'utilisateur est manager, montrer les congés des employés de son département/entreprise
-            if (auth()->user()->isManager()) {
+        // Si l'utilisateur est admin, filtrer les congés par employeur
+        if (auth()->user()->isAdmin()) {
+          
                 // Logique pour récupérer les employés sous la responsabilité du manager
                 // À adapter selon votre modèle de données
                 $query->whereHas('employeur', function ($query) {
                     $query->where('entreprise_id', auth()->user()->entreprise_id);
                 });
-            } 
+             
         }
         
         // Trier les congés par ordre du plus récent au plus ancien

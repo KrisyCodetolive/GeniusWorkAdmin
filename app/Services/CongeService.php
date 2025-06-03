@@ -55,7 +55,7 @@ class CongeService
         // Vérifier le solde disponible si le congé est déductible
         if ($typeConge->estDeductible()) {
             $annee = $dateDebut->year;
-            $soldeConge = $this->getSoldeConge($user->id, $typeConge->id, $annee);
+            $soldeConge = $this->getSoldeConge($user->employeur->id, $typeConge->id, $annee);
             
             if (!$soldeConge || !$soldeConge->verifierDisponibilite($dureeJours)) {
                 throw new \Exception("Solde de congés insuffisant pour cette demande");
@@ -111,7 +111,7 @@ class CongeService
             $typeConge = $conge->typeConge;
             if ($typeConge->estDeductible()) {
                 $dateDebut = Carbon::parse($conge->date_debut);
-                $soldeConge = $this->getSoldeConge($conge->employeur->user_id, $typeConge->id, $dateDebut->year);
+                $soldeConge = $this->getSoldeConge($conge->employeur->id, $typeConge->id, $dateDebut->year);
                 
                 if ($soldeConge) {
                     $soldeConge->deduireSolde(
@@ -133,7 +133,7 @@ class CongeService
             
             // Envoyer une notification à l'employé
             try {
-                $user = User::find($conge->employeur->user_id);
+                $user = $conge->employeur->user;
                 if ($user) {
                     $user->notify(new CongeStatusNotification($conge, $pdfPath));
                 }
@@ -168,7 +168,7 @@ class CongeService
         
         // Envoyer une notification à l'employé
         try {
-            $user = User::find($conge->employeur->user_id);
+            $user = $conge->employeur->user;
             if ($user) {
                 $user->notify(new CongeStatusNotification($conge));
             }
@@ -197,7 +197,7 @@ class CongeService
             // Si le congé était approuvé et déductible, restaurer le solde
             if ($conge->estApprouve() && $conge->typeConge->estDeductible()) {
                 $dateDebut = Carbon::parse($conge->date_debut);
-                $soldeConge = $this->getSoldeConge($conge->employeur->user_id, $conge->typeConge->id, $dateDebut->year);
+                $soldeConge = $this->getSoldeConge($conge->employeur->id, $conge->typeConge->id, $dateDebut->year);
                 
                 if ($soldeConge) {
                     $soldeConge->ajouterSolde(
@@ -211,7 +211,7 @@ class CongeService
             
             // Envoyer une notification à l'employé
             try {
-                $user = User::find($conge->employeur->user_id);
+                $user = $conge->employeur->user;
                 if ($user) {
                     $user->notify(new CongeStatusNotification($conge));
                 }
@@ -227,14 +227,14 @@ class CongeService
     /**
      * Obtenir le solde de congé pour un utilisateur, un type et une année
      *
-     * @param int $userId ID de l'utilisateur
+     * @param int $employeurId ID de l'employeur
      * @param int $typeCongeId ID du type de congé
      * @param int $annee Année concernée
      * @return SoldeConge|null
      */
-    public function getSoldeConge($userId, $typeCongeId, $annee)
+    public function getSoldeConge($employeurId, $typeCongeId, $annee)
     {
-        return SoldeConge::where('user_id', $userId)
+        return SoldeConge::where('employeur_id', $employeurId)
             ->where('type_conge_id', $typeCongeId)
             ->where('annee', $annee)
             ->first();
@@ -243,17 +243,17 @@ class CongeService
     /**
      * Initialiser ou mettre à jour le solde de congé d'un utilisateur
      *
-     * @param int $userId ID de l'utilisateur
+     * @param int $employeurId ID de l'employeur
      * @param int $typeCongeId ID du type de congé
      * @param int $annee Année concernée
      * @param float $solde Solde à attribuer
      * @param string|null $commentaire Commentaire sur l'opération
      * @return SoldeConge
      */
-    public function initialiserSoldeConge($userId, $typeCongeId, $annee, $solde, $commentaire = null)
+    public function initialiserSoldeConge($employeurId, $typeCongeId, $annee, $solde, $commentaire = null)
     {
         $soldeConge = SoldeConge::firstOrNew([
-            'user_id' => $userId,
+            'employeur_id' => $employeurId,
             'type_conge_id' => $typeCongeId,
             'annee' => $annee
         ]);
@@ -278,19 +278,19 @@ class CongeService
     /**
      * Ajouter des jours au solde de congé d'un utilisateur
      *
-     * @param int $userId ID de l'utilisateur
+     * @param int $employeurId ID de l'employeur
      * @param int $typeCongeId ID du type de congé
      * @param int $annee Année concernée
      * @param float $jours Nombre de jours à ajouter
      * @param string|null $commentaire Commentaire sur l'opération
      * @return SoldeConge
      */
-    public function ajouterJoursSoldeConge($userId, $typeCongeId, $annee, $jours, $commentaire = null)
+    public function ajouterJoursSoldeConge($employeurId, $typeCongeId, $annee, $jours, $commentaire = null)
     {
-        $soldeConge = $this->getSoldeConge($userId, $typeCongeId, $annee);
+        $soldeConge = $this->getSoldeConge($employeurId, $typeCongeId, $annee);
         
         if (!$soldeConge) {
-            return $this->initialiserSoldeConge($userId, $typeCongeId, $annee, $jours, $commentaire);
+            return $this->initialiserSoldeConge($employeurId, $typeCongeId, $annee, $jours, $commentaire);
         }
         
         return $soldeConge->ajouterSolde($jours, $commentaire);
@@ -365,7 +365,7 @@ class CongeService
     {
         $annee = $annee ?? date('Y');
         
-        $soldes = SoldeConge::where('user_id', $user->id)
+        $soldes = SoldeConge::where('employeur_id', $user->employeur->id)
             ->where('annee', $annee)
             ->with('typeConge')
             ->get();
