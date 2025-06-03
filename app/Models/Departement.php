@@ -134,6 +134,17 @@ class Departement extends Model
             // Générer un nouveau code avec un suffixe supplémentaire
             $suffixe = substr(strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', Filiale::find($filialeId)->nom)), 0, 2);
             $nouveauCode = $prefix . $suffixe . str_pad($numero + 1, 3, '0', STR_PAD_LEFT);
+            
+            // Vérifier si le code est toujours en conflit
+            $codeExisteTjs = self::where('entreprise_id', $entrepriseId)
+                ->where('code', $nouveauCode)
+                ->exists();
+                
+            if ($codeExisteTjs) {
+                // Ajouter un timestamp pour garantir l'unicité
+                $timestamp = substr(time(), -4);
+                $nouveauCode = $prefix . $suffixe . $timestamp;
+            }
         }
         
         return $nouveauCode;
