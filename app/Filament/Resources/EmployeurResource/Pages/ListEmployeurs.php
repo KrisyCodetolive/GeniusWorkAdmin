@@ -8,6 +8,8 @@ use App\Filament\Widgets\EmployeurDepartementWidget;
 use App\Filament\Widgets\EmployeurTendanceWidget;
 use App\Filament\Widgets\EmployeeLimitWidget;
 use App\Filament\Actions\GenerateEmployeursExemplesAction;
+use App\Filament\Actions\ExporterEmployeursAction;
+use App\Filament\Actions\ImporterEmployeursAction;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -19,6 +21,18 @@ class ListEmployeurs extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
+            // Action pour importer des employés en masse
+            ImporterEmployeursAction::make()
+                ->visible(function () {
+                    $user = auth()->user();
+                    return $user->isAdmin() || $user->isSuperAdmin() || $user->isSupport();
+                }),
+            // Action pour exporter les données des employés
+            ExporterEmployeursAction::make()
+                ->visible(function () {
+                    $user = auth()->user();
+                    return $user->isAdmin() || $user->isSuperAdmin() || $user->isSupport();
+                }),
             // Page vue Stats pour les employeurs
             Actions\Action::make('stats')
                 ->label('Voir les stats')

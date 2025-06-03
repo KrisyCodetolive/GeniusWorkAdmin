@@ -82,12 +82,12 @@ class EntrepriseStatsWidget extends BaseWidget
             // Calculer le nombre d'employés par genre
             $employesHommes = Employeur::where('entreprise_id', $entreprise->id)
                 ->where('statut', 'actif')
-                ->where('genre', 'homme')
+                ->where('genre', 'M')
                 ->count();
                 
             $employesFemmes = Employeur::where('entreprise_id', $entreprise->id)
                 ->where('statut', 'actif')
-                ->where('genre', 'femme')
+                ->where('genre', 'F')
                 ->count();
                 
             $ratioGenre = $totalEmployes > 0 

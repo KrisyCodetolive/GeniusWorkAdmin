@@ -159,9 +159,8 @@ class EmployeurResource extends Resource
                                             Select::make('genre')
                                                 ->label('Genre')
                                                 ->options([
-                                                    'masculin' => 'Masculin',
-                                                    'feminin' => 'Féminin',
-                                                    'autre' => 'Autre',
+                                                    'M' => 'Masculin',
+                                                    'F' => 'Féminin',
                                                 ]),
                                             FileUpload::make('photo')
                                                 ->label('Photo')

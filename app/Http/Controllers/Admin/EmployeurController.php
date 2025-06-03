@@ -102,8 +102,7 @@ class EmployeurController extends Controller
         // Genres disponibles
         $genres = [
             'M' => 'Masculin',
-            'F' => 'Féminin',
-            'Autre' => 'Autre'
+            'F' => 'Féminin'
         ];
         
         return view('app.admin.employeurs.create', compact(
@@ -225,8 +224,7 @@ class EmployeurController extends Controller
         // Genres disponibles
         $genres = [
             'M' => 'Masculin',
-            'F' => 'Féminin',
-            'Autre' => 'Autre'
+            'F' => 'Féminin'
         ];
         
         return view('app.admin.employeurs.edit', compact(

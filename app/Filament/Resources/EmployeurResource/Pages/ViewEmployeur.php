@@ -56,6 +56,28 @@ class ViewEmployeur extends ViewRecord
                         ->send();
                 })
                 ->requiresConfirmation(),
+            Actions\Action::make('desactiverEmployeur')
+                ->label('Désactiver Employeur')
+                ->icon('heroicon-o-user-minus')
+                ->color('danger')
+                ->visible(fn ($record) => $record->estActif())
+                ->action(function () {
+                    $record = $this->getRecord();
+                    $record->statut = 'inactif';
+                    $record->save();
+                    
+                    // Désactiver également le QR Code
+                    $record->deactivateQRCode();
+                    
+                    Notification::make()
+                        ->title('Employeur désactivé avec succès')
+                        ->success()
+                        ->send();
+                })
+                ->requiresConfirmation()
+                ->modalHeading('Désactiver l\'employeur')
+                ->modalDescription('Êtes-vous sûr de vouloir désactiver cet employeur ? Cette action désactivera également son QR Code.')
+                ->modalSubmitActionLabel('Oui, désactiver'),
         ];
     }
 }
