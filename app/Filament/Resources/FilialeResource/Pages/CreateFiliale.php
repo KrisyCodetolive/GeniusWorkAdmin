@@ -136,7 +136,7 @@ class CreateFiliale extends CreateRecord
                                     Select::make('site_id')
                                         ->label('Site existant')
                                         ->options(function () {
-                                            $entrepriseId = request()->input('data.entreprise_id');
+                                            $entrepriseId = auth()->user->entreprise_id;
                                             if (!$entrepriseId) {
                                                 return [];
                                             }
