@@ -92,6 +92,14 @@ class WorkflowController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
+        // Vérifier si l'email existe déjà dans la base de données
+        $existingUser = \App\Models\User::where('email', $request->email)->first();
+        if ($existingUser) {
+            return redirect()->route('login')
+                ->with('info', 'Cet email est déjà utilisé. Veuillez vous connecter avec vos identifiants existants.')
+                ->with('email', $request->email);
+        }
+
         // Stocker les données dans la session pour l'étape suivante
         $request->session()->put('user_account', [
             'full_name' => $request->full_name,
@@ -108,6 +116,14 @@ class WorkflowController extends Controller
                 Log::info('User account created in database', ['user_id' => $user->id]);
             } catch (\Exception $e) {
                 Log::error('Error creating user account', ['error' => $e->getMessage()]);
+                // Si l'erreur est due à un utilisateur existant, rediriger vers la page de connexion
+                if (strpos($e->getMessage(), 'email est déjà utilisé') !== false) {
+                    return redirect()->route('login')
+                        ->with('info', $e->getMessage())
+                        ->with('email', $request->email);
+                }
+                // Sinon, afficher l'erreur sur la page actuelle
+                return redirect()->back()->withErrors(['email' => $e->getMessage()])->withInput();
             }
         }
 

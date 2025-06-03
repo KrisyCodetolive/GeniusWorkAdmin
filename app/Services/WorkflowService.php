@@ -21,6 +21,7 @@ class WorkflowService
      *
      * @param array $userData
      * @return User
+     * @throws \Exception Si l'utilisateur existe déjà
      */
     public function createUserAccount(array $userData)
     {
@@ -31,8 +32,8 @@ class WorkflowService
             $existingUser = User::where('email', $userData['email'])->first();
             
             if ($existingUser) {
-                Log::info('Utilisateur existant trouvé, réutilisation', ['user_id' => $existingUser->id]);
-                return $existingUser;
+                Log::info('Utilisateur existant trouvé, redirection vers login', ['user_id' => $existingUser->id]);
+                throw new \Exception('Cet email est déjà utilisé. Veuillez vous connecter avec vos identifiants existants.');
             }
             
             $user = User::create([
