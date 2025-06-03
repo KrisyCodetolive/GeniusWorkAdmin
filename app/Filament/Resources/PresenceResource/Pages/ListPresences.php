@@ -104,7 +104,22 @@ class ListPresences extends ListRecords
                     return redirect()->route('smart-clock.index');
                 }),
 
-                
+            \Filament\Actions\Action::make('downloadMobileApp')
+                ->label('Télécharger App Mobile')
+                ->icon('heroicon-o-device-phone-mobile')
+                ->color('primary')
+                //->url('https://linkqr.genius.ci/workapp')
+                ->extraAttributes([
+                    'x-on:click' => "window.dispatchEvent(new CustomEvent('open-modal', { detail: { id: 'download-mobile-app-modal' } }))",
+                ])
+                ->modalHeading('Application Mobile Genius Work')
+                ->modalDescription('L\'application mobile Genius Work est en cours de déploiement sur Play Store et App Store. En attendant, vous pouvez télécharger directement l\'APK pour Android.')
+                ->modalContent(function() {
+                    return view('filament.modals.download-mobile-app');
+                })
+                ->modalSubmitAction(false)
+                ->modalCancelAction(false),
+
         ];
     }
     
