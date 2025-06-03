@@ -12,7 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('entreprise_id')->constrained()->cascadeOnDelete();
             $table->string('nom');
-            $table->string('code')->unique();
+            $table->string('code');
             $table->text('description')->nullable();
             $table->boolean('necessite_photo')->default(false);
             $table->boolean('necessite_geolocalisation')->default(true);
@@ -25,6 +25,9 @@ return new class extends Migration
             $table->enum('statut', ['actif', 'inactif'])->default('actif');
             $table->timestamps();
             $table->softDeletes();
+            
+            // Création d'un index unique composite sur code et entreprise_id
+            $table->unique(['code', 'entreprise_id']);
         });
     }
 

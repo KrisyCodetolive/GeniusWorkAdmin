@@ -120,11 +120,26 @@ class RapportPresenceController extends Controller
         // Statistiques de validation
         $validation = $presences->groupBy('statut_validation')->map->count();
         
-        // Heures totales travaillées
-        $heuresTravaillees = $presences->sum('duree_effective') / 60; // Conversion en heures
+        // Heures totales travaillées - méthode améliorée
+        $tempsTotalMinutes = $presences->sum(function ($presence) {
+            // Si la durée effective est déjà calculée, l'utiliser
+            if (!empty($presence->duree_effective)) {
+                return $presence->duree_effective;
+            }
+            
+            // Sinon, calculer la durée à partir des dates d'entrée et de sortie
+            if ($presence->date_heure_entree && $presence->date_heure_sortie) {
+                return $presence->date_heure_entree->diffInMinutes($presence->date_heure_sortie);
+            }
+            
+            return 0;
+        });
+        
+        // Conversion en heures
+        $heuresTravaillees = $tempsTotalMinutes / 60;
         
         // Minutes totales de retard
-        $minutesRetard = $presences->sum('retard');
+        $minutesRetard = $presences->sum('retard') ?? 0;
         
         // Taux de présence (employés présents / total employés)
         $tauxPresence = $totalEmployes > 0 ? ($employesPresentIds / $totalEmployes) * 100 : 0;

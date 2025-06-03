@@ -24,6 +24,10 @@ class Presence extends Model
         'date_heure',
         'latitude',
         'longitude',
+        'latitude_entree',
+        'longitude_entree',
+        'latitude_sortie',
+        'longitude_sortie',
         'precision_geo',
         'adresse_ip',
         'appareil',
@@ -47,7 +51,15 @@ class Presence extends Model
         'minutes_pause',
         'date_heure_pause_debut',
         'date_heure_pause_fin',
-        'supplementaire_id'
+        'supplementaire_id',
+        'duree_effective',
+        'retard',
+        'adresse_ip_entree',
+        'adresse_ip_sortie',
+        'navigateur',
+        'appareil_entree',
+        'appareil_sortie',
+        'depart_anticipe',
     ];
 
     protected $casts = [
@@ -59,11 +71,22 @@ class Presence extends Model
         'date_validation' => 'datetime',
         'latitude' => 'decimal:6',
         'longitude' => 'decimal:6',
+        'latitude_entree' => 'decimal:6',
+        'longitude_entree' => 'decimal:6',
+        'latitude_sortie' => 'decimal:6',
+        'longitude_sortie' => 'decimal:6',
         'precision_geo' => 'decimal:2',
         'distance_site' => 'decimal:2',
         'verification_data' => 'array',
         'minutes_supplementaires' => 'integer',
-        'minutes_pause' => 'integer'
+        'minutes_pause' => 'integer',
+        'duree_effective' => 'integer',
+        'retard' => 'integer',
+        'adresse_ip_entree' => 'string',
+        'adresse_ip_sortie' => 'string',
+        'navigateur' => 'string',
+        'appareil_entree' => 'string',
+        'appareil_sortie' => 'string'
     ];
 
     // Relations
