@@ -15,6 +15,41 @@ class ListSites extends ListRecords
     {
         $user = auth()->user();
         $actions = [
+            Actions\Action::make('sites_restants')
+                ->label(function () {
+                    $entrepriseId = auth()->user()->entreprise_id;
+                    $sitesUtilises = \App\Models\Site::where('entreprise_id', $entrepriseId)->count();
+                    $sitesMax = 10; // Limite maximale de sites
+                    $sitesRestants = max(0, $sitesMax - $sitesUtilises);
+                    
+                    return $sitesRestants . ' Sites Restants';
+                })
+                ->icon('heroicon-o-building-office-2')
+                ->color(function () {
+                    $entrepriseId = auth()->user()->entreprise_id;
+                    $sitesUtilises = \App\Models\Site::where('entreprise_id', $entrepriseId)->count();
+                    $sitesMax = 10; // Limite maximale de sites
+                    $sitesRestants = max(0, $sitesMax - $sitesUtilises);
+                    
+                    // Rouge si moins de 20% restants, orange si moins de 50%, vert sinon
+                    if ($sitesRestants <= 2) {
+                        return 'danger';
+                    } elseif ($sitesRestants <= 5) {
+                        return 'warning';
+                    } else {
+                        return 'success';
+                    }
+                })
+                ->tooltip(function () {
+                    $entrepriseId = auth()->user()->entreprise_id;
+                    $sitesUtilises = \App\Models\Site::where('entreprise_id', $entrepriseId)->count();
+                    $sitesMax = 10; // Limite maximale de sites
+                    $sitesRestants = max(0, $sitesMax - $sitesUtilises);
+                    
+                    return "Vous pouvez encore créer $sitesRestants sites sur un total de $sitesMax";
+                })
+                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
+                
             Actions\CreateAction::make(),
             // Afficher le Maps ici 
             Actions\Action::make('viewMap')

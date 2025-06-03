@@ -14,6 +14,41 @@ class ListFiliales extends ListRecords
     {
         $user = auth()->user();
         $actions = [
+            Actions\CreateAction::make()
+                ->label(function () {
+                    $entrepriseId = auth()->user()->entreprise_id;
+                    $filialesUtilisees = \App\Models\Filiale::where('entreprise_id', $entrepriseId)->count();
+                    $filialesMax = 10; // Limite maximale de filiales
+                    $filialesRestantes = max(0, $filialesMax - $filialesUtilisees);
+                    
+                    return $filialesRestantes . ' Filiales Restantes';
+                })
+                ->icon('heroicon-o-building-office-2')
+                ->color(function () {
+                    $entrepriseId = auth()->user()->entreprise_id;
+                    $filialesUtilisees = \App\Models\Filiale::where('entreprise_id', $entrepriseId)->count();
+                    $filialesMax = 10; // Limite maximale de filiales
+                    $filialesRestantes = max(0, $filialesMax - $filialesUtilisees);
+                    
+                    // Rouge si moins de 20% restants, orange si moins de 50%, vert sinon
+                    if ($filialesRestantes <= 2) {
+                        return 'danger';
+                    } elseif ($filialesRestantes <= 5) {
+                        return 'warning';
+                    } else {
+                        return 'success';
+                    }
+                })
+                ->tooltip(function () {
+                    $entrepriseId = auth()->user()->entreprise_id;
+                    $filialesUtilisees = \App\Models\Filiale::where('entreprise_id', $entrepriseId)->count();
+                    $filialesMax = 10; // Limite maximale de filiales
+                    $filialesRestantes = max(0, $filialesMax - $filialesUtilisees);
+                    
+                    return "Vous pouvez encore créer $filialesRestantes filiales sur un total de $filialesMax";
+                })
+                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
+                
             Actions\CreateAction::make(),
         ];
 

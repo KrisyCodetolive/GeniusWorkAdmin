@@ -19,6 +19,14 @@ class ListVisites extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+
+            Actions\CreateAction::make()
+                ->label('Visites illimitées')
+                ->icon('heroicon-o-sparkles')
+                ->color('success')
+                ->tooltip("Vous pouvez créer un nombre illimité de visites")
+                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
+
             Actions\CreateAction::make()
                 ->label('Nouvelle visite')
                 ->icon('heroicon-o-plus-circle'),

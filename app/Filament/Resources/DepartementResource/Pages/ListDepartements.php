@@ -15,6 +15,13 @@ class ListDepartements extends ListRecords
     {
         $user = auth()->user();
         $actions = [
+            Actions\CreateAction::make()
+                ->label('Departements illimités')
+                ->icon('heroicon-o-sparkles')
+                ->color('success')
+                ->tooltip("Vous pouvez créer un nombre illimité de départements")
+                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
+                
             Actions\CreateAction::make(),
             // Page vue Stats pour les départements
             Actions\Action::make('stats')

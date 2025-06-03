@@ -76,7 +76,7 @@ class ListBulletinPaies extends ListRecords
                     ->whereMonth('periode_fin', $now->copy()->subMonth()->month)
                     ->whereYear('periode_fin', $now->copy()->subMonth()->year)),
                 
-            'trimestre' => Tab::make('Trimestre en cours')
+           /* 'trimestre' => Tab::make('Trimestre en cours')
                 ->icon('heroicon-o-calendar')
                 ->badge(BulletinPaie::where('entreprise_id', $entrepriseId)
                     ->whereBetween('periode_fin', [
@@ -89,7 +89,7 @@ class ListBulletinPaies extends ListRecords
                         $now->copy()->startOfQuarter(),
                         $now->copy()->endOfQuarter()
                     ])),
-                
+                */
             'annee' => Tab::make('Année ' . $now->year)
                 ->icon('heroicon-o-calendar')
                 ->badge(BulletinPaie::where('entreprise_id', $entrepriseId)
@@ -103,6 +103,42 @@ class ListBulletinPaies extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+        
+            Actions\CreateAction::make()
+            ->label(function () {
+                $entrepriseId = auth()->user()->entreprise_id;
+                $bulletinsUtilises = \App\Models\Paie\BulletinPaie::where('entreprise_id', $entrepriseId)->count();
+                $bulletinsMax = 100; // Limite maximale de bulletins
+                $bulletinsRestants = max(0, $bulletinsMax - $bulletinsUtilises);
+                
+                return $bulletinsRestants . ' Restants';
+            })
+            ->icon('heroicon-o-document-chart-bar')
+            ->color(function () {
+                $entrepriseId = auth()->user()->entreprise_id;
+                $bulletinsUtilises = \App\Models\Paie\BulletinPaie::where('entreprise_id', $entrepriseId)->count();
+                $bulletinsMax = 100; // Limite maximale de bulletins
+                $bulletinsRestants = max(0, $bulletinsMax - $bulletinsUtilises);
+                
+                // Rouge si moins de 10% restants, orange si moins de 30%, vert sinon
+                if ($bulletinsRestants <= 10) {
+                    return 'danger';
+                } elseif ($bulletinsRestants <= 30) {
+                    return 'warning';
+                } else {
+                    return 'success';
+                }
+            })
+            ->tooltip(function () {
+                $entrepriseId = auth()->user()->entreprise_id;
+                $bulletinsUtilises = \App\Models\Paie\BulletinPaie::where('entreprise_id', $entrepriseId)->count();
+                $bulletinsMax = 100; // Limite maximale de bulletins
+                $bulletinsRestants = max(0, $bulletinsMax - $bulletinsUtilises);
+                
+                return "Vous pouvez encore créer $bulletinsRestants bulletins de paie sur un total de $bulletinsMax";
+            })
+            ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
+
             Actions\CreateAction::make()
                 ->label('Nouveau bulletin')
                 ->icon('heroicon-o-plus')
@@ -110,14 +146,7 @@ class ListBulletinPaies extends ListRecords
                 ->tooltip('Créer un nouveau bulletin de paie')
                 ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
     
-            Actions\Action::make('configurations')
-                ->label('Configurations')
-                ->icon('heroicon-o-cog')
-                ->color('danger')
-                ->tooltip('Gérer les configurations de paie')
-                ->url(fn (): string => ConfigurationPaieResource::getUrl())
-                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
-                
+              
             ExporterBulletinsPaieAction::make()
                 ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin()),
                 
@@ -144,6 +173,14 @@ class ListBulletinPaies extends ListRecords
                     // Ne montrer l'action que si l'entreprise n'a pas encore de bulletins de paie
                     return $existingBulletins === 0;
                 }),
+                Actions\Action::make('configurations')
+                ->label('Configurations')
+                ->icon('heroicon-o-cog')
+                ->color('danger')
+                ->tooltip('Gérer les configurations de paie')
+                ->url(fn (): string => ConfigurationPaieResource::getUrl())
+                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
+             
         ];
     }
     
