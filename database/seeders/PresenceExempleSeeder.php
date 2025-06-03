@@ -89,7 +89,7 @@ class PresenceExempleSeeder extends Seeder
                     'date_heure_sortie' => $exitTime,
                     'statut' => $statut,
                     'commentaire' => 'Présence exemple générée automatiquement',
-                    'duree_effective' => $exitTime->diffInMinutes($entryTime),
+                    'duree_effective' => $entryTime->diffInMinutes($exitTime),
                     'retard' => $statut === 'retard' ? rand(15, 60) : 0,
                     'statut_validation' => 'approuve',
                     'validateur_id' => Auth::id(),

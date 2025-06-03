@@ -56,10 +56,9 @@ class TempsPresenceService
         $employesQuery = Employeur::where('entreprise_id', $entrepriseId)
             ->where('statut', 'actif');
         
-        // Filtrer par site si spécifié
-        if ($siteId) {
-            $employesQuery->where('site_id', $siteId);
-        }
+        // Nous ne filtrons pas directement les employés par site
+        // car la colonne site_id n'existe pas dans la table employeurs
+        // Le filtrage par site est déjà fait sur les présences
         
         $employes = $employesQuery->get();
         

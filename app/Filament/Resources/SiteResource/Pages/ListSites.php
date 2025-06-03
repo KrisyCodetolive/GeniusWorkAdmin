@@ -15,7 +15,7 @@ class ListSites extends ListRecords
     {
         $user = auth()->user();
         $actions = [
-            Actions\Action::make('sites_restants')
+            Actions\CreateAction::make()
                 ->label(function () {
                     $entrepriseId = auth()->user()->entreprise_id;
                     $sitesUtilises = \App\Models\Site::where('entreprise_id', $entrepriseId)->count();

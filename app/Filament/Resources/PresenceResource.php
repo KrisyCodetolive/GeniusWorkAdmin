@@ -368,17 +368,32 @@ class PresenceResource extends Resource
                     ->icon('heroicon-o-building-office'),
                 
                 Tables\Columns\TextColumn::make('duree_effective')
-                    ->label('Durée (min)')
+                    ->label('Durée')
+                    ->formatStateUsing(function ($state) {
+                        $heures = floor($state / 60);
+                        $minutes = $state % 60;
+                        return $heures . 'h ' . str_pad($minutes, 2, '0', STR_PAD_LEFT) . 'min';
+                    })
                     ->numeric()
                     ->sortable()
-                    ->icon('heroicon-o-stopwatch'),
+                    ->icon('heroicon-o-clock'),
                 
                 Tables\Columns\TextColumn::make('retard')
-                    ->label('Retard (min)')
+                    ->label('Retard')
+                    ->formatStateUsing(function ($state) {
+                        if ($state == 0) return '-';
+                        $heures = floor($state / 60);
+                        $minutes = $state % 60;
+                        if ($heures > 0) {
+                            return $heures . 'h ' . str_pad($minutes, 2, '0', STR_PAD_LEFT) . 'min';
+                        } else {
+                            return $minutes . ' min';
+                        }
+                    })
                     ->numeric()
                     ->sortable()
-                    ->toggleable(),
-                    // ->icon('heroicon-o-exclamation'),
+                    ->icon('heroicon-o-exclamation-circle')
+                    ->color('danger'),
                 
                 Tables\Columns\TextColumn::make('statut_validation')
                     ->label('Validation')
@@ -403,7 +418,7 @@ class PresenceResource extends Resource
                     ->label('Validé par')
                     ->searchable()
                     ->sortable()
-                    ->toggleable()
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->icon('heroicon-o-user-circle'),
                 
                 Tables\Columns\TextColumn::make('date_validation')
@@ -513,8 +528,11 @@ class PresenceResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
-                    ->icon('heroicon-o-pencil'),
+                ->label('')    
+                ->icon('heroicon-o-pencil'),
+
                 Tables\Actions\DeleteAction::make()
+                ->label('')
                     ->icon('heroicon-o-trash'),
                 Tables\Actions\Action::make('valider')
                     ->label('Valider')
@@ -593,7 +611,7 @@ class PresenceResource extends Resource
     {
         $query = parent::getEloquentQuery()
             ->withoutGlobalScopes([
-                SoftDeletingScope::class,
+               // SoftDeletingScope::class,
             ]);
             
         // Appliquer le filtre d'entreprise

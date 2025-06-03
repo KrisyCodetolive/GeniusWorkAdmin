@@ -19,6 +19,7 @@ use Filament\Forms\Components\Wizard\Step;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord\Concerns\HasWizard;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class CreateFiliale extends CreateRecord
 {
@@ -136,7 +137,7 @@ class CreateFiliale extends CreateRecord
                                     Select::make('site_id')
                                         ->label('Site existant')
                                         ->options(function () {
-                                            $entrepriseId = auth()->user->entreprise_id;
+                                            $entrepriseId = Auth::user()->entreprise_id;
                                             if (!$entrepriseId) {
                                                 return [];
                                             }

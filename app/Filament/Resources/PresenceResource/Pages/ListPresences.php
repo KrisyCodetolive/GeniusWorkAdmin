@@ -58,21 +58,13 @@ class ListPresences extends ListRecords
             GeneratePresenceReportAction::make()
                 ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
                 
-            GenerateHeuresTravailReportAction::make()
-                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
+         //   GenerateHeuresTravailReportAction::make()
+         //       ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
                 
             ImporterAnalyserPresenceAction::make()
                 ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
                 
-            \Filament\Actions\Action::make('retardsAbsences')
-                ->label('Retards & Absences')
-                ->icon('heroicon-o-exclamation-circle')
-                ->color('danger')
-                ->url(fn (): string => RetardAbsenceResource::getUrl())
-                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
-                
-            
-      
+         
             \Filament\Actions\Action::make('smartClock')
                 ->label('SmartClock')
                 ->icon('heroicon-o-qr-code')
@@ -111,6 +103,8 @@ class ListPresences extends ListRecords
                     // Rediriger vers la page SmartClock
                     return redirect()->route('smart-clock.index');
                 }),
+
+                
         ];
     }
     

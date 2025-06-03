@@ -29,6 +29,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Actions\Action;
 use Filament\Notifications\Notification;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Section;
 
 class DepartementResource extends Resource
 {
@@ -61,111 +63,205 @@ class DepartementResource extends Resource
         
         return $form
             ->schema([
-                Grid::make(3)
-                    ->schema([
-                        Card::make()
+                // Section principale avec des onglets pour une meilleure organisation
+                Tabs::make('Département')
+                    ->tabs([
+                        // Onglet des informations générales
+                        Tabs\Tab::make('Informations générales')
+                            ->icon('heroicon-o-information-circle')
                             ->schema([
-                                Select::make('entreprise_id')
-                                    ->label('Entreprise')
-                                    ->options(Entreprise::pluck('nom', 'id'))
-                                    ->required()
-                                    ->reactive()
-                                    ->afterStateUpdated(fn (callable $set) => $set('filiale_id', null))
-                                    ->visible($isSuperAdminOrSupport),
+                                Section::make('Identification')
+                                    ->description('Informations d\'identification du département')
+                                    ->icon('heroicon-o-identification')
+                                    ->schema([
+                                        Grid::make()
+                                            ->schema([
+                                                Select::make('entreprise_id')
+                                                    ->label('Entreprise')
+                                                    ->options(Entreprise::pluck('nom', 'id'))
+                                                    ->required()
+                                                    ->reactive()
+                                                    ->afterStateUpdated(fn (callable $set) => $set('filiale_id', null))
+                                                    ->visible($isSuperAdminOrSupport)
+                                                    ->searchable()
+                                                    ->columnSpanFull(),
+                                                
+                                                Select::make('filiale_id')
+                                                    ->label('Filiale')
+                                                    ->options(function (callable $get) {
+                                                        $entrepriseId = $get('entreprise_id');
+                                                        if (!$entrepriseId && !auth()->user()->isSuperAdmin() && !auth()->user()->isSupport()) {
+                                                            $entrepriseId = auth()->user()->entreprise_id;
+                                                        }
+                                                        if (!$entrepriseId) {
+                                                            return [];
+                                                        }
+                                                        return Filiale::where('entreprise_id', $entrepriseId)
+                                                            ->pluck('nom', 'id');
+                                                    })
+                                                    ->required()
+                                                    ->searchable()
+                                                    ->columnSpanFull(),
+                                                
+                                                TextInput::make('nom')
+                                                    ->label('Nom du département')
+                                                    ->required()
+                                                    ->maxLength(255)
+                                                    ->placeholder('Ex: Ressources Humaines')
+                                                    ->columnSpan([
+                                                        'default' => 2,
+                                                        'md' => 1,
+                                                    ]),
+                                                
+                                                TextInput::make('code')
+                                                    ->label('Code du département')
+                                                    ->maxLength(50)
+                                                    ->placeholder('Ex: RH')
+                                                    ->helperText('Laissez vide pour générer automatiquement')
+                                                    ->columnSpan([
+                                                        'default' => 2,
+                                                        'md' => 1,
+                                                    ]),
+                                            ])
+                                            ->columns([
+                                                'default' => 2,
+                                                'sm' => 2,
+                                                'md' => 2,
+                                                'lg' => 2,
+                                            ]),
+                                    ]),
                                 
-                                Select::make('filiale_id')
-                                    ->label('Filiale')
-                                    ->options(function (callable $get) {
-                                        $entrepriseId = $get('entreprise_id');
-                                        if (!$entrepriseId && !auth()->user()->isSuperAdmin() && !auth()->user()->isSupport()) {
-                                            $entrepriseId = auth()->user()->entreprise_id;
-                                        }
-                                        if (!$entrepriseId) {
-                                            return [];
-                                        }
-                                        return Filiale::where('entreprise_id', $entrepriseId)
-                                            ->pluck('nom', 'id');
-                                    })
-                                    ->required(),
-                                
-                                TextInput::make('nom')
-                                    ->required()
-                                    ->maxLength(255),
-                                
-                                TextInput::make('code')
-                                    ->maxLength(50)
-                                    ->helperText('Laissez vide pour générer automatiquement'),
-                                
-                                Textarea::make('description')
-                                    ->maxLength(500)
-                                    ->columnSpan(2),
-                            ])
-                            ->columnSpan(2),
+                                Section::make('Description')
+                                    ->description('Description détaillée du département')
+                                    ->icon('heroicon-o-document-text')
+                                    ->schema([
+                                        Textarea::make('description')
+                                            ->label('Description')
+                                            ->maxLength(500)
+                                            ->placeholder('Décrivez le rôle et les responsabilités de ce département')
+                                            ->columnSpanFull(),
+                                    ]),
+                            ]),
                         
-                        Card::make()
+                        // Onglet de la structure hiérarchique
+                        Tabs\Tab::make('Structure')
+                            ->icon('heroicon-o-chart-bar-square')
                             ->schema([
-                                Select::make('responsable_id')
-                                    ->label('Responsable')
-                                    ->options(function (callable $get) {
-                                        $entrepriseId = $get('entreprise_id');
-                                        if (!$entrepriseId) {
-                                            return [];
-                                        }
-                                        return Employeur::where('entreprise_id', $entrepriseId)
-                                            ->get()
-                                            ->mapWithKeys(function ($employeur) {
-                                                return [$employeur->id => $employeur->prenom . ' ' . $employeur->nom];
-                                            });
-                                    })
-                                    ->searchable(),
+                                Section::make('Hiérarchie')
+                                    ->description('Structure hiérarchique du département')
+                                    ->icon('heroicon-o-arrow-trending-up')
+                                    ->schema([
+                                        Grid::make()
+                                            ->schema([
+                                                Select::make('parent_id')
+                                                    ->label('Département parent')
+                                                    ->options(function (callable $get, ?Departement $record) {
+                                                        $filialeId = $get('filiale_id');
+                                                        if (!$filialeId) {
+                                                            return [];
+                                                        }
+                                                        
+                                                        $query = Departement::where('filiale_id', $filialeId);
+                                                        
+                                                        // Exclure le département actuel et ses descendants
+                                                        if ($record) {
+                                                            $descendants = $record->getTousLesSousDepartements()->pluck('id')->toArray();
+                                                            $descendants[] = $record->id;
+                                                            $query->whereNotIn('id', $descendants);
+                                                        }
+                                                        
+                                                        return $query->pluck('nom', 'id');
+                                                    })
+                                                    ->searchable()
+                                                    ->placeholder('Département principal')
+                                                    ->columnSpan([
+                                                        'default' => 2,
+                                                        'md' => 1,
+                                                    ]),
+                                                
+                                                TextInput::make('niveau')
+                                                    ->label('Niveau hiérarchique')
+                                                    ->disabled()
+                                                    ->helperText('Calculé automatiquement en fonction du parent')
+                                                    ->columnSpan([
+                                                        'default' => 2,
+                                                        'md' => 1,
+                                                    ]),
+                                            ])
+                                            ->columns([
+                                                'default' => 2,
+                                                'sm' => 2,
+                                                'md' => 2,
+                                                'lg' => 2,
+                                            ]),
+                                    ]),
                                 
-                                Select::make('parent_id')
-                                    ->label('Département parent')
-                                    ->options(function (callable $get, ?Departement $record) {
-                                        $filialeId = $get('filiale_id');
-                                        if (!$filialeId) {
-                                            return [];
-                                        }
-                                        
-                                        $query = Departement::where('filiale_id', $filialeId);
-                                        
-                                        // Exclure le département actuel et ses descendants
-                                        if ($record) {
-                                            $descendants = $record->getTousLesSousDepartements()->pluck('id')->toArray();
-                                            $descendants[] = $record->id;
-                                            $query->whereNotIn('id', $descendants);
-                                        }
-                                        
-                                        return $query->pluck('nom', 'id');
-                                    })
-                                    ->searchable(),
+                                Section::make('Responsable')
+                                    ->description('Personne en charge du département')
+                                    ->icon('heroicon-o-user')
+                                    ->schema([
+                                        Select::make('responsable_id')
+                                            ->label('Responsable du département')
+                                            ->options(function (callable $get) {
+                                                $entrepriseId = $get('entreprise_id');
+                                                if (!$entrepriseId && !auth()->user()->isSuperAdmin() && !auth()->user()->isSupport()) {
+                                                    $entrepriseId = auth()->user()->entreprise_id;
+                                                }
+                                                if (!$entrepriseId) {
+                                                    return [];
+                                                }
+                                                return Employeur::where('entreprise_id', $entrepriseId)
+                                                    ->get()
+                                                    ->mapWithKeys(function ($employeur) {
+                                                        return [$employeur->id => $employeur->prenom . ' ' . $employeur->nom];
+                                                    });
+                                            })
+                                            ->searchable()
+                                            ->placeholder('Sélectionnez un responsable')
+                                            ->columnSpanFull(),
+                                    ]),
+                            ]),
+                        
+                        // Onglet des configurations
+                        Tabs\Tab::make('Configuration')
+                            ->icon('heroicon-o-cog')
+                            ->schema([
+                                Section::make('Statut')
+                                    ->description('État actuel du département')
+                                    ->icon('heroicon-o-flag')
+                                    ->schema([
+                                        Select::make('statut')
+                                            ->label('Statut du département')
+                                            ->options([
+                                                Departement::STATUT_ACTIF => 'Actif',
+                                                Departement::STATUT_INACTIF => 'Inactif',
+                                            ])
+                                            ->default(Departement::STATUT_ACTIF)
+                                            ->required()
+                                            ->columnSpanFull(),
+                                    ]),
                                 
-                                TextInput::make('niveau')
-                                    ->label('Niveau hiérarchique')
-                                    ->disabled()
-                                    ->helperText('Calculé automatiquement'),
-                                
-                                Select::make('statut')
-                                    ->options([
-                                        Departement::STATUT_ACTIF => 'Actif',
-                                        Departement::STATUT_INACTIF => 'Inactif',
-                                    ])
-                                    ->default(Departement::STATUT_ACTIF)
-                                    ->required(),
-                                
-                                KeyValue::make('configuration')
-                                    ->keyLabel('Paramètre')
-                                    ->valueLabel('Valeur')
-                                    ->reorderable()
-                                    ->default([
-                                        'limite_employes' => '0',
-                                        'budget' => '0',
-                                    ])
-                                    ->columnSpan(2),
-                            ])
-                            ->columnSpan(1),
-                    ]),
-            ]);
+                                Section::make('Paramètres avancés')
+                                    ->description('Configuration spécifique du département')
+                                    ->icon('heroicon-o-adjustments-horizontal')
+                                    ->schema([
+                                        KeyValue::make('configuration')
+                                            ->label('Paramètres personnalisés')
+                                            ->keyLabel('Paramètre')
+                                            ->valueLabel('Valeur')
+                                            ->reorderable()
+                                            ->default([
+                                                'limite_employes' => '0',
+                                                'budget' => '0',
+                                            ])
+                                            ->addActionLabel('Ajouter un paramètre')
+                                            ->columnSpanFull(),
+                                    ]),
+                            ]),
+                    ])
+                    ->columnSpanFull(),
+            ])
+            ->columns(1);
     }
 
     public static function table(Table $table): Table
