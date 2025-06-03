@@ -127,6 +127,13 @@ class PlageHoraire extends Model
         $debut = Carbon::parse($this->heure_debut);
         $fin = Carbon::parse($this->heure_fin);
         
+        // Si l'heure de fin est avant l'heure de début, cela signifie que la plage s'étend sur deux jours
+        // Par exemple: début à 22h30 et fin à 6h00 le jour suivant
+        if ($fin->format('H:i') < $debut->format('H:i')) {
+            // Calculer la différence en ajoutant 24 heures (1 jour)
+            return $debut->diffInMinutes($fin->copy()->addDay());
+        }
+        
         return $debut->diffInMinutes($fin);
     }
 
