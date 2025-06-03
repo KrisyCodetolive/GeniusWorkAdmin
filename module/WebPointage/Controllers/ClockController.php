@@ -17,6 +17,7 @@ use App\Http\Requests;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Library\VoiceRSS;
+use Illuminate\Support\Facades\Log;
 
 class ClockController extends Controller
 {
@@ -521,7 +522,7 @@ class ClockController extends Controller
                         )
                     ];
                 } catch (\Exception $e) {
-                    \Log::error('Erreur lors du formatage d\'un log: ' . $e->getMessage());
+                    Log::error('Erreur lors du formatage d\'un log: ' . $e->getMessage());
                     return null;
                 }
             })
@@ -531,7 +532,7 @@ class ClockController extends Controller
             return response()->json($formattedLogs);
 
         } catch (\Exception $e) {
-            \Log::error('Erreur dans getRecentLogs: ' . $e->getMessage());
+            Log::error('Erreur dans getRecentLogs: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Erreur lors de la récupération des pointages',
                 'details' => $e->getMessage()

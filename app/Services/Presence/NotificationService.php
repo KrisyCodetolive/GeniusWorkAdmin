@@ -756,7 +756,7 @@ class NotificationService
                 );
                 $notification->marquerEmailEnvoye();
             } catch (\Exception $e) {
-                \Log::channel('presences')->error("Erreur lors de l'envoi de l'email de retard: " . $e->getMessage());
+                Log::channel('presences')->error("Erreur lors de l'envoi de l'email de retard: " . $e->getMessage());
             }
         }
         
@@ -769,7 +769,7 @@ class NotificationService
                 );
                 $notification->marquerSmsEnvoye();
             } catch (\Exception $e) {
-                \Log::channel('presences')->error("Erreur lors de l'envoi du SMS de retard: " . $e->getMessage());
+                Log::channel('presences')->error("Erreur lors de l'envoi du SMS de retard: " . $e->getMessage());
             }
         }
         
@@ -831,7 +831,7 @@ class NotificationService
                 );
                 $notification->marquerEmailEnvoye();
             } catch (\Exception $e) {
-                \Log::channel('presences')->error("Erreur lors de l'envoi de l'email d'absence: " . $e->getMessage());
+                Log::channel('presences')->error("Erreur lors de l'envoi de l'email d'absence: " . $e->getMessage());
             }
         }
         
@@ -844,7 +844,7 @@ class NotificationService
                 );
                 $notification->marquerSmsEnvoye();
             } catch (\Exception $e) {
-                \Log::channel('presences')->error("Erreur lors de l'envoi du SMS d'absence: " . $e->getMessage());
+                Log::channel('presences')->error("Erreur lors de l'envoi du SMS d'absence: " . $e->getMessage());
             }
         }
         
@@ -908,7 +908,7 @@ class NotificationService
                 );
                 $notification->marquerEmailEnvoye();
             } catch (\Exception $e) {
-                \Log::channel('presences')->error("Erreur lors de l'envoi de l'email de sortie manquante: " . $e->getMessage());
+                Log::channel('presences')->error("Erreur lors de l'envoi de l'email de sortie manquante: " . $e->getMessage());
             }
         }
         
@@ -921,7 +921,7 @@ class NotificationService
                 );
                 $notification->marquerSmsEnvoye();
             } catch (\Exception $e) {
-                \Log::channel('presences')->error("Erreur lors de l'envoi du SMS de sortie manquante: " . $e->getMessage());
+                Log::channel('presences')->error("Erreur lors de l'envoi du SMS de sortie manquante: " . $e->getMessage());
             }
         }
         

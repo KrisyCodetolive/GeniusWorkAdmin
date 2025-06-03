@@ -166,7 +166,7 @@ class ImpersonateWidget extends Widget implements HasForms
             // Rediriger vers le tableau de bord avec un message de succès
             return redirect()->to(route('filament.admin.pages.dashboard'));
         } catch (\Exception $exception) {
-            \Log::error('Erreur d\'impersonation: ' . $exception->getMessage());
+            Log::error('Erreur d\'impersonation: ' . $exception->getMessage());
             
             Notification::make()
                 ->title('Erreur')

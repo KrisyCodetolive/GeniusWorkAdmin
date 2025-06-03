@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Services\CongePdfService;
+use Illuminate\Support\Facades\Log;
 
 class CongeService
 {
@@ -127,7 +128,7 @@ class CongeService
                 $pdfPath = $pdfService->generatePdf($conge);
             } catch (\Exception $e) {
                 // Logger l'erreur mais continuer le processus
-                \Log::error('Erreur lors de la génération du PDF de congé: ' . $e->getMessage());
+                Log::error('Erreur lors de la génération du PDF de congé: ' . $e->getMessage());
             }
             
             // Envoyer une notification à l'employé
@@ -138,7 +139,7 @@ class CongeService
                 }
             } catch (\Exception $e) {
                 // Logger l'erreur mais continuer le processus
-                \Log::error('Erreur lors de l\'envoi de la notification de congé: ' . $e->getMessage());
+                Log::error('Erreur lors de l\'envoi de la notification de congé: ' . $e->getMessage());
             }
             
             return $conge;
@@ -173,7 +174,7 @@ class CongeService
             }
         } catch (\Exception $e) {
             // Logger l'erreur mais continuer le processus
-            \Log::error('Erreur lors de l\'envoi de la notification de congé: ' . $e->getMessage());
+            Log::error('Erreur lors de l\'envoi de la notification de congé: ' . $e->getMessage());
         }
         
         return $conge;
@@ -216,7 +217,7 @@ class CongeService
                 }
             } catch (\Exception $e) {
                 // Logger l'erreur mais continuer le processus
-                \Log::error('Erreur lors de l\'envoi de la notification de congé: ' . $e->getMessage());
+                Log::error('Erreur lors de l\'envoi de la notification de congé: ' . $e->getMessage());
             }
             
             return $conge;
