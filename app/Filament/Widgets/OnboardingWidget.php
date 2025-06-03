@@ -157,7 +157,7 @@ class OnboardingWidget extends Widget
     {
         // Les filiales sont optionnelles, donc cette étape est considérée comme complète
         // si au moins une filiale est ajoutée ou si l'entreprise n'en a pas besoin
-        return true;
+        return $this->statistiques['filiales'] > 0;
     }
     
     protected function verifierPlagesHoraires(): bool

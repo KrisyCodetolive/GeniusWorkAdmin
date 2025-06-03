@@ -98,13 +98,13 @@ class Onboarding extends Page
             [
                 'id' => 'filiales',
                 'titre' => 'Filiales',
-                'description' => 'Ajoutez les filiales de votre entreprise (si applicable)',
+                'description' => 'Ajoutez les filiales de votre entreprise',
                 'icone' => 'heroicon-o-building-storefront',
                 'url' => route('filament.admin.resources.filiales.index'),
                 'complete' => $this->verifierFiliales(),
                 'statistiques' => [
                     'total' => $this->statistiques['filiales'] ?? 0,
-                    'objectif' => 'Optionnel'
+                    'objectif' => 'Au moins 1 filiale'
                 ],
                 'conseils' => [
                     'Précisez la participation de votre entreprise dans chaque filiale',
@@ -214,7 +214,7 @@ class Onboarding extends Page
     {
         // Les filiales sont optionnelles, donc cette étape est considérée comme complète
         // si au moins une filiale est ajoutée ou si l'entreprise n'en a pas besoin
-        return true;
+        return $this->statistiques['filiales'] > 0;
     }
     
     protected function verifierPlagesHoraires(): bool

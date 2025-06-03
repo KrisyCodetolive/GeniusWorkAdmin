@@ -112,6 +112,12 @@ class MonEntrepriseResource extends Resource
                             ->url()
                             ->maxLength(255)
                             ->prefixIcon('heroicon-o-globe-alt'),
+                        // Nombre d'employés
+                        TextInput::make('nombre_employes')
+                            ->label('Nombre d\'employés')
+                            ->numeric()
+                            ->minValue(1)
+                            ->disabled(),    
                         
                         Textarea::make('description')
                             ->label('Description')

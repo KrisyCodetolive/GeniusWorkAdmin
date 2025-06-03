@@ -32,8 +32,21 @@ class WorkflowService
             $existingUser = User::where('email', $userData['email'])->first();
             
             if ($existingUser) {
-                Log::info('Utilisateur existant trouvé, redirection vers login', ['user_id' => $existingUser->id]);
-                throw new \Exception('Cet email est déjà utilisé. Veuillez vous connecter avec vos identifiants existants.');
+                // Vérifier s'il a une entreprise avec un abonnement actif
+                $hasActiveSubscription = $existingUser->entreprises()
+                    ->whereHas('abonnements', function($query) {
+                        $query->where('statut', 'actif');
+                    })
+                    ->exists();
+
+                if ($hasActiveSubscription) {
+                    Log::info('Utilisateur déjà associé à une entreprise active', ['user_id' => $existingUser->id]);
+                    throw new \Exception('Cet email est déjà utilisé et associé à une entreprise active. Veuillez vous connecter.');
+                }
+
+                // Sinon, on continue le process d'onboarding avec ce mail
+                Log::info('Utilisateur existant sans entreprise active, onboarding possible', ['user_id' => $existingUser->id]);
+                return $existingUser;
             }
             
             $user = User::create([
@@ -111,6 +124,7 @@ class WorkflowService
             $user->update([
                 'entreprise_id' => $entreprise->id
             ]);
+
             
             return $entreprise;
         });
