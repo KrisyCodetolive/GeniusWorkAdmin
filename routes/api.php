@@ -35,6 +35,29 @@ Route::prefix('terminals')->name('api.terminals.')->middleware('auth:sanctum')->
         ->name('verify-qr');
 });
 
+// API routes for sites
+Route::prefix('sites')->name('api.sites.')->middleware('auth:sanctum')->group(function () {
+    // Liste des sites de l'entreprise de l'utilisateur
+    Route::get('/', [App\Http\Controllers\Api\SiteController::class, 'index'])
+        ->name('index');
+    
+    // Détails d'un site spécifique
+    Route::get('/{id}', [App\Http\Controllers\Api\SiteController::class, 'show'])
+        ->name('show');
+    
+    // Vérifier si l'utilisateur est dans la zone d'un site
+    Route::post('/verifier-position', [App\Http\Controllers\Api\SiteController::class, 'verifierPosition'])
+        ->name('verifier-position');
+    
+    // Trouver le site le plus proche
+    Route::post('/site-proche', [App\Http\Controllers\Api\SiteController::class, 'siteProche'])
+        ->name('site-proche');
+    
+    // Statistiques des sites
+    Route::get('/statistiques', [App\Http\Controllers\Api\SiteController::class, 'statistiques'])
+        ->name('statistiques');
+});
+
 // API routes for mobile pointage
 Route::prefix('pointage')->name('api.pointage.')->group(function () {
     // Enregistrement d'un pointage

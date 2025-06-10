@@ -271,4 +271,60 @@ class SiteService
             'pourcentage_geofencing' => $totalSites > 0 ? round(($sitesAvecGeofencing / $totalSites) * 100, 2) : 0
         ];
     }
+    
+    /**
+     * Trouver le site le plus proche d'une position donnée
+     *
+     * @param float $latitude Latitude de la position
+     * @param float $longitude Longitude de la position
+     * @param string|null $entrepriseId ID de l'entreprise (optionnel)
+     * @return Site|null Le site le plus proche ou null si aucun site n'est trouvé
+     */
+    public function findNearestSite(float $latitude, float $longitude, ?string $entrepriseId = null): ?Site
+    {
+        $query = Site::query()->actif();
+        
+        if ($entrepriseId) {
+            $query->parEntreprise($entrepriseId);
+        }
+        
+        $sites = $query->get();
+        
+        if ($sites->isEmpty()) {
+            return null;
+        }
+        
+        $nearestSite = null;
+        $shortestDistance = PHP_FLOAT_MAX;
+        
+        foreach ($sites as $site) {
+            // Utiliser la méthode calculerDistance du modèle Site
+            $distance = $site->calculerDistance(
+                $latitude,
+                $longitude,
+                $site->latitude,
+                $site->longitude
+            );
+            
+            if ($distance < $shortestDistance) {
+                $shortestDistance = $distance;
+                $nearestSite = $site;
+            }
+        }
+        
+        return $nearestSite;
+    }
+    
+    /**
+     * Récupérer tous les sites d'une entreprise
+     *
+     * @param string $entrepriseId ID de l'entreprise
+     * @return \Illuminate\Database\Eloquent\Collection Collection de sites
+     */
+    public function getSitesByEntreprise(string $entrepriseId)
+    {
+        return Site::parEntreprise($entrepriseId)
+            ->orderBy('nom')
+            ->get();
+    }
 }
