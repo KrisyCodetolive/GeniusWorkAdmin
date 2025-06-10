@@ -44,6 +44,8 @@ class MobilePointageController extends Controller
                 'message' => 'Utilisateur non authentifié'
             ], 401);
         }
+        // Recuperer l'IP de l'utilisateur
+        $ip = $request->ip();
 
         // Valider les données de la requête
         $validator = Validator::make($request->all(), [
@@ -52,6 +54,8 @@ class MobilePointageController extends Controller
             'type' => 'nullable',
             'methode_pointage' => 'nullable|string',
             'token' => 'required',
+            'user_agent' => 'nullable|string',
+            'ip' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {

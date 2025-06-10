@@ -10,6 +10,7 @@ use App\Models\PlageHoraire;
 use App\Models\MethodePointage;
 use App\Models\Supplementaire;
 use App\Models\Politique;
+use App\Services\QREncryptionService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -40,9 +41,42 @@ class WebPointageService
     public function processPointage(Request $request)
     {
         try {
+
+            
+
             $idno = $request->idno;
-            // Récupérer l'employé par son identifiant QR
+            
+            // D'abord essayer de trouver l'employeur avec l'identifiant non crypté
             $employeur = Employeur::where('qr_code_secret', $idno)->first();
+            
+            if (!$employeur) {
+                // Vérifier si le QR code est crypté
+                try {
+                    // Vérifier si le QR code est valide et décrypter
+                    if (QREncryptionService::verifyQRData($idno)) {
+                        // Extraire l'ID de la carte décryptée
+                        $decryptedId = QREncryptionService::extractCardId($idno);
+                        
+                        // Chercher l'employeur avec l'ID décrypté
+                        $employeur = Employeur::where('id', $decryptedId)->first();
+                        
+                        if (!$employeur) {
+                            return [
+                                'status' => 'error',
+                                'message' => 'Identifiant employé non reconnu après décryptage '. $idno . ' ' . $decryptedId
+                            ];
+                            Log::info('Employeur non trouvé après décryptage : ' . $decryptedId . ' ' . $idno);
+                        }
+                        Log::info('Employeur trouvé après décryptage : ' . $employeur->id);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Erreur lors du décryptage du QR code : ' . $e->getMessage());
+                    return [
+                        'status' => 'error',
+                        'message' => 'QR code invalide ou expiré'
+                    ];
+                }
+            }
             
             if (!$employeur) {
                 return [

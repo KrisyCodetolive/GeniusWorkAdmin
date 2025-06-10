@@ -182,10 +182,13 @@ class MobilePointageService
                 if ($type === 'entree') {
                     $presence->latitude_entree = $request->lat;
                     $presence->longitude_entree = $request->lng;
-                    
+                    $presence->adresse_ip_entree = $request->ip;
+                    $presence->appareil_entree = $request->user_agent;
                 } else if ($type === 'sortie') {
                     $presence->latitude_sortie = $request->lat;
                     $presence->longitude_sortie = $request->lng;
+                    $presence->adresse_ip_sortie = $request->ip;
+                    $presence->appareil_sortie = $request->user_agent;
                 }
                 
                 // Calculer la distance par rapport au site si le site a des coordonnées
