@@ -38,7 +38,7 @@ class MobilePointageService
             // Récupérer le site (pour le mobile, on utilise un token spécial)
             $site = Site::where('entreprise_id', $employeur->entreprise_id)
                 ->where(function($query) use ($request) {
-                    $query->where('qr_token', $request->token);
+                    $query->where('id', $request->token);
                 })
                 ->first();
             

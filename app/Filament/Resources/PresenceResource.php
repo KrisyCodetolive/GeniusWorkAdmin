@@ -318,12 +318,14 @@ class PresenceResource extends Resource
                         'webpointage:qrcode_physique' => 'QR Code',
                         'mobile_app' => 'Mobile',
                         'biometric' => 'Biometric',
+                        null => 'Manual',
                         default => $state,
                     })
                     ->icon(fn (string $state): string => match ($state) {
                         'webpointage:qrcode_physique' => 'heroicon-o-qr-code',
                         'mobile_app' => 'heroicon-o-device-phone-mobile',
                         'biometric' => 'heroicon-o-finger-print',
+                        null => 'heroicon-o-hand-raised',
                         default => 'heroicon-o-device-computer',
                     })
                     ->searchable()

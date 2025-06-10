@@ -51,7 +51,7 @@ class MobilePointageController extends Controller
             'lng' => 'required|numeric',
             'type' => 'nullable',
             'methode_pointage' => 'nullable|string',
-            'token' => 'required|string',
+            'token' => 'required',
         ]);
 
         if ($validator->fails()) {
