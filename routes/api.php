@@ -62,6 +62,7 @@ Route::prefix('sites')->name('api.sites.')->middleware('auth:sanctum')->group(fu
 Route::prefix('pointage')->name('api.pointage.')->group(function () {
     // Enregistrement d'un pointage
     Route::post('/mobile', [App\Http\Controllers\Api\Presence\MobilePointageController::class, 'enregistrerPointage'])
+        ->middleware('auth:sanctum')
         ->name('mobile');
     
     // Synchronisation des pointages stockés localement

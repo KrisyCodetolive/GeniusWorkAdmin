@@ -35,15 +35,23 @@ class MobilePointageController extends Controller
      */
     public function enregistrerPointage(Request $request)
     {
+        // Récupérer l'utilisateur authentifié
+        $user = $request->user();
+        
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Utilisateur non authentifié'
+            ], 401);
+        }
+
         // Valider les données de la requête
         $validator = Validator::make($request->all(), [
-            'idno' => 'required|string',
-            'token' => 'required|string',
             'lat' => 'required|numeric',
             'lng' => 'required|numeric',
-            'type' => 'nullable|string|in:entree,sortie,pause_debut,pause_fin',
-            'isPause' => 'nullable|boolean',
+            'type' => 'nullable',
             'methode_pointage' => 'nullable|string',
+            'token' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -54,14 +62,25 @@ class MobilePointageController extends Controller
             ], 422);
         }
 
-        // Traiter le pointage
-        $result = $this->mobilePointageService->processPointage($request);
+        try {
+            // Traiter le pointage
+            $result = $this->mobilePointageService->processPointage($request);
+            
+            if (!is_array($result) || !isset($result['status'])) {
+                throw new \Exception('Format de réponse invalide du service de pointage ' . $result);
+            }
 
-        // Retourner la réponse
-        if ($result['status'] === 'success') {
-            return response()->json($result);
-        } else {
-            return response()->json($result, 400);
+            // Retourner la réponse
+            if ($result['status'] === 'success') {
+                return response()->json($result);
+            } else {
+                return response()->json($result, 400);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Une erreur est survenue lors du traitement du pointage: ' . $result . ' - ' . $e->getMessage()
+            ], 500);
         }
     }
 

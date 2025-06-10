@@ -10,6 +10,7 @@ use App\Models\MethodePointage;
 use App\Models\Supplementaire;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\Request;
 
 class MobilePointageService
@@ -23,21 +24,21 @@ class MobilePointageService
     public function processPointage(Request $request)
     {
         try {
-            // Récupérer l'employé par son identifiant QR
-            $employeur = Employeur::where('qr_code_secret', $request->idno)->first();
+            // Récupérer l'employé à partir de l'utilisateur authentifié
+            $user = $request->user();
+            $employeur = $user->employeur;
             
             if (!$employeur) {
                 return [
                     'status' => 'error',
-                    'message' => 'Identifiant employé non reconnu'
+                    'message' => 'Compte employé non trouvé'
                 ];
             }
             
             // Récupérer le site (pour le mobile, on utilise un token spécial)
             $site = Site::where('entreprise_id', $employeur->entreprise_id)
                 ->where(function($query) use ($request) {
-                    $query->where('qr_token', $request->token)
-                          ->orWhere('mobile_token', $request->token);
+                    $query->where('qr_token', $request->token);
                 })
                 ->first();
             
@@ -55,55 +56,62 @@ class MobilePointageService
                 }
             }
             
-            // Déterminer le type de pointage
+            // Récupérer ou créer la présence du jour
             $today = Carbon::today();
             $lastPresence = Presence::where('employeur_id', $employeur->id)
-                ->where(function($query) use ($today) {
-                    $query->whereDate('date_heure_entree', $today)
-                          ->orWhereDate('date_heure', $today);
-                })
-                ->latest('date_heure')
+                ->whereDate('date_heure_entree', $today)
+                ->where('type', 'entree')
                 ->first();
-            
-            // Déterminer le type de pointage en fonction de la demande
-            $type = $request->type ?? 'entree';
-            
-            // Vérifier si une demande de pause est faite
-            $isPause = $request->filled('isPause') && $request->isPause;
-            
-            if ($isPause) {
-                // Vérifier si l'entreprise autorise les pauses
-                $politique = \App\Models\Politique::where('entreprise_id', $employeur->entreprise_id)->first();
                 
-                if (!$politique || !$politique->activer_pauses) {
-                    return [
-                        'status' => 'error',
-                        'message' => 'Les pauses ne sont pas autorisées dans votre entreprise'
-                    ];
-                }
+            $isNewPresence = false;
+            $previousType = null;
+            $type = $request->type;
+            
+            if (!$lastPresence) {
+                // Aucune présence aujourd'hui, on en crée une nouvelle
+                $isNewPresence = true;
+                $type = 'entree'; // Premier pointage de la journée = entrée
+            } else {
+                // On a déjà une présence aujourd'hui, on garde une trace du type précédent
+                $previousType = $lastPresence->type;
                 
-                // Si on a déjà un pointage d'entrée aujourd'hui et qu'il n'est pas en pause
-                if ($lastPresence && 
-                    ($lastPresence->type === 'entree' || $lastPresence->type === 'pause_fin')) {
-                    $type = 'pause_debut';
+                // Déterminer le type de pointage (entrée, sortie, pause_debut, pause_fin)
+                $isPause = $request->filled('isPause') && $request->isPause;
+                
+                if ($isPause) {
+                    // Vérifier si l'entreprise autorise les pauses
+                    $politique = \App\Models\Politique::where('entreprise_id', $employeur->entreprise_id)->first();
+                    
+                    if (!$politique || !$politique->activer_pauses) {
+                        return [
+                            'status' => 'error',
+                            'message' => 'Les pauses ne sont pas autorisées dans votre entreprise'
+                        ];
+                    }
+                    
+                    // Si on a déjà un pointage d'entrée aujourd'hui et qu'il n'est pas en pause
+                    if ($lastPresence && 
+                        ($lastPresence->type === 'entree' || $lastPresence->type === 'pause_fin')) {
+                        $type = 'pause_debut';
+                    }
+                    // Si on est déjà en pause, c'est une fin de pause
+                    else if ($lastPresence && $lastPresence->type === 'pause_debut') {
+                        $type = 'pause_fin';
+                    }
                 }
-                // Si on est déjà en pause, c'est une fin de pause
-                else if ($lastPresence && $lastPresence->type === 'pause_debut') {
-                    $type = 'pause_fin';
-                }
-            }
-            // Si pas de demande de pause, on utilise le type fourni ou on déduit
-            else if (!$request->filled('type')) {
-                // Si on a déjà un pointage d'entrée aujourd'hui, c'est une sortie
-                if ($lastPresence && 
-                    ($lastPresence->type === 'entree' || 
-                     $lastPresence->type === 'pause_fin' ||
-                     ($lastPresence->date_heure_entree && !$lastPresence->date_heure_sortie))) {
-                    $type = 'sortie';
-                }
-                // Si on est en pause, c'est une fin de pause
-                else if ($lastPresence && $lastPresence->type === 'pause_debut') {
-                    $type = 'pause_fin';
+                // Si pas de demande de pause, on utilise le type fourni ou on déduit
+                else if (!$request->filled('type')) {
+                    // Si on a déjà un pointage d'entrée aujourd'hui, c'est une sortie
+                    if ($lastPresence && 
+                        ($lastPresence->type === 'entree' || 
+                         $lastPresence->type === 'pause_fin' ||
+                         ($lastPresence->date_heure_entree && !$lastPresence->date_heure_sortie))) {
+                        $type = 'sortie';
+                    }
+                    // Si on est en pause, c'est une fin de pause
+                    else if ($lastPresence && $lastPresence->type === 'pause_debut') {
+                        $type = 'pause_fin';
+                    }
                 }
             }
             
@@ -125,12 +133,17 @@ class MobilePointageService
                 }
             }
             
-            // Créer le nouvel enregistrement de présence
-            $presence = new Presence();
-            $presence->employeur_id = $employeur->id;
-            $presence->entreprise_id = $employeur->entreprise_id;
-            $presence->site_id = $site->id;
-            $presence->methode_pointage_id = $methodePointage->id;
+            // Créer ou mettre à jour l'enregistrement de présence
+            if ($isNewPresence) {
+                $presence = new Presence();
+                $presence->employeur_id = $employeur->id;
+                $presence->site_id = $site->id;
+                $presence->source = 'mobile_app';
+                $presence->date_heure_entree = Carbon::now();
+            } else {
+                $presence = $lastPresence;
+            }
+            
             $presence->type = $type;
             $presence->date_heure = Carbon::now();
             
@@ -163,12 +176,17 @@ class MobilePointageService
             }
             
             $presence->source = 'mobile_app';
-            $presence->statut = 'enregistre';
             
             // Ajouter les coordonnées géographiques si disponibles
             if ($request->filled(['lat', 'lng'])) {
-                $presence->latitude = $request->lat;
-                $presence->longitude = $request->lng;
+                if ($type === 'entree') {
+                    $presence->latitude_entree = $request->lat;
+                    $presence->longitude_entree = $request->lng;
+                    
+                } else if ($type === 'sortie') {
+                    $presence->latitude_sortie = $request->lat;
+                    $presence->longitude_sortie = $request->lng;
+                }
                 
                 // Calculer la distance par rapport au site si le site a des coordonnées
                 if ($site->latitude && $site->longitude) {
@@ -208,6 +226,7 @@ class MobilePointageService
                         $minutesRetard = Carbon::parse($heureActuelle)->diffInMinutes(Carbon::parse($heureDebut));
                         $presence->minutes_retard = $minutesRetard;
                         $presence->retard = true;
+                        $presence->statut = 'retard';
                     }
                 }
             } else if ($type === 'sortie') {
@@ -251,12 +270,11 @@ class MobilePointageService
                 }
             }
             
+            // Mettre à jour le statut de la présence en suivant les règles de validation strict
+            $presence->statut_validation = 'approuve';
+
             // Enregistrer la présence
             $presence->save();
-            
-            // Préparer le message de bienvenue/au revoir
-            $webPointageService = new WebPointageService();
-            $message = $webPointageService->getWelcomeMessage($employeur, $type);
             
             // Retourner les données
             return [
@@ -268,7 +286,6 @@ class MobilePointageService
                     'time' => Carbon::now()->format('H:i:s'),
                     'date' => Carbon::now()->format('d/m/Y'),
                     'site' => $site->nom,
-                    'message' => $message,
                     'retard' => $presence->retard ?? false,
                     'minutes_retard' => $presence->minutes_retard ?? 0,
                     'minutes_travaillees' => $presence->minutes_travaillees ?? 0,
@@ -283,7 +300,7 @@ class MobilePointageService
             
             return [
                 'status' => 'error',
-                'message' => 'Une erreur est survenue lors du traitement de votre pointage'
+                'message' => 'Une erreur est survenue lors du traitement de votre pointage ' . $e->getMessage()
             ];
         }
     }

@@ -40,8 +40,9 @@ class WebPointageService
     public function processPointage(Request $request)
     {
         try {
+            $idno = $request->idno;
             // Récupérer l'employé par son identifiant QR
-            $employeur = Employeur::where('qr_code_secret', $request->idno)->first();
+            $employeur = Employeur::where('qr_code_secret', $idno)->first();
             
             if (!$employeur) {
                 return [
@@ -72,6 +73,7 @@ class WebPointageService
             $today = Carbon::today();
             $presence = Presence::where('employeur_id', $employeur->id)
                 ->whereDate('date_heure_entree', $today)
+                ->where('type', 'entree')
                 ->first();
                 
             $isNewPresence = false;

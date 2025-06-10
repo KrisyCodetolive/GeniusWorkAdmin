@@ -312,6 +312,24 @@ class PresenceResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('source')
+                    ->label('Source')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'webpointage:qrcode_physique' => 'QR Code',
+                        'mobile_app' => 'Mobile',
+                        'biometric' => 'Biometric',
+                        default => $state,
+                    })
+                    ->icon(fn (string $state): string => match ($state) {
+                        'webpointage:qrcode_physique' => 'heroicon-o-qr-code',
+                        'mobile_app' => 'heroicon-o-device-phone-mobile',
+                        'biometric' => 'heroicon-o-finger-print',
+                        default => 'heroicon-o-device-computer',
+                    })
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: false),
+                
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
                     ->searchable()
@@ -337,23 +355,21 @@ class PresenceResource extends Resource
                     ->sortable()
                     ->icon('heroicon-o-user-circle'),
                 
-                Tables\Columns\TextColumn::make('statut')
-                    ->label('Statut')
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Type')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'present' => 'Présent',
-                        'absent' => 'Absent',
-                        'retard' => 'En retard',
-                        'sortie' => 'Sorti',
-                        'conge' => 'En congé',
+                        'entree' => 'Entrée',
+                        'sortie' => 'Sortie',
+                        'pause_debut' => 'Pause début',
+                        'pause_fin' => 'Pause fin',
                         default => $state,
                     })
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'present' => 'success',
-                        'absent' => 'danger',
-                        'retard' => 'warning',
-                        'sortie' => 'info',
-                        'conge' => 'gray',
+                        'entree' => 'success',
+                        'sortie' => 'danger',
+                        'pause_debut' => 'warning',
+                        'pause_fin' => 'info',
                         default => 'gray',
                     })
                     ->searchable()
@@ -364,36 +380,28 @@ class PresenceResource extends Resource
                     ->label('Site')
                     ->searchable()
                     ->sortable()
-                    ->toggleable()
                     ->icon('heroicon-o-building-office'),
                 
-                Tables\Columns\TextColumn::make('duree_effective')
+                Tables\Columns\TextColumn::make('minutes_travaillees')
                     ->label('Durée')
-                    ->formatStateUsing(function ($state) {
-                        $heures = floor($state / 60);
-                        $minutes = $state % 60;
-                        return $heures . 'h ' . str_pad($minutes, 2, '0', STR_PAD_LEFT) . 'min';
-                    })
                     ->numeric()
                     ->sortable()
                     ->icon('heroicon-o-clock'),
                 
                 Tables\Columns\TextColumn::make('retard')
                     ->label('Retard')
-                    ->formatStateUsing(function ($state) {
-                        if ($state == 0) return '-';
-                        $heures = floor($state / 60);
-                        $minutes = $state % 60;
-                        if ($heures > 0) {
-                            return $heures . 'h ' . str_pad($minutes, 2, '0', STR_PAD_LEFT) . 'min';
-                        } else {
-                            return $minutes . ' min';
-                        }
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        '1' => 'En retard',
+                        '0' => 'Ponctuel',
+                        default => $state,
                     })
-                    ->numeric()
                     ->sortable()
                     ->icon('heroicon-o-exclamation-circle')
-                    ->color('danger'),
+                    ->color(fn (string $state): string => match ($state) {
+                        '1' => 'danger',
+                        '0' => 'success',
+                        default => 'gray',
+                    }),
                 
                 Tables\Columns\TextColumn::make('statut_validation')
                     ->label('Validation')
@@ -412,6 +420,7 @@ class PresenceResource extends Resource
                     })
                     ->searchable()
                     ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->icon('heroicon-o-clipboard-document-check'),
                 
                 Tables\Columns\TextColumn::make('validateur.name')
