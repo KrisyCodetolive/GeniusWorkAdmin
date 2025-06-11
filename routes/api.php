@@ -112,6 +112,37 @@ Route::post('mobile/auth/resend-otp', [App\Http\Controllers\Api\Auth\EmployeAuth
 | Routes d'authentification pour les employés
 |--------------------------------------------------------------------------
 */
+// API routes for conges
+Route::prefix('conges')->name('api.conges.')->middleware('auth:sanctum')->group(function () {
+    // Liste des congés de l'utilisateur
+    Route::get('/', [App\Http\Controllers\Api\CongeController::class, 'index'])
+        ->name('index');
+    
+    // Créer une nouvelle demande
+    Route::post('/', [App\Http\Controllers\Api\CongeController::class, 'store'])
+        ->name('store');
+    
+    // Détails d'un congé
+    Route::get('/{conge}', [App\Http\Controllers\Api\CongeController::class, 'show'])
+        ->name('show');
+    
+    // Annuler une demande
+    Route::post('/{conge}/cancel', [App\Http\Controllers\Api\CongeController::class, 'cancel'])
+        ->name('cancel');
+    
+    // Approuver une demande
+    Route::post('/{conge}/approve', [App\Http\Controllers\Api\CongeController::class, 'approve'])
+        ->name('approve');
+    
+    // Rejeter une demande
+    Route::post('/{conge}/reject', [App\Http\Controllers\Api\CongeController::class, 'reject'])
+        ->name('reject');
+    
+    // Statistiques des congés
+    Route::get('/user/statistics', [App\Http\Controllers\Api\CongeController::class, 'statistics'])
+        ->name('statistics');
+});
+
 Route::group(['prefix' => 'auth'], function () {
     Route::post('login', [App\Http\Controllers\Api\Auth\EmployeAuthController::class, 'login']);
     Route::post('logout', [App\Http\Controllers\Api\Auth\EmployeAuthController::class, 'logout'])->middleware('auth:sanctum');
