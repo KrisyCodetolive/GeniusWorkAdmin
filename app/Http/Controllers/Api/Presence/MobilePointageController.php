@@ -461,4 +461,94 @@ class MobilePointageController extends Controller
             'results' => $results
         ]);
     }
+    
+    /**
+     * Récupère l'état de pointage actuel d'un employé
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getEtatPointage(Request $request)
+    {
+        try {
+            // Récupérer l'utilisateur authentifié
+            $user = $request->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Utilisateur non authentifié'
+                ], 401);
+            }
+            
+            // Vérifier si l'utilisateur a un employé associé
+            if (!$user->employeur) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Employé non trouvé'
+                ], 404);
+            }
+            
+            // Récupérer la date du jour (format Y-m-d)
+            $today = date('Y-m-d');
+            
+            // Récupérer les paramètres optionnels
+            $fields = $request->input('fields', 'is_checked_in,last_pointage_type,last_pointage_time');
+            $fieldsArray = explode(',', $fields);
+            
+            // Récupérer la dernière présence de l'employé pour aujourd'hui
+            $lastPointage = \App\Models\Presence::where('employeur_id', $user->employeur->id)
+                ->whereDate('created_at', $today)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            $result = [
+                'status' => 'success',
+                'data' => []
+            ];
+            
+            // Déterminer si l'employé est pointé ou non
+            $isCheckedIn = false;
+            $lastPointageType = null;
+            $lastPointageTime = null;
+            
+            if ($lastPointage) {
+                $lastPointageType = $lastPointage->type;
+                $lastPointageTime = $lastPointage->created_at->format('Y-m-d H:i:s');
+                
+                // L'employé est considéré comme pointé si son dernier pointage est de type 'entree' ou 'pause_fin'
+                $isCheckedIn = in_array($lastPointage->type, ['entree', 'pause_fin']);
+            }
+            
+            // Construire la réponse en fonction des champs demandés
+            if (in_array('is_checked_in', $fieldsArray)) {
+                $result['data']['is_checked_in'] = $isCheckedIn;
+            }
+            
+            if (in_array('last_pointage_type', $fieldsArray) && $lastPointageType) {
+                $result['data']['last_pointage_type'] = $lastPointageType;
+            }
+            
+            if (in_array('last_pointage_time', $fieldsArray) && $lastPointageTime) {
+                $result['data']['last_pointage_time'] = $lastPointageTime;
+            }
+            
+            // Ajouter des statistiques si demandées
+            if (in_array('stats', $fieldsArray)) {
+                // Calculer les statistiques de la journée
+                $stats = $this->mobilePointageService->calculateDailyStats($user->employeur->id, $today);
+                $result['data']['stats'] = $stats;
+            }
+            
+            return response()->json($result);
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Erreur lors de la récupération de l\'état de pointage: ' . $e->getMessage());
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Une erreur est survenue lors de la récupération de l\'état de pointage'
+            ], 500);
+        }
+    }
 }

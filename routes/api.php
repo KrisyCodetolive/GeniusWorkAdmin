@@ -91,6 +91,11 @@ Route::prefix('pointage')->name('api.pointage.')->group(function () {
     Route::post('/verifier-position', [App\Http\Controllers\Api\Presence\MobilePointageController::class, 'verifierPosition'])
         ->middleware('auth:sanctum')
         ->name('verifier-position');
+    
+    // Récupération de l'état de pointage actuel
+    Route::get('/etat-pointage', [App\Http\Controllers\Api\Presence\MobilePointageController::class, 'getEtatPointage'])
+        ->middleware('auth:sanctum')
+        ->name('etat-pointage');
 });
 
 /*
