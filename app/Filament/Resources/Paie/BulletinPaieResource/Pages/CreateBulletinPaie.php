@@ -119,6 +119,13 @@ class CreateBulletinPaie extends CreateRecord
     
     protected function getRedirectUrl(): string
     {
+        // Si on est en mode masse ou si $this->record n'est pas défini correctement,
+        // rediriger vers la liste des bulletins de paie
+        if (!isset($this->record) || !$this->record->exists || $this->record instanceof \App\Models\Employeur) {
+            return $this->getResource()::getUrl('index');
+        }
+        
+        // Sinon, rediriger vers la vue du bulletin créé
         return $this->getResource()::getUrl('view', ['record' => $this->record]);
     }
 

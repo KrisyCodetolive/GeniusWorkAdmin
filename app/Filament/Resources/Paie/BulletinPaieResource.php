@@ -314,18 +314,35 @@ class BulletinPaieResource extends Resource
                                     $salaireBrut = $calculPaieService->calculerSalaireBrut($employeur, $configuration, $elementsSupplementaires);
                                     $set('salaire_brut', $salaireBrut);
                                     
+                                    // Extraire les éléments imposables des éléments supplémentaires
+                                    $elementsImposables = [];
+                                    if (isset($elementsSupplementaires['indemnites'])) {
+                                        foreach ($elementsSupplementaires['indemnites'] as $indemnite) {
+                                            if (isset($indemnite['imposable']) && $indemnite['imposable']) {
+                                                $elementsImposables[] = $indemnite;
+                                            }
+                                        }
+                                    }
+                                    if (isset($elementsSupplementaires['primes'])) {
+                                        foreach ($elementsSupplementaires['primes'] as $prime) {
+                                            if (isset($prime['imposable']) && $prime['imposable']) {
+                                                $elementsImposables[] = $prime;
+                                            }
+                                        }
+                                    }
+                                    
                                     // Calculer les retenues
-                                    $retenues = $calculPaieService->calculerRetenues($employeur, $configuration, $salaireBrut, $elementsSupplementaires);
+                                    $retenues = $calculPaieService->calculerRetenuesSalariales($salaireBrut, $configuration, $elementsImposables);
                                     $set('cnps_employe', $retenues['cnps_employe']);
                                     $set('igr', $retenues['igr']);
-                                    $set('total_retenues', $retenues['total']);
+                                    $set('total_retenues', $retenues['total_retenues']);
                                     
                                     // Calculer le salaire net
-                                    $salaireNet = $calculPaieService->calculerSalaireNet($salaireBrut, $retenues['total']);
+                                    $salaireNet = $calculPaieService->calculerSalaireNet($salaireBrut, $retenues['total_retenues']);
                                     $set('salaire_net', $salaireNet);
                                     
                                     // Calculer les charges patronales
-                                    $chargesPatronales = $calculPaieService->calculerChargesPatronales($employeur, $configuration, $salaireBrut);
+                                    $chargesPatronales = $calculPaieService->calculerChargesPatronales($salaireBrut, $configuration);
                                     $set('charges_patronales', $chargesPatronales['total']);
                                     
                                     // Calculer les totaux des indemnités et primes
