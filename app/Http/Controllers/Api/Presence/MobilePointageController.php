@@ -96,30 +96,60 @@ class MobilePointageController extends Controller
      */
     public function getHistorique(Request $request)
     {
-        // Valider les données de la requête
-        $validator = Validator::make($request->all(), [
-            'idno' => 'required|string',
-            'date_debut' => 'nullable|date',
-            'date_fin' => 'nullable|date',
-            'limit' => 'nullable|integer|min:1|max:100',
-        ]);
+        try {
+            // Récupérer l'utilisateur authentifié
+            $user = $request->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Utilisateur non authentifié'
+                ], 401);
+            }
+            
+            // Vérifier si l'utilisateur a un employé associé
+            if (!$user->employeur) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Employé non trouvé'
+                ], 404);
+            }
+            
+            // Valider les données de la requête
+            $validator = Validator::make($request->all(), [
+                'date_debut' => 'nullable|date',
+                'date_fin' => 'nullable|date',
+                'limit' => 'nullable|integer|min:1|max:100',
+            ]);
 
-        if ($validator->fails()) {
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Données invalides',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Créer une nouvelle requête avec l'ID de l'employeur
+            $historiqueRequest = new Request($request->all());
+            $historiqueRequest->merge(['employeur' => $user->employeur]);
+            
+            // Récupérer l'historique
+            $result = $this->mobilePointageService->getHistorique($historiqueRequest);
+
+            // Retourner la réponse
+            if ($result['status'] === 'success') {
+                return response()->json($result);
+            } else {
+                return response()->json($result, 400);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Erreur lors de la récupération de l\'historique: ' . $e->getMessage());
+            
             return response()->json([
                 'status' => 'error',
-                'message' => 'Données invalides',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        // Récupérer l'historique
-        $result = $this->mobilePointageService->getHistorique($request);
-
-        // Retourner la réponse
-        if ($result['status'] === 'success') {
-            return response()->json($result);
-        } else {
-            return response()->json($result, 400);
+                'message' => 'Une erreur est survenue lors de la récupération de l\'historique'
+            ], 500);
         }
     }
 

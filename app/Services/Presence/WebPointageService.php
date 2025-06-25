@@ -566,8 +566,7 @@ class WebPointageService
     {
         $query = Presence::query();
         
-        // Filtrer par entreprise de l'employeur
-        $query->where('entreprise_id', $employeur->entreprise_id);
+        // Filtrer par employeur directement (pas besoin de filtrer par entreprise_id qui n'existe pas dans la table presences)
         
         // Si un employeur spécifique est demandé
         if (isset($filters['employeur_id']) && !empty($filters['employeur_id'])) {
@@ -609,8 +608,6 @@ class WebPointageService
             $query->where('type', $filters['type']);
         }
         
-        // Filtrage par source
-        $query->where('source', 'webpointage');
         
         // Tri par date décroissante (priorité aux nouveaux champs)
         $query->orderByRaw('COALESCE(date_heure_sortie, date_heure_entree, date_heure) DESC');

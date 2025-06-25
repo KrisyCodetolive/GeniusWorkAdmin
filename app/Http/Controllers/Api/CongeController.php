@@ -145,4 +145,19 @@ class CongeController extends Controller
 
         return response()->json($stats);
     }
+
+    /**
+     * Récupérer la liste des types de congés
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function types()
+    {
+        $typesConge = TypeConge::where('actif', true)->orderBy('nom')->get();
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $typesConge
+        ]);
+    }
 }

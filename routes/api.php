@@ -71,6 +71,7 @@ Route::prefix('pointage')->name('api.pointage.')->group(function () {
     
     // Historique des pointages
     Route::get('/historique', [App\Http\Controllers\Api\Presence\MobilePointageController::class, 'getHistorique'])
+        ->middleware('auth:sanctum')
         ->name('historique');
     
     // Statistiques de pointage
@@ -146,6 +147,10 @@ Route::prefix('conges')->name('api.conges.')->middleware('auth:sanctum')->group(
     // Statistiques des congés
     Route::get('/user/statistics', [App\Http\Controllers\Api\CongeController::class, 'statistics'])
         ->name('statistics');
+    
+    // Liste des types de congés
+    Route::get('/types', [App\Http\Controllers\Api\CongeController::class, 'types'])
+        ->name('types');
 });
 
 Route::group(['prefix' => 'auth'], function () {

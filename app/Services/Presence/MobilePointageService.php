@@ -317,13 +317,13 @@ class MobilePointageService
     public function getHistorique(Request $request)
     {
         try {
-            // Récupérer l'employeur
-            $employeur = Employeur::where('qr_code_secret', $request->idno)->first();
+            // Récupérer l'employeur directement depuis la requête
+            $employeur = $request->employeur;
             
             if (!$employeur) {
                 return [
                     'status' => 'error',
-                    'message' => 'Identifiant employé non reconnu'
+                    'message' => 'Employeur non trouvé'
                 ];
             }
             
