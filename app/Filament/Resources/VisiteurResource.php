@@ -102,12 +102,17 @@ class VisiteurResource extends Resource
                                         function () {
                                             return function (string $attribute, $value, \Closure $fail) {
                                                 $entrepriseId = request()->get('entreprise_id');
-                                                $record = \Filament\Facades\Filament::getCurrentResource()::getRecordInstance();
+                                                $record = null;
+                                                
+                                                // Get the current record if we're in an edit form
+                                                if (request()->route('record')) {
+                                                    $record = request()->route('record');
+                                                }
                                                 
                                                 $query = \App\Models\Visiteur::where('telephone', $value)
                                                     ->where('entreprise_id', $entrepriseId);
                                                 
-                                                if ($record && $record->exists) {
+                                                if ($record) {
                                                     $query->where('id', '!=', $record->id);
                                                 }
                                                 
