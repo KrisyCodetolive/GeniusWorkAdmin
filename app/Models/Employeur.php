@@ -117,6 +117,18 @@ class Employeur extends Model
     {
         return $this->hasMany(Tracking::class);
     }
+    
+    /**
+     * Relation avec les équipes
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function equipes()
+    {
+        return $this->belongsToMany(Equipe::class, 'equipe_employeur')
+            ->withTimestamps()
+            ->withPivot(['est_actif', 'date_debut', 'date_fin']);
+    }
 
     // Scopes
     public function scopeActif($query)
