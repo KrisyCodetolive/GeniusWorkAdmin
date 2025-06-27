@@ -366,6 +366,101 @@ class EmployeAuthController extends Controller
             'message' => 'Un nouveau code de vérification a été envoyé',
         ]);
     }
+    
+    /**
+     * Demande un code OTP pour l'authentification par numéro de téléphone
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function requestOtp(Request $request)
+    {
+        // Valider les données de la requête
+        $validator = Validator::make($request->all(), [
+            'phone_number' => 'required|string|min:8',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Numéro de téléphone invalide',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+        
+        // Formater le numéro de téléphone
+        $phoneNumber = $request->phone_number;
+        $phoneNumber = preg_replace('/[^0-9+]/', '', $phoneNumber);
+        
+        // S'assurer que le numéro commence par +
+        if (!str_starts_with($phoneNumber, '+')) {
+            // Si le numéro commence par 00, remplacer par +
+            if (str_starts_with($phoneNumber, '00')) {
+                $phoneNumber = '+' . substr($phoneNumber, 2);
+            } else {
+                // Sinon, ajouter le préfixe +225 (Côte d'Ivoire) par défaut
+                if (str_starts_with($phoneNumber, '0')) {
+                    $phoneNumber = '+225' . substr($phoneNumber, 1);
+                } else {
+                    $phoneNumber = '+225' . $phoneNumber;
+                }
+            }
+        }
+
+        // Rechercher l'employé par numéro de téléphone
+        $employe = Employeur::where('telephone', 'like', '%' . substr($phoneNumber, -9) . '%')
+                           ->where('statut', 'actif')
+                           ->first();
+
+        if (!$employe) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Aucun employé trouvé avec ce numéro de téléphone'
+            ], 404);
+        }
+
+        // Récupérer ou créer un utilisateur pour cet employé
+        $user = $this->getOrCreateUserForEmploye($employe);
+        
+        // Vérifier si un code a été envoyé récemment (limiter les abus)
+        if ($this->otpService->isThrottled($user->id)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Veuillez attendre avant de demander un nouveau code',
+            ], 429);
+        }
+        
+        // Générer un code OTP
+        $otpCode = $this->otpService->generateOtp($user->id);
+        
+        // Envoyer le code par SMS
+        $sent = $this->otpService->sendOtp($phoneNumber, $otpCode);
+        
+        if (!$sent) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Échec de l\'envoi du SMS. Veuillez réessayer plus tard.',
+            ], 500);
+        }
+        
+        // Mettre à jour la dernière tentative de connexion
+        $user->update([
+            'last_login_at' => now(),
+            'last_login_ip' => $request->ip()
+        ]);
+        
+        return response()->json([
+            'status' => 'success',
+            'user_id' => $user->id,
+            'employe' => [
+                'id' => $employe->id,
+                'nom' => $employe->nom,
+                'prenom' => $employe->prenom,
+                'telephone' => $phoneNumber,
+            ],
+            'message' => 'Un code de vérification a été envoyé à votre téléphone',
+        ]);
+    }
 
     /**
      * Vérifie si le token est valide

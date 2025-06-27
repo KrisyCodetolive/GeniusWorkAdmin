@@ -153,7 +153,7 @@ class CongeController extends Controller
      */
     public function types()
     {
-        $typesConge = TypeConge::where('actif', true)->orderBy('nom')->get();
+        $typesConge = TypeConge::orderBy('nom')->get();
         
         return response()->json([
             'status' => 'success',

@@ -112,6 +112,7 @@ Route::get('mobile/auth/verify', [App\Http\Controllers\Api\Auth\EmployeAuthContr
 // Routes OTP pour l'authentification mobile
 Route::post('mobile/auth/verify-otp', [App\Http\Controllers\Api\Auth\EmployeAuthController::class, 'verifyOtp'])->name('mobile.auth.verify-otp');
 Route::post('mobile/auth/resend-otp', [App\Http\Controllers\Api\Auth\EmployeAuthController::class, 'resendOtp'])->name('mobile.auth.resend-otp');
+Route::post('mobile/auth/request-otp', [App\Http\Controllers\Api\Auth\EmployeAuthController::class, 'requestOtp'])->name('mobile.auth.request-otp');
 
 /*
 |--------------------------------------------------------------------------
@@ -128,6 +129,14 @@ Route::prefix('conges')->name('api.conges.')->middleware('auth:sanctum')->group(
     Route::post('/', [App\Http\Controllers\Api\CongeController::class, 'store'])
         ->name('store');
     
+    // Liste des types de congés
+    Route::get('/types', [App\Http\Controllers\Api\CongeController::class, 'types'])
+        ->name('types');
+    
+    // Statistiques des congés
+    Route::get('/user/statistics', [App\Http\Controllers\Api\CongeController::class, 'statistics'])
+        ->name('statistics');
+    
     // Détails d'un congé
     Route::get('/{conge}', [App\Http\Controllers\Api\CongeController::class, 'show'])
         ->name('show');
@@ -143,14 +152,6 @@ Route::prefix('conges')->name('api.conges.')->middleware('auth:sanctum')->group(
     // Rejeter une demande
     Route::post('/{conge}/reject', [App\Http\Controllers\Api\CongeController::class, 'reject'])
         ->name('reject');
-    
-    // Statistiques des congés
-    Route::get('/user/statistics', [App\Http\Controllers\Api\CongeController::class, 'statistics'])
-        ->name('statistics');
-    
-    // Liste des types de congés
-    Route::get('/types', [App\Http\Controllers\Api\CongeController::class, 'types'])
-        ->name('types');
 });
 
 Route::group(['prefix' => 'auth'], function () {
@@ -161,4 +162,5 @@ Route::group(['prefix' => 'auth'], function () {
     // Routes pour l'authentification OTP
     Route::post('verify-otp', [App\Http\Controllers\Api\Auth\EmployeAuthController::class, 'verifyOtp']);
     Route::post('resend-otp', [App\Http\Controllers\Api\Auth\EmployeAuthController::class, 'resendOtp']);
+    Route::post('request-otp', [App\Http\Controllers\Api\Auth\EmployeAuthController::class, 'requestOtp']);
 });
