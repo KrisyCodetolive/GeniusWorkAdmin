@@ -10,7 +10,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class EmployeAuthController extends Controller
 {
@@ -26,6 +28,72 @@ class EmployeAuthController extends Controller
     {
         $this->otpService = $otpService;
     }
+    
+    /**
+     * Vérifie la compatibilité de l'appareil avec le compte de l'employé
+     * 
+     * @param \App\Models\Employeur $employe
+     * @param string $deviceModel
+     * @param string $deviceId
+     * @return array
+     */
+    protected function checkDeviceCompatibility(Employeur $employe, string $deviceModel, string $deviceId): array
+    {
+        // Récupérer la configuration actuelle
+        $config = $employe->configuration ?? [];
+        
+        // Si aucun appareil n'est enregistré, autoriser celui-ci
+        if (empty($config['device_model'])) {
+            return ['status' => 'success'];
+        }
+        
+        // Si l'appareil est différent de celui enregistré
+        if ($config['device_model'] !== $deviceModel) {
+            // Vérifier si l'ID de l'appareil correspond (même modèle mais ID différent)
+            if (!empty($config['device_id']) && $config['device_id'] === $deviceId) {
+                return ['status' => 'success'];
+            }
+            
+            // Appareil différent, refuser la connexion
+            return [
+                'status' => 'error',
+                'code' => 'device_mismatch',
+                'message' => 'Cet appareil est différent de celui habituellement utilisé pour ce compte. Veuillez contacter le support pour réinitialiser votre appareil.',
+                'registered_device' => $config['device_model']
+            ];
+        }
+        
+        return ['status' => 'success'];
+    }
+    
+    /**
+     * Enregistre les informations de l'appareil dans la configuration de l'employé
+     * 
+     * @param \App\Models\Employeur $employe
+     * @param string $deviceModel
+     * @param string $deviceId
+     * @return void
+     */
+    protected function saveDeviceInfo(Employeur $employe, string $deviceModel, string $deviceId): void
+    {
+        // Récupérer la configuration actuelle
+        $config = $employe->configuration ?? [];
+        
+        // Mettre à jour les informations de l'appareil
+        $config['device_model'] = $deviceModel;
+        $config['device_id'] = $deviceId;
+        $config['last_device_login'] = now()->toIso8601String();
+        
+        // Sauvegarder la configuration
+        $employe->configuration = $config;
+        $employe->save();
+        
+        Log::info('Device info updated for employee', [
+            'employee_id' => $employe->id,
+            'device_model' => $deviceModel,
+            'device_id' => $deviceId
+        ]);
+    }
     /**
      * Authentifie un employé avec son QR code
      *
@@ -37,6 +105,8 @@ class EmployeAuthController extends Controller
         // Valider les données de la requête
         $validator = Validator::make($request->all(), [
             'qr_code' => 'required|string',
+            'device_model' => 'required|string',
+            'device_id' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -201,6 +271,8 @@ class EmployeAuthController extends Controller
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|string',
             'otp_code' => 'required|string|size:6',
+            'device_model' => 'required|string',
+            'device_id' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -233,11 +305,14 @@ class EmployeAuthController extends Controller
         $token = $user->createToken('mobile-app')->plainTextToken;
         $employe = $user->employeur;
 
-        // Mettre à jour la dernière connexion
+        // Mettre à jour la dernière connexion et les informations de l'appareil
         $user->update([
             'last_login_at' => now(),
             'last_login_ip' => $request->ip()
         ]);
+        
+        // Enregistrer les informations de l'appareil dans la configuration de l'employé
+        $this->saveDeviceInfo($employe, $request->device_model, $request->device_id);
 
         // Préparer les données de l'employé à retourner
         $employeData = [
@@ -290,6 +365,8 @@ class EmployeAuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|string',
+            'device_model' => 'nullable|string',
+            'device_id' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -378,6 +455,8 @@ class EmployeAuthController extends Controller
         // Valider les données de la requête
         $validator = Validator::make($request->all(), [
             'phone_number' => 'required|string|min:8',
+            'device_model' => 'required|string',
+            'device_id' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -391,21 +470,7 @@ class EmployeAuthController extends Controller
         // Formater le numéro de téléphone
         $phoneNumber = $request->phone_number;
         $phoneNumber = preg_replace('/[^0-9+]/', '', $phoneNumber);
-        
-        // S'assurer que le numéro commence par +
-        if (!str_starts_with($phoneNumber, '+')) {
-            // Si le numéro commence par 00, remplacer par +
-            if (str_starts_with($phoneNumber, '00')) {
-                $phoneNumber = '+' . substr($phoneNumber, 2);
-            } else {
-                // Sinon, ajouter le préfixe +225 (Côte d'Ivoire) par défaut
-                if (str_starts_with($phoneNumber, '0')) {
-                    $phoneNumber = '+225' . substr($phoneNumber, 1);
-                } else {
-                    $phoneNumber = '+225' . $phoneNumber;
-                }
-            }
-        }
+        $phoneNumber = '+225' . $phoneNumber;
 
         // Rechercher l'employé par numéro de téléphone
         $employe = Employeur::where('telephone', 'like', '%' . substr($phoneNumber, -9) . '%')
