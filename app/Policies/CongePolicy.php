@@ -45,7 +45,7 @@ class CongePolicy
         }
 
         // Les managers peuvent voir les congés des employés qu'ils gèrent
-        if ($user->isAdmin() && $conge->employeur && $user->entreprise_id === $conge->employeur->entreprise_id) {
+        if ($user->isAdmin() || $user->isManager() && $conge->employeur && $user->entreprise_id === $conge->employeur->entreprise_id) {
             return true;
         }
 

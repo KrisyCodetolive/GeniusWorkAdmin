@@ -370,7 +370,7 @@ class CongeResource extends Resource
                     ->icon('heroicon-o-trash')
                     ->color('gray')
                     ->visible(fn ($record) => ($record->statut === 'en_attente' || $record->statut === 'approuve') && 
-                        (auth()->user()->isAdmin() || auth()->id() === $record->employeur->user_id))
+                        (auth()->user()->isAdmin() || auth()->user()->isManager() || auth()->id() === $record->employeur->user_id))
                     ->requiresConfirmation()
                     ->form([
                         Forms\Components\Textarea::make('commentaire')

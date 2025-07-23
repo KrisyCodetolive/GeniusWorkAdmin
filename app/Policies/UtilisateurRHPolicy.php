@@ -5,7 +5,7 @@ namespace App\Policies;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class UserPolicy
+class UtilisateurRHPolicy
 {
     use HandlesAuthorization;
 
@@ -17,7 +17,7 @@ class UserPolicy
      */
     public function viewAny(User $user): bool
     {
-        // SuperAdmin, Support et Admin peuvent voir la liste des utilisateurs
+        // SuperAdmin, Support et Admin peuvent voir la liste des utilisateurs RH
         return $user->isSuperAdmin() || $user->isSupport() || $user->isAdmin();
     }
 
@@ -35,7 +35,7 @@ class UserPolicy
             return true;
         }
         
-        // Admin peut voir les utilisateurs de son entreprise qui sont admin ou manager
+        // Admin peut voir les utilisateurs admin ou manager de son entreprise
         if ($user->isAdmin() && $model->entreprise_id === $user->entreprise_id) {
             return $model->isAdmin() || $model->isManager();
         }
@@ -51,17 +51,8 @@ class UserPolicy
      */
     public function create(User $user): bool
     {
-        // SuperAdmin et Support peuvent créer n'importe quel utilisateur
-        if ($user->isSuperAdmin() || $user->isSupport()) {
-            return true;
-        }
-        
-        // Admin peut créer des utilisateurs admin ou manager dans son entreprise
-        if ($user->isAdmin()) {
-            return true;
-        }
-        
-        return false;
+        // SuperAdmin, Support et Admin peuvent créer des utilisateurs RH
+        return $user->isSuperAdmin() || $user->isSupport() || $user->isAdmin();
     }
 
     /**
@@ -73,7 +64,7 @@ class UserPolicy
      */
     public function update(User $user, User $model): bool
     {
-        // Les SuperAdmin et Support peuvent modifier tous les utilisateurs
+        // SuperAdmin et Support peuvent modifier tous les utilisateurs
         if ($user->isSuperAdmin() || $user->isSupport()) {
             return true;
         }
@@ -100,12 +91,12 @@ class UserPolicy
      */
     public function delete(User $user, User $model): bool
     {
-        // Les SuperAdmin peuvent supprimer n'importe quel utilisateur
+        // SuperAdmin peut supprimer n'importe quel utilisateur
         if ($user->isSuperAdmin()) {
             return true;
         }
 
-        // Les Support peuvent supprimer tous les utilisateurs sauf les SuperAdmin
+        // Support peut supprimer tous les utilisateurs sauf les SuperAdmin
         if ($user->isSupport() && !$model->isSuperAdmin()) {
             return true;
         }
@@ -152,27 +143,5 @@ class UserPolicy
     {
         // Seuls les SuperAdmin peuvent supprimer définitivement
         return $user->isSuperAdmin();
-    }
-
-    /**
-     * Determine whether the user can impersonate another user.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\User  $model
-     * @return bool
-     */
-    public function impersonate(User $user, User $model): bool
-    {
-        // Seuls les SuperAdmin et Support peuvent se connecter en tant qu'un autre utilisateur
-        if (!($user->isSuperAdmin() || $user->isSupport())) {
-            return false;
-        }
-
-        // Empêcher l'impersonation d'un SuperAdmin
-        if ($model->isSuperAdmin()) {
-            return false;
-        }
-
-        return true;
     }
 }

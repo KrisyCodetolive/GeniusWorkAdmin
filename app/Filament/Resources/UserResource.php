@@ -44,6 +44,12 @@ class UserResource extends Resource
     
     protected static string $policy = UserPolicy::class;
 
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        return $user->isSuperAdmin();
+    }
+
     public static function form(Form $form): Form
     {
         return $form

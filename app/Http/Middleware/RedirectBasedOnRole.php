@@ -22,7 +22,7 @@ class RedirectBasedOnRole
             $user = Auth::user();
             
             // Rediriger en fonction du rôle
-            if ($user->isAdmin()) {
+            if ($user->isAdmin() || $user->isManager()) {
                 return redirect()->route('dashboard.admin');
             } elseif ($user->isEntreprise()) {
                 return redirect()->route('dashboard.entreprise');
