@@ -164,3 +164,18 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('resend-otp', [App\Http\Controllers\Api\Auth\EmployeAuthController::class, 'resendOtp']);
     Route::post('request-otp', [App\Http\Controllers\Api\Auth\EmployeAuthController::class, 'requestOtp']);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Routes pour les webhooks MTN SMS
+|--------------------------------------------------------------------------
+*/
+Route::prefix('webhooks/mtn-sms')->name('api.webhooks.mtn-sms.')->group(function () {
+    // Réception des notifications de livraison
+    Route::post('/delivery-receipt', [App\Http\Controllers\API\MTNSMSWebhookController::class, 'deliveryReceipt'])
+        ->name('delivery-receipt');
+    
+    // Réception des SMS entrants
+    Route::post('/inbound-message', [App\Http\Controllers\API\MTNSMSWebhookController::class, 'inboundMessage'])
+        ->name('inbound-message');
+});

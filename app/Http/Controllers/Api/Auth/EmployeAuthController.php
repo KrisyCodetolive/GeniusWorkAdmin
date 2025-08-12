@@ -140,6 +140,12 @@ class EmployeAuthController extends Controller
                 'message' => 'Compte employé inactif'
             ], 403);
         }
+        
+        // Vérifier la compatibilité de l'appareil
+        $deviceCheckResult = $this->checkDeviceCompatibility($employe, $request->device_model, $request->device_id);
+        if ($deviceCheckResult['status'] === 'error') {
+            return response()->json($deviceCheckResult, 403);
+        }
 
         // Récupérer ou créer un utilisateur pour cet employé
         $user = $this->getOrCreateUserForEmploye($employe);
@@ -149,36 +155,28 @@ class EmployeAuthController extends Controller
         
         // Déterminer le numéro de téléphone à utiliser
         $telephone = $user->telephone ?: $employe->telephone;
+
+
         
         // Formater le numéro de téléphone (supprimer les espaces et ajouter le préfixe + si nécessaire)
         if ($telephone) {
             // Supprimer tous les caractères non numériques sauf le +
             $telephone = preg_replace('/[^0-9+]/', '', $telephone);
             
-            // S'assurer que le numéro commence par +
-            if (!str_starts_with($telephone, '+')) {
-                // Si le numéro commence par 00, remplacer par +
-                if (str_starts_with($telephone, '00')) {
-                    $telephone = '+' . substr($telephone, 2);
-                } else {
-                    // Sinon, ajouter le préfixe +225 (Côte d'Ivoire) par défaut
-                    // Vous pouvez adapter cette logique selon vos besoins
-                    if (str_starts_with($telephone, '0')) {
-                        $telephone = '+225' . substr($telephone, 1);
-                    } else {
-                        $telephone = '+225' . $telephone;
-                    }
-                }
-            }
-            
+            $telephone = '+225' . $telephone;
+
             // Envoyer le code par SMS
             $this->otpService->sendOtp($telephone, $otpCode);
+
             $messageSMS = 'Un code de vérification a été envoyé à votre téléphone';
+
         } else {
+
             Log::warning("Impossible d'envoyer le code OTP: aucun numéro de téléphone disponible", [
                 'user_id' => $user->id,
                 'employe_id' => $employe->id
             ]);
+
             $messageSMS = 'Impossible d\'envoyer le code de vérification: aucun numéro de téléphone disponible';
         }
         
@@ -187,6 +185,9 @@ class EmployeAuthController extends Controller
             'last_login_at' => now(),
             'last_login_ip' => $request->ip()
         ]);
+        
+        // Enregistrer les informations de l'appareil dans la configuration de l'employé
+        $this->saveDeviceInfo($employe, $request->device_model, $request->device_id);
         
         return response()->json([
             'status' => 'success',
@@ -483,6 +484,12 @@ class EmployeAuthController extends Controller
                 'message' => 'Aucun employé trouvé avec ce numéro de téléphone'
             ], 404);
         }
+        
+        // Vérifier la compatibilité de l'appareil
+        $deviceCheckResult = $this->checkDeviceCompatibility($employe, $request->device_model, $request->device_id);
+        if ($deviceCheckResult['status'] === 'error') {
+            return response()->json($deviceCheckResult, 403);
+        }
 
         // Récupérer ou créer un utilisateur pour cet employé
         $user = $this->getOrCreateUserForEmploye($employe);
@@ -513,6 +520,9 @@ class EmployeAuthController extends Controller
             'last_login_at' => now(),
             'last_login_ip' => $request->ip()
         ]);
+        
+        // Enregistrer les informations de l'appareil dans la configuration de l'employé
+        $this->saveDeviceInfo($employe, $request->device_model, $request->device_id);
         
         return response()->json([
             'status' => 'success',
