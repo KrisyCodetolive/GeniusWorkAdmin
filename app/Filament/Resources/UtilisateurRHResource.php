@@ -33,7 +33,7 @@ class UtilisateurRHResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
     
-    protected static ?string $navigationGroup = 'Ressources Humaines';
+    protected static ?string $navigationGroup = 'Mon Compte';
 
     protected static ?int $navigationSort = 1;
 

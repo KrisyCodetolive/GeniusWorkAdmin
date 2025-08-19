@@ -37,7 +37,7 @@ class UserPolicy
         
         // Admin peut voir les utilisateurs de son entreprise qui sont admin ou manager
         if ($user->isAdmin() && $model->entreprise_id === $user->entreprise_id) {
-            return $model->isAdmin() || $model->isManager();
+            return true;
         }
         
         return false;

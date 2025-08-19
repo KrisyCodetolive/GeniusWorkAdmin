@@ -456,8 +456,8 @@ class EmployeAuthController extends Controller
         // Valider les données de la requête
         $validator = Validator::make($request->all(), [
             'phone_number' => 'required|string|min:8',
-            'device_model' => 'required|string',
-            'device_id' => 'required|string',
+            'device_model' => 'nullable|string',
+            'device_id' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
