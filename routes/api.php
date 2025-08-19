@@ -179,3 +179,42 @@ Route::prefix('webhooks/mtn-sms')->name('api.webhooks.mtn-sms.')->group(function
     Route::post('/inbound-message', [App\Http\Controllers\API\MTNSMSWebhookController::class, 'inboundMessage'])
         ->name('inbound-message');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Routes pour tester les services SMS
+|--------------------------------------------------------------------------
+*/
+Route::prefix('sms-test')->name('api.sms-test.')->group(function () {
+    // Test d'envoi SMS avec le fournisseur par défaut ou spécifié
+    Route::match(['get', 'post'], '/send', [App\Http\Controllers\API\SMSTestController::class, 'sendTestSMS'])
+        ->name('send');
+    
+    // Test d'envoi SMS avec Orange
+    Route::match(['get', 'post'], '/send-orange', [App\Http\Controllers\API\SMSTestController::class, 'sendOrangeSMS'])
+        ->name('send-orange');
+    
+    // Test d'envoi SMS avec MTN
+    Route::match(['get', 'post'], '/send-mtn', [App\Http\Controllers\API\SMSTestController::class, 'sendMTNSMS'])
+        ->name('send-mtn');
+    
+    // Vérification du statut de livraison MTN
+    Route::post('/mtn-delivery-status', [App\Http\Controllers\API\SMSTestController::class, 'checkMTNDeliveryStatus'])
+        ->name('mtn-delivery-status');
+    
+    // Création d'un abonnement aux notifications MTN
+    Route::post('/mtn-create-subscription', [App\Http\Controllers\API\SMSTestController::class, 'createMTNDeliverySubscription'])
+        ->name('mtn-create-subscription');
+    
+    // Suppression d'un abonnement aux notifications MTN
+    Route::post('/mtn-delete-subscription', [App\Http\Controllers\API\SMSTestController::class, 'deleteMTNDeliverySubscription'])
+        ->name('mtn-delete-subscription');
+    
+    // Récupération des SMS entrants MTN
+    Route::post('/mtn-inbound-messages', [App\Http\Controllers\API\SMSTestController::class, 'getMTNInboundMessages'])
+        ->name('mtn-inbound-messages');
+    
+    // Statistiques des SMS
+    Route::get('/stats', [App\Http\Controllers\API\SMSTestController::class, 'getSMSStats'])
+        ->name('stats');
+});

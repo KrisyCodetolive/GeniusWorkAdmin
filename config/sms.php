@@ -21,6 +21,7 @@ return [
         'client_id' => env('ORANGE_SMS_CLIENT_ID'),
         'client_secret' => env('ORANGE_SMS_CLIENT_SECRET'),
         'dev_phone_number' => env('ORANGE_SMS_DEV_PHONE_NUMBER'),
+        'api_base_url' => env('ORANGE_SMS_API_BASE_URL', 'https://api.orange.com'),
     ],
 
     /*
