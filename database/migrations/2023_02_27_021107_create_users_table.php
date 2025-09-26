@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('password');
             $table->timestamp('email_verified_at')->nullable();
             $table->foreignUuid('entreprise_id')->nullable()->constrained()->nullOnDelete();
-            $table->enum('role', ['super_admin', 'admin', 'entreprise', 'employeur', 'support', 'employee'])->default('employeur');
+            $table->enum('role', ['super_admin', 'admin', 'manager', 'entreprise', 'employeur', 'support', 'employee'])->default('employeur');
             $table->enum('statut', ['actif', 'inactif', 'suspendu'])->default('actif');
             $table->string('telephone')->nullable();
             $table->string('photo')->nullable();

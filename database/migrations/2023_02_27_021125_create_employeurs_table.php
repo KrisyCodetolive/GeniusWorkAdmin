@@ -27,7 +27,7 @@ return new class extends Migration
             $table->date('date_embauche');
             $table->string('type_contrat');
             $table->date('date_fin_contrat')->nullable();
-            $table->decimal('salaire_base', 10, 2);
+            $table->decimal('salaire_base', 20, 2);
             $table->string('fonction');
             $table->json('competences')->nullable();
             $table->json('configuration')->nullable();
