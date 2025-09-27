@@ -20,7 +20,7 @@ class SmsService
     }
 
     /**
-     * Envoie un code OTP par SMS
+     * Envoie un code OTP par SMS avec un message sécurisé
      *
      * @param string $phoneNumber Numéro de téléphone destinataire
      * @param string $otpCode Code OTP à envoyer
@@ -29,8 +29,8 @@ class SmsService
     public function sendOtp(string $phoneNumber, string $otpCode): bool
     {
         try {
-            // Formater le message
-            $message = "Votre code de vérification GENIUS WORK est: {$otpCode}. Il est valable pendant 10 minutes.";
+            // Formater le message avec un format plus professionnel
+            $message = "[GENIUS WORK] Votre code de vérification est {$otpCode}. Ne le partagez avec personne. Valable 10 minutes.";
             
             // Envoyer le SMS via le service Orange
             $response = $this->orangeSmsService->sendSMS($phoneNumber, $message);

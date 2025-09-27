@@ -470,8 +470,32 @@ class EmployeAuthController extends Controller
         
         // Formater le numéro de téléphone
         $phoneNumber = $request->phone_number;
+        
+        // Nettoyer le numéro (garder seulement les chiffres et le +)
         $phoneNumber = preg_replace('/[^0-9+]/', '', $phoneNumber);
-        $phoneNumber = '+225' . $phoneNumber;
+        
+        // Logique de formatage pour la Côte d'Ivoire
+        if (str_starts_with($phoneNumber, '+225')) {
+            // Déjà au format international, ne rien changer
+            $phoneNumber = $phoneNumber;
+        } elseif (str_starts_with($phoneNumber, '225') && strlen($phoneNumber) == 13) {
+            // Format 225XXXXXXXXXX, ajouter le +
+            $phoneNumber = '+' . $phoneNumber;
+        } elseif (str_starts_with($phoneNumber, '0') && strlen($phoneNumber) == 10) {
+            // Format local 0XXXXXXXXX, ajouter +225 en gardant le 0
+            $phoneNumber = '+225' . $phoneNumber;
+        } elseif (strlen($phoneNumber) == 9 && !str_starts_with($phoneNumber, '0')) {
+            // Format XXXXXXXXX (9 chiffres), ajouter +225
+            $phoneNumber = '+225' . $phoneNumber;
+        } elseif (strlen($phoneNumber) == 10 && !str_starts_with($phoneNumber, '0')) {
+            // Format XXXXXXXXXX (10 chiffres sans 0), ajouter +225
+            $phoneNumber = '+225' . $phoneNumber;
+        } else {
+            // Format non reconnu, essayer d'ajouter +225 si pas déjà présent
+            if (!str_starts_with($phoneNumber, '+')) {
+                $phoneNumber = '+225' . $phoneNumber;
+            }
+        }
 
         // Rechercher l'employé par numéro de téléphone
         $employe = Employeur::where('telephone', 'like', '%' . substr($phoneNumber, -9) . '%')
