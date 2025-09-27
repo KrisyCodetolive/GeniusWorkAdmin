@@ -218,3 +218,85 @@ Route::prefix('sms-test')->name('api.sms-test.')->group(function () {
     Route::get('/stats', [App\Http\Controllers\API\SMSTestController::class, 'getSMSStats'])
         ->name('stats');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Routes pour le pointage mobile avec WebAuthn
+|--------------------------------------------------------------------------
+*/
+Route::prefix('mobile')->name('api.mobile.')->group(function () {
+    // Routes publiques (sans authentification)
+    Route::prefix('pointage')->name('pointage.')->group(function () {
+        // Validation du QR code
+        Route::post('/qr/validate', [App\Http\Controllers\API\MobilePointageController::class, 'validateQRCode'])
+            ->name('qr.validate');
+        
+        // Génération des options d'authentification WebAuthn
+        Route::post('/webauthn/auth-options', [App\Http\Controllers\API\MobilePointageController::class, 'getWebAuthnAuthOptions'])
+            ->name('webauthn.auth-options');
+        
+        // Vérification de l'authentification WebAuthn
+        Route::post('/webauthn/verify-auth', [App\Http\Controllers\API\MobilePointageController::class, 'verifyWebAuthnAuth'])
+            ->name('webauthn.verify-auth');
+        
+        // Validation de la géolocalisation
+        Route::post('/location/validate', [App\Http\Controllers\API\MobilePointageController::class, 'validateLocation'])
+            ->name('location.validate');
+        
+        // Enregistrement du pointage
+        Route::post('/record', [App\Http\Controllers\API\MobilePointageController::class, 'recordPointage'])
+            ->name('record');
+        
+        // Récupération de l'historique des pointages
+        Route::post('/history', [App\Http\Controllers\API\MobilePointageController::class, 'getPresenceHistory'])
+            ->name('history');
+        
+        // Récupération du statut actuel
+        Route::post('/status', [App\Http\Controllers\API\MobilePointageController::class, 'getCurrentStatus'])
+            ->name('status');
+        
+        // Calcul des heures de travail
+        Route::post('/working-hours', [App\Http\Controllers\API\MobilePointageController::class, 'getWorkingHours'])
+            ->name('working-hours');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Routes pour la gestion des QR codes (authentifiées)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('qr-codes')->name('api.qr-codes.')->middleware('auth:sanctum')->group(function () {
+    // Génération d'un QR code pour un site
+    Route::post('/sites/{siteId}/generate', [App\Http\Controllers\API\QRCodeController::class, 'generateQRCode'])
+        ->name('sites.generate');
+    
+    // Rafraîchissement d'un QR code
+    Route::post('/sites/{siteId}/refresh', [App\Http\Controllers\API\QRCodeController::class, 'refreshQRCode'])
+        ->name('sites.refresh');
+    
+    // Invalidation d'un QR code
+    Route::delete('/sites/{siteId}/invalidate', [App\Http\Controllers\API\QRCodeController::class, 'invalidateQRCode'])
+        ->name('sites.invalidate');
+    
+    // Informations d'un QR code (route publique pour validation)
+    Route::post('/info', [App\Http\Controllers\API\QRCodeController::class, 'getQRCodeInfo'])
+        ->withoutMiddleware('auth:sanctum')
+        ->name('info');
+    
+    // Génération de QR codes pour tous les sites de l'entreprise
+    Route::post('/entreprise/generate-all', [App\Http\Controllers\API\QRCodeController::class, 'generateQRCodesForEntreprise'])
+        ->name('entreprise.generate-all');
+    
+    // Statistiques d'utilisation des QR codes
+    Route::post('/stats', [App\Http\Controllers\API\QRCodeController::class, 'getQRCodeStats'])
+        ->name('stats');
+    
+    // Liste des sites avec leur statut de QR code
+    Route::get('/sites/status', [App\Http\Controllers\API\QRCodeController::class, 'listSitesWithQRStatus'])
+        ->name('sites.status');
+    
+    // Nettoyage des QR codes expirés
+    Route::post('/cleanup', [App\Http\Controllers\API\QRCodeController::class, 'cleanupExpiredQRCodes'])
+        ->name('cleanup');
+});

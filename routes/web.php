@@ -379,7 +379,57 @@ Route::middleware(['auth'])->group(function () {
 
 // Route dashboard
 
+/*
+|--------------------------------------------------------------------------
+| Routes pour le pointage mobile avec WebAuthn
+|--------------------------------------------------------------------------
+*/
+Route::prefix('mobile')->name('mobile.')->group(function () {
+    Route::prefix('pointage')->name('pointage.')->group(function () {
+        // Page principale de pointage (après scan QR code)
+        Route::get('/{siteId}', [App\Http\Controllers\MobilePointageWebController::class, 'index'])
+            ->name('index');
+        
+        // Page de succès après pointage
+        Route::get('/success', [App\Http\Controllers\MobilePointageWebController::class, 'success'])
+            ->name('success');
+        
+        // Page d'erreur
+        Route::get('/error', [App\Http\Controllers\MobilePointageWebController::class, 'error'])
+            ->name('error');
+        
+        // Scanner de QR codes
+        Route::get('/scanner', [App\Http\Controllers\MobilePointageWebController::class, 'scanner'])
+            ->name('scanner');
+        
+        // Page d'aide
+        Route::get('/help', [App\Http\Controllers\MobilePointageWebController::class, 'help'])
+            ->name('help');
+    });
+});
 
+/*
+|--------------------------------------------------------------------------
+| Routes pour l'impression des affiches QR Code
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->prefix('qr-poster')->name('qr-poster.')->group(function () {
+    // Imprimer une affiche pour un site spécifique
+    Route::get('/print/{site}', [App\Http\Controllers\QRPosterController::class, 'print'])
+        ->name('print');
+    
+    // Télécharger le PDF d'une affiche
+    Route::get('/download/{site}', [App\Http\Controllers\QRPosterController::class, 'downloadPdf'])
+        ->name('download-pdf');
+    
+    // Imprimer toutes les affiches
+    Route::get('/print-all', [App\Http\Controllers\QRPosterController::class, 'printAll'])
+        ->name('print-all');
+    
+    // Télécharger le PDF de toutes les affiches
+    Route::get('/download-all', [App\Http\Controllers\QRPosterController::class, 'downloadAllPdf'])
+        ->name('download-all-pdf');
+});
 
 // Inclusion des fichiers de routes
 require __DIR__.'/auth.php';

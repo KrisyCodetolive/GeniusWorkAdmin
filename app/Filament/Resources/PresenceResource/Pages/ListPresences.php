@@ -25,15 +25,96 @@ class ListPresences extends ListRecords
 
     protected function getHeaderActions(): array
     {
+        $user = auth()->user();
+        $isAdmin = $user->isAdmin() || $user->isSuperAdmin() || $user->isSupport();
+        
         return [
+            // Action principale de création
             Actions\CreateAction::make()
                 ->label('Nouvelle présence')
                 ->icon('heroicon-o-plus'),
                 
-            \App\Filament\Actions\GeneratePresencesExemplesAction::make()
-                ->visible(function () {
-                    $user = auth()->user();
+            // Menu déroulant pour les outils de pointage
+            Actions\ActionGroup::make([
+                // SmartClock pour pointage physique
+                Actions\Action::make('smartClock')
+                    ->label('SmartClock')
+                    ->icon('heroicon-o-qr-code')
+                    ->color('success')
+                    ->form([
+                        \Filament\Forms\Components\Select::make('site_id')
+                            ->label('Sélectionnez un site')
+                            ->options(function () use ($user) {
+                                $query = \App\Models\Site::query();
+                                if (!$user->isSuperAdmin() && !$user->isSupport()) {
+                                    $query->where('entreprise_id', $user->entreprise_id);
+                                }
+                                return $query->pluck('nom', 'id');
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                    ])
+                    ->action(function (array $data) {
+                        $site = \App\Models\Site::find($data['site_id']);
+                        if (!$site) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Erreur')
+                                ->body('Site non trouvé')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+                        
+                        // Redirection vers la page SmartClock
+                        return redirect()->route('smart-clock.index', ['site_id' => $site->id]);
+                    }),
                     
+                // Scanner QR Code mobile
+                Actions\Action::make('scannerQRCode')
+                    ->label('Scanner QR Code Mobile')
+                    ->icon('heroicon-o-device-phone-mobile')
+                    ->url(route('mobile.pointage.scanner'))
+                    ->openUrlInNewTab(),
+                    
+                // Télécharger App Mobile
+                Actions\Action::make('downloadMobileApp')
+                    ->label('Télécharger App Mobile')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('primary')
+                    ->extraAttributes([
+                        'x-on:click' => "window.dispatchEvent(new CustomEvent('open-modal', { detail: { id: 'download-mobile-app-modal' } }))",
+                    ])
+                    ->modalHeading('Application Mobile Genius Work')
+                    ->modalDescription('L\'application mobile Genius Work est en cours de déploiement sur Play Store et App Store. En attendant, vous pouvez télécharger directement l\'APK pour Android.')
+            ])
+            ->label('Outils de pointage')
+            ->icon('heroicon-o-finger-print')
+            ->visible($isAdmin),
+            
+            // Menu déroulant pour les rapports
+            Actions\ActionGroup::make([
+                // Rapport de présence
+                GeneratePresenceReportAction::make()
+                    ->label('Rapport de présence'),
+                    
+                // Rapport d'heures de travail (commenté)
+                // GenerateHeuresTravailReportAction::make()
+                //    ->label('Rapport d\'heures de travail'),
+                    
+                // Importer et analyser des présences
+                ImporterAnalyserPresenceAction::make()
+                    ->label('Importer et analyser'),
+            ])
+            ->label('Rapports')
+            ->icon('heroicon-o-document-chart-bar')
+            ->visible($isAdmin),
+            
+            // Données d'exemple (visible uniquement pour les entreprises sans présences)
+            \App\Filament\Actions\GeneratePresencesExemplesAction::make()
+                ->label('Générer des exemples')
+                ->icon('heroicon-o-beaker')
+                ->visible(function () use ($user) {
                     // Vérifier si l'utilisateur a les droits nécessaires
                     if (!$user->isAdmin()) {
                         return false;
@@ -45,8 +126,6 @@ class ListPresences extends ListRecords
                     }
                     
                     // Vérifier si l'entreprise a déjà des présences
-                    // La table Presence n'a pas de colonne entreprise_id directe
-                    // On doit passer par la relation avec les employeurs
                     $existingPresences = \App\Models\Presence::whereHas('employeur', function($query) use ($entreprise) {
                         $query->where('entreprise_id', $entreprise->id);
                     })->count();
@@ -54,72 +133,6 @@ class ListPresences extends ListRecords
                     // Ne montrer l'action que si l'entreprise n'a pas encore de présences
                     return $existingPresences === 0;
                 }),
-                
-            GeneratePresenceReportAction::make()
-                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
-                
-         //   GenerateHeuresTravailReportAction::make()
-         //       ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
-                
-            ImporterAnalyserPresenceAction::make()
-                ->visible(fn (): bool => auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupport()),
-                
-         
-            \Filament\Actions\Action::make('smartClock')
-                ->label('SmartClock')
-                ->icon('heroicon-o-qr-code')
-                ->color('success')
-                ->form([
-                    \Filament\Forms\Components\Select::make('site_id')
-                        ->label('Sélectionnez un site')
-                        ->options(function () {
-                            $user = auth()->user();
-                            $query = \App\Models\Site::query();
-                            
-                            if (!$user->isSuperAdmin() && !$user->isSupport()) {
-                                $query->where('entreprise_id', $user->entreprise_id);
-                            }
-                            
-                            return $query->pluck('nom', 'id');
-                        })
-                        ->searchable()
-                        ->preload()
-                        ->required()
-                ])
-                ->action(function (array $data) {
-                    $site = \App\Models\Site::find($data['site_id']);
-                    if (!$site) {
-                        \Filament\Notifications\Notification::make()
-                            ->title('Erreur')
-                            ->body('Site non trouvé')
-                            ->danger()
-                            ->send();
-                        return;
-                    }
-                    
-                    // Stocker le site sélectionné en session
-                    session(['selected_site_id' => $site->id]);
-                    
-                    // Rediriger vers la page SmartClock
-                    return redirect()->route('smart-clock.index');
-                }),
-
-            \Filament\Actions\Action::make('downloadMobileApp')
-                ->label('Télécharger App Mobile')
-                ->icon('heroicon-o-device-phone-mobile')
-                ->color('primary')
-                //->url('https://linkqr.genius.ci/workapp')
-                ->extraAttributes([
-                    'x-on:click' => "window.dispatchEvent(new CustomEvent('open-modal', { detail: { id: 'download-mobile-app-modal' } }))",
-                ])
-                ->modalHeading('Application Mobile Genius Work')
-                ->modalDescription('L\'application mobile Genius Work est en cours de déploiement sur Play Store et App Store. En attendant, vous pouvez télécharger directement l\'APK pour Android.')
-                ->modalContent(function() {
-                    return view('filament.modals.download-mobile-app');
-                })
-                ->modalSubmitAction(false)
-                ->modalCancelAction(false),
-
         ];
     }
     
