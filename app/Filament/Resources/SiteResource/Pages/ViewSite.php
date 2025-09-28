@@ -107,6 +107,7 @@ class ViewSite extends ViewRecord
                     ->schema([
                         KeyValueEntry::make('horaires')
                             ->label('Horaires')
+                            ->visible(fn ($record): bool => is_array($record->horaires) || is_object($record->horaires))
                     ]),
                 
                 Section::make('Informations système')

@@ -225,40 +225,80 @@ Route::prefix('sms-test')->name('api.sms-test.')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')->name('api.mobile.')->group(function () {
+    // Route de test pour vérifier si le contrôleur fonctionne
+    Route::get('/test', function() {
+        return response()->json(['success' => true, 'message' => 'API mobile fonctionne correctement']);
+    });
+    
     // Routes publiques (sans authentification)
     Route::prefix('pointage')->name('pointage.')->group(function () {
         // Validation du QR code
-        Route::post('/qr/validate', [App\Http\Controllers\API\MobilePointageController::class, 'validateQRCode'])
+        Route::post('/qr/validate', [App\Http\Controllers\Api\MobilePointageController::class, 'validateQRCode'])
             ->name('qr.validate');
         
         // Génération des options d'authentification WebAuthn
-        Route::post('/webauthn/auth-options', [App\Http\Controllers\API\MobilePointageController::class, 'getWebAuthnAuthOptions'])
+        Route::post('/webauthn/auth-options', [App\Http\Controllers\Api\MobilePointageController::class, 'getWebAuthnAuthOptions'])
             ->name('webauthn.auth-options');
         
         // Vérification de l'authentification WebAuthn
-        Route::post('/webauthn/verify-auth', [App\Http\Controllers\API\MobilePointageController::class, 'verifyWebAuthnAuth'])
+        Route::post('/webauthn/verify-auth', [App\Http\Controllers\Api\MobilePointageController::class, 'verifyWebAuthnAuth'])
             ->name('webauthn.verify-auth');
         
         // Validation de la géolocalisation
-        Route::post('/location/validate', [App\Http\Controllers\API\MobilePointageController::class, 'validateLocation'])
+        Route::post('/location/validate', [App\Http\Controllers\Api\MobilePointageController::class, 'validateLocation'])
             ->name('location.validate');
         
         // Enregistrement du pointage
-        Route::post('/record', [App\Http\Controllers\API\MobilePointageController::class, 'recordPointage'])
+        Route::post('/record', [App\Http\Controllers\Api\MobilePointageController::class, 'recordPointage'])
             ->name('record');
         
         // Récupération de l'historique des pointages
-        Route::post('/history', [App\Http\Controllers\API\MobilePointageController::class, 'getPresenceHistory'])
+        Route::post('/history', [App\Http\Controllers\Api\MobilePointageController::class, 'getPresenceHistory'])
             ->name('history');
         
         // Récupération du statut actuel
-        Route::post('/status', [App\Http\Controllers\API\MobilePointageController::class, 'getCurrentStatus'])
+        Route::post('/status', [App\Http\Controllers\Api\MobilePointageController::class, 'getCurrentStatus'])
             ->name('status');
         
         // Calcul des heures de travail
-        Route::post('/working-hours', [App\Http\Controllers\API\MobilePointageController::class, 'getWorkingHours'])
+        Route::post('/working-hours', [App\Http\Controllers\Api\MobilePointageController::class, 'getWorkingHours'])
             ->name('working-hours');
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Routes pour WebAuthn
+|--------------------------------------------------------------------------
+*/
+Route::prefix('webauthn')->name('api.webauthn.')->group(function () {
+    // Handle OPTIONS requests for CORS preflight
+    Route::options('/{any}', function() {
+        return response()->json([], 200);
+    })->where('any', '.*');
+    
+    // Vérifier si l'utilisateur a des informations d'identification WebAuthn
+    Route::get('/credentials/check', [App\Http\Controllers\WebAuthnController::class, 'checkCredentials'])
+        ->withoutMiddleware('auth:sanctum') // Temporarily remove auth middleware for testing
+        ->name('credentials.check');
+    
+    // Options d'enregistrement WebAuthn
+    Route::post('/register/options', [App\Http\Controllers\WebAuthnController::class, 'generateRegistrationOptions'])
+        ->withoutMiddleware('auth:sanctum') // Temporarily remove auth middleware for testing
+        ->name('register.options');
+    
+    // Vérification de l'enregistrement WebAuthn
+    Route::post('/register/verify', [App\Http\Controllers\WebAuthnController::class, 'register'])
+        ->withoutMiddleware('auth:sanctum') // Temporarily remove auth middleware for testing
+        ->name('register.verify');
+    
+    // Options d'authentification WebAuthn
+    Route::post('/login/options', [App\Http\Controllers\WebAuthnController::class, 'generateAuthenticationOptions'])
+        ->name('login.options');
+    
+    // Vérification de l'authentification WebAuthn
+    Route::post('/login/verify', [App\Http\Controllers\WebAuthnController::class, 'authenticate'])
+        ->name('login.verify');
 });
 
 /*

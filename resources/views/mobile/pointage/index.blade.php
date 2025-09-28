@@ -1,467 +1,142 @@
 @extends('mobile.pointage.layout')
 
-@section('title', 'Pointage - ' . $site->nom)
+@section('title', 'Connexion')
 
 @section('content')
-<div class="max-w-md mx-auto">
-    <!-- Site Information Card -->
-    <div class="card">
-        <div class="text-center mb-6">
-            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-building text-blue-600 text-2xl"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ $site->nom }}</h2>
-            <p class="text-gray-600 text-sm">{{ $site->adresse }}</p>
-            @if($site->ville)
-                <p class="text-gray-500 text-sm">{{ $site->ville }}</p>
-            @endif
-        </div>
-        
-        <!-- Geofencing Info -->
-        @if($site->has_geofencing)
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-            <div class="flex items-center text-blue-700">
-                <i class="fas fa-map-marker-alt mr-2"></i>
-                <span class="text-sm">
-                    Géolocalisation requise (rayon: {{ $site->rayon_geofencing }}m)
-                </span>
-            </div>
-        </div>
-        @endif
+<div class="min-h-screen flex flex-col justify-center py-12 px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <img class="mx-auto h-16 w-auto" src="{{ asset('images/logo/logo2.png') }}" alt="GeniusWork Logo">
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Connexion à votre compte
+        </h2>
+        <p class="mt-2 text-center text-sm text-gray-600">
+            Pointage mobile - {{ $app_name ?? 'GeniusWork' }}
+        </p>
     </div>
 
-    <!-- Authentication Section -->
-    <div class="card" id="authSection">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-user-check mr-2 text-blue-600"></i>
-            Authentification
-        </h3>
-        
-        <form id="authForm" class="space-y-4">
-            <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                    Adresse email
-                </label>
-                <input 
-                    type="email" 
-                    id="email" 
-                    name="email" 
-                    required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="votre.email@entreprise.com"
-                >
-            </div>
-            
-            <button type="submit" class="w-full btn-primary" id="authButton">
-                <i class="fas fa-fingerprint mr-2"></i>
-                S'authentifier avec WebAuthn
-            </button>
-        </form>
-        
-        <div class="mt-4 text-center">
-            <p class="text-xs text-gray-500">
-                <i class="fas fa-shield-alt mr-1"></i>
-                Authentification sécurisée sans mot de passe
-            </p>
-        </div>
-    </div>
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-6 shadow rounded-lg sm:px-10">
+            <form class="mb-0 space-y-6" action="{{ route('mobile.pointage.login') }}" method="POST" id="loginForm">
+                @csrf
+                
+                @if(session('error'))
+                <div class="rounded-md bg-red-50 p-4 mb-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-red-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-red-800">
+                                {{ session('error') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                @endif
+                
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Adresse email</label>
+                    <div class="mt-1">
+                        <input id="email" name="email" type="email" autocomplete="email" required 
+                            class="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+                    </div>
+                </div>
 
-    <!-- Location Section (Hidden initially) -->
-    <div class="card hidden" id="locationSection">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-map-marker-alt mr-2 text-green-600"></i>
-            Vérification de position
-        </h3>
-        
-        <div id="locationStatus" class="text-center">
-            <div class="spinner mx-auto mb-4"></div>
-            <p class="text-gray-600">Vérification de votre position...</p>
-        </div>
-        
-        <button id="retryLocationButton" class="w-full btn-secondary hidden mt-4">
-            <i class="fas fa-redo mr-2"></i>
-            Réessayer la géolocalisation
-        </button>
-    </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Mot de passe</label>
+                    <div class="mt-1 relative">
+                        <input id="password" name="password" type="password" autocomplete="current-password" required 
+                            class="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
 
-    <!-- Pointage Section (Hidden initially) -->
-    <div class="card hidden" id="pointageSection">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-clock mr-2 text-purple-600"></i>
-            Pointage
-        </h3>
-        
-        <div id="employeeInfo" class="bg-gray-50 rounded-lg p-4 mb-4">
-            <!-- Employee info will be populated here -->
-        </div>
-        
-        <div id="currentStatus" class="mb-4">
-            <!-- Current status will be populated here -->
-        </div>
-        
-        <button id="pointageButton" class="w-full btn-success">
-            <i class="fas fa-play mr-2"></i>
-            <span id="pointageButtonText">Pointer l'entrée</span>
-        </button>
-    </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember_me" name="remember" type="checkbox" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                        <label for="remember_me" class="ml-2 block text-sm text-gray-900">
+                            Se souvenir de moi
+                        </label>
+                    </div>
 
-    <!-- Progress Indicator -->
-    <div class="flex justify-center mt-6">
-        <div class="flex space-x-2">
-            <div class="w-3 h-3 rounded-full bg-blue-600" id="step1"></div>
-            <div class="w-3 h-3 rounded-full bg-gray-300" id="step2"></div>
-            <div class="w-3 h-3 rounded-full bg-gray-300" id="step3"></div>
+                    <div class="text-sm">
+                        <a href="{{ route('password.request') }}" class="font-medium text-primary-600 hover:text-primary-500">
+                            Mot de passe oublié ?
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <span>Se connecter</span>
+                    </button>
+                </div>
+                
+                <!-- WebAuthn Authentication Button -->
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">Ou</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <button type="button" id="webAuthButton" class="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-fingerprint text-primary-600 mr-2"></i>
+                        <span>Connexion biométrique</span>
+                    </button>
+                </div>
+            </form>
         </div>
-    </div>
-    
-    <div class="text-center mt-2">
-        <p class="text-sm text-gray-500" id="stepText">Étape 1: Authentification</p>
     </div>
 </div>
-
-<!-- Hidden data -->
-<input type="hidden" id="siteId" value="{{ $site->id }}">
-<input type="hidden" id="token" value="{{ $token }}">
-<input type="hidden" id="siteData" value="{{ json_encode($qr_info) }}">
 @endsection
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const siteId = document.getElementById('siteId').value;
-    const token = document.getElementById('token').value;
-    const siteData = JSON.parse(document.getElementById('siteData').value);
-    
-    let currentEmployeur = null;
-    let currentLocation = null;
-    let isCheckedIn = false;
-    
-    // Step management
-    function updateStep(step) {
-        // Reset all steps
-        document.querySelectorAll('[id^="step"]').forEach(el => {
-            el.classList.remove('bg-blue-600', 'bg-green-600');
-            el.classList.add('bg-gray-300');
-        });
+    // Toggle password visibility
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const passwordInput = document.getElementById('password');
+        const icon = this.querySelector('i');
         
-        // Update current and completed steps
-        for (let i = 1; i <= step; i++) {
-            const stepEl = document.getElementById(`step${i}`);
-            if (i === step) {
-                stepEl.classList.remove('bg-gray-300');
-                stepEl.classList.add('bg-blue-600');
-            } else if (i < step) {
-                stepEl.classList.remove('bg-gray-300');
-                stepEl.classList.add('bg-green-600');
-            }
-        }
-        
-        // Update step text
-        const stepTexts = {
-            1: 'Étape 1: Authentification',
-            2: 'Étape 2: Vérification de position',
-            3: 'Étape 3: Pointage'
-        };
-        document.getElementById('stepText').textContent = stepTexts[step] || '';
-    }
-    
-    // Authentication form handler
-    document.getElementById('authForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const email = document.getElementById('email').value;
-        const authButton = document.getElementById('authButton');
-        
-        if (!email) {
-            utils.showToast('Veuillez saisir votre adresse email', 'error');
-            return;
-        }
-        
-        try {
-            utils.showLoading();
-            authButton.disabled = true;
-            authButton.innerHTML = '<div class="spinner mx-auto"></div>';
-            
-            // Get WebAuthn authentication options
-            const optionsResponse = await api.post('/mobile/pointage/webauthn/auth-options', {
-                email: email
-            });
-            
-            if (!optionsResponse.success) {
-                throw new Error(optionsResponse.message || 'Erreur lors de la génération des options d\'authentification');
-            }
-            
-            // Start WebAuthn authentication
-            const credential = await navigator.credentials.get({
-                publicKey: {
-                    challenge: Uint8Array.from(atob(optionsResponse.data.challenge), c => c.charCodeAt(0)),
-                    allowCredentials: optionsResponse.data.allowCredentials?.map(cred => ({
-                        id: Uint8Array.from(atob(cred.id), c => c.charCodeAt(0)),
-                        type: cred.type,
-                        transports: cred.transports
-                    })) || [],
-                    timeout: optionsResponse.data.timeout,
-                    userVerification: optionsResponse.data.userVerification
-                }
-            });
-            
-            // Verify authentication
-            const verifyResponse = await api.post('/mobile/pointage/webauthn/verify-auth', {
-                email: email,
-                webauthn_response: {
-                    id: credential.id,
-                    rawId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
-                    response: {
-                        authenticatorData: btoa(String.fromCharCode(...new Uint8Array(credential.response.authenticatorData))),
-                        clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(credential.response.clientDataJSON))),
-                        signature: btoa(String.fromCharCode(...new Uint8Array(credential.response.signature))),
-                        userHandle: credential.response.userHandle ? btoa(String.fromCharCode(...new Uint8Array(credential.response.userHandle))) : null
-                    },
-                    type: credential.type
-                }
-            });
-            
-            if (!verifyResponse.success) {
-                throw new Error(verifyResponse.message || 'Échec de l\'authentification');
-            }
-            
-            currentEmployeur = verifyResponse.data.employeur;
-            
-            // Show success and move to next step
-            utils.showToast('Authentification réussie!', 'success');
-            document.getElementById('authSection').classList.add('hidden');
-            document.getElementById('locationSection').classList.remove('hidden');
-            updateStep(2);
-            
-            // Start location verification
-            await verifyLocation();
-            
-        } catch (error) {
-            console.error('Authentication error:', error);
-            utils.showToast(error.message || 'Erreur lors de l\'authentification', 'error');
-        } finally {
-            utils.hideLoading();
-            authButton.disabled = false;
-            authButton.innerHTML = '<i class="fas fa-fingerprint mr-2"></i>S\'authentifier avec WebAuthn';
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
         }
     });
     
-    // Location verification
-    async function verifyLocation() {
-        const locationStatus = document.getElementById('locationStatus');
-        const retryButton = document.getElementById('retryLocationButton');
-        
-        try {
-            locationStatus.innerHTML = `
-                <div class="spinner mx-auto mb-4"></div>
-                <p class="text-gray-600">Vérification de votre position...</p>
-            `;
-            retryButton.classList.add('hidden');
-            
-            // Get current position
-            const position = await getCurrentPosition();
-            currentLocation = {
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude
-            };
-            
-            // Validate location with server
-            const locationResponse = await api.post('/mobile/pointage/location/validate', {
-                latitude: currentLocation.latitude,
-                longitude: currentLocation.longitude,
-                site_id: siteId
-            });
-            
-            if (!locationResponse.success) {
-                throw new Error(locationResponse.message || 'Position non autorisée');
-            }
-            
-            // Show success
-            locationStatus.innerHTML = `
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-check text-green-600 text-2xl"></i>
-                    </div>
-                    <p class="text-green-600 font-semibold">Position validée</p>
-                    <p class="text-sm text-gray-500 mt-1">
-                        Distance: ${locationResponse.data.distance}m
-                    </p>
-                </div>
-            `;
-            
-            // Move to pointage section
-            setTimeout(() => {
-                document.getElementById('locationSection').classList.add('hidden');
-                document.getElementById('pointageSection').classList.remove('hidden');
-                updateStep(3);
-                setupPointageSection();
-            }, 1500);
-            
-        } catch (error) {
-            console.error('Location error:', error);
-            locationStatus.innerHTML = `
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-times text-red-600 text-2xl"></i>
-                    </div>
-                    <p class="text-red-600 font-semibold">Erreur de position</p>
-                    <p class="text-sm text-gray-500 mt-1">${error.message}</p>
-                </div>
-            `;
-            retryButton.classList.remove('hidden');
+    // WebAuthn button handler
+    document.getElementById('webAuthButton').addEventListener('click', async function() {
+        // First check if WebAuthn is supported
+        if (!window.PublicKeyCredential) {
+            window.utils.showToast('Votre navigateur ne supporte pas l\'authentification biométrique', 'error');
+            return;
         }
-    }
-    
-    // Get current position with promise
-    function getCurrentPosition() {
-        return new Promise((resolve, reject) => {
-            if (!navigator.geolocation) {
-                reject(new Error('Géolocalisation non supportée'));
-                return;
-            }
-            
-            navigator.geolocation.getCurrentPosition(
-                resolve,
-                (error) => {
-                    let message = 'Erreur de géolocalisation';
-                    switch (error.code) {
-                        case error.PERMISSION_DENIED:
-                            message = 'Accès à la géolocalisation refusé';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            message = 'Position non disponible';
-                            break;
-                        case error.TIMEOUT:
-                            message = 'Délai d\'attente dépassé';
-                            break;
-                    }
-                    reject(new Error(message));
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 60000
-                }
-            );
-        });
-    }
-    
-    // Setup pointage section
-    async function setupPointageSection() {
-        const employeeInfo = document.getElementById('employeeInfo');
-        const currentStatus = document.getElementById('currentStatus');
-        const pointageButton = document.getElementById('pointageButton');
-        const pointageButtonText = document.getElementById('pointageButtonText');
         
-        // Display employee info
-        employeeInfo.innerHTML = `
-            <div class="flex items-center">
-                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                    <i class="fas fa-user text-blue-600"></i>
-                </div>
-                <div>
-                    <p class="font-semibold text-gray-800">${currentEmployeur.nom_complet}</p>
-                    <p class="text-sm text-gray-500">${currentEmployeur.matricule}</p>
-                    <p class="text-sm text-gray-500">${currentEmployeur.entreprise.nom}</p>
-                </div>
-            </div>
-        `;
-        
+        // Check if user has credentials
         try {
-            // Check current status
-            const statusResponse = await api.post('/mobile/pointage/status', {
-                employeur_id: currentEmployeur.id
-            });
+            const hasCredentials = await window.checkWebAuthnSupport();
             
-            if (statusResponse.success && statusResponse.data.is_checked_in) {
-                isCheckedIn = true;
-                const presence = statusResponse.data;
-                
-                currentStatus.innerHTML = `
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-green-800 font-semibold">Déjà pointé</p>
-                                <p class="text-sm text-green-600">
-                                    Entrée: ${utils.formatTime(presence.heure_entree)}
-                                </p>
-                                <p class="text-sm text-green-600">
-                                    Temps écoulé: ${utils.formatDuration(presence.temps_ecoule_minutes)}
-                                </p>
-                            </div>
-                            <div class="status-success">
-                                ${presence.statut}
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                pointageButton.className = 'w-full btn-danger';
-                pointageButtonText.innerHTML = '<i class="fas fa-stop mr-2"></i>Pointer la sortie';
+            if (hasCredentials) {
+                // User has credentials, show login UI
+                window.webAuthUI.showLogin();
             } else {
-                currentStatus.innerHTML = `
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                        <p class="text-blue-800">Prêt pour le pointage d'entrée</p>
-                        <p class="text-sm text-blue-600 mt-1">
-                            ${utils.formatDate(new Date())}
-                        </p>
-                    </div>
-                `;
+                // User doesn't have credentials, show no credentials UI
+                window.webAuthUI.showNoCredentials();
             }
         } catch (error) {
-            console.error('Status check error:', error);
+            console.error('Error checking WebAuthn support:', error);
+            window.utils.showToast('Erreur lors de la vérification de l\'authentification biométrique', 'error');
         }
-        
-        // Pointage button handler
-        pointageButton.addEventListener('click', async function() {
-            await performPointage();
-        });
-    }
-    
-    // Perform pointage
-    async function performPointage() {
-        const pointageButton = document.getElementById('pointageButton');
-        
-        try {
-            utils.showLoading();
-            pointageButton.disabled = true;
-            
-            const pointageData = {
-                employeur_id: currentEmployeur.id,
-                site_id: siteId,
-                latitude: currentLocation.latitude,
-                longitude: currentLocation.longitude,
-                webauthn_verified: true,
-                webauthn_credential_id: null // Will be set by WebAuthn service
-            };
-            
-            const response = await api.post('/mobile/pointage/record', pointageData);
-            
-            if (!response.success) {
-                throw new Error(response.message || 'Erreur lors du pointage');
-            }
-            
-            // Redirect to success page
-            const params = new URLSearchParams({
-                type: response.data.type,
-                employeur: currentEmployeur.nom_complet,
-                site: siteData.site.nom,
-                heures: response.data.minutes_travaillees ? utils.formatDuration(response.data.minutes_travaillees) : '0h00'
-            });
-            
-            window.location.href = `/mobile/pointage/success?${params.toString()}`;
-            
-        } catch (error) {
-            console.error('Pointage error:', error);
-            utils.showToast(error.message || 'Erreur lors du pointage', 'error');
-        } finally {
-            utils.hideLoading();
-            pointageButton.disabled = false;
-        }
-    }
-    
-    // Retry location button
-    document.getElementById('retryLocationButton').addEventListener('click', verifyLocation);
-});
+    });
 </script>
 @endpush

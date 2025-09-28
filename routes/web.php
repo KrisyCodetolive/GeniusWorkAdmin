@@ -24,7 +24,12 @@ use App\Http\Controllers\AbonnementController;
 */
 
 Route::get('/', function () {
-    return redirect('https://work.genius.ci');
+    if (app()->environment('production')) {
+        return redirect('https://work.genius.ci');
+    }
+    
+    // For local development, redirect to a local route
+    return redirect()->route('mobile.pointage.scanner');
 })->name('home');
 
 Route::middleware(['auth'])->group(function () {
@@ -405,6 +410,10 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         // Page d'aide
         Route::get('/help', [App\Http\Controllers\MobilePointageWebController::class, 'help'])
             ->name('help');
+        
+        // Authentification pour le pointage mobile
+        Route::post('/login', [App\Http\Controllers\MobilePointageWebController::class, 'login'])
+            ->name('login');
     });
 });
 

@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Services\QRCodeService;
 use App\Models\Site;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Laravel\Sanctum\HasApiTokens;
 
 class MobilePointageWebController extends Controller
 {
@@ -130,5 +133,66 @@ class MobilePointageWebController extends Controller
         return view('mobile.pointage.help', [
             'app_name' => config('app.name', 'GeniusWork')
         ]);
+    }
+    
+    /**
+     * Authentification pour le pointage mobile
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     */
+    public function login(Request $request)
+    {
+        // Valider les données de la requête
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+            'remember' => 'nullable|boolean',
+        ]);
+        
+        $credentials = $request->only('email', 'password');
+        $remember = $request->boolean('remember', false);
+        
+        // Tentative d'authentification
+        if (auth()->attempt($credentials, $remember)) {
+            $request->session()->regenerate();
+            
+            $user = auth()->user();
+            
+            // Générer un token Sanctum pour les API
+            $token = $user->createToken('mobile-pointage-auth')->plainTextToken;
+            
+            // Si c'est une requête AJAX, retourner un JSON
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Authentification réussie',
+                    'token' => $token,
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                    ]
+                ]);
+            }
+            
+            // Redirection vers la page appropriée
+            return redirect()->intended(route('mobile.pointage.scanner'));
+        }
+        
+        // Échec d'authentification
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Identifiants invalides',
+                'errors' => [
+                    'email' => ['Ces identifiants ne correspondent pas à nos enregistrements.']
+                ]
+            ], 422);
+        }
+        
+        return back()->withErrors([
+            'email' => 'Ces identifiants ne correspondent pas à nos enregistrements.',
+        ])->withInput($request->except('password'));
     }
 }

@@ -208,8 +208,9 @@ class ViewTask extends ViewRecord
                         
                         Tab::make('Métadonnées')
                             ->schema([
-                                Infolists\Components\KeyValueEntry::make('metadata')
+                                Infolists\Components\KeyValueEntry::make('meta_donnees')
                                     ->label('Métadonnées')
+                                    ->visible(fn ($record): bool => is_array($record->meta_donnees) || is_object($record->meta_donnees))
                                     ->columnSpanFull(),
                             ]),
                     ])->columnSpanFull(),

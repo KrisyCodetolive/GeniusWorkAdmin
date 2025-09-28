@@ -6,6 +6,9 @@ use App\Services\OtpService;
 use App\Services\SmsService;
 use App\Services\SMS\OrangeSMSService;
 use App\Services\SMS\SMSLogService;
+use App\Services\WebAuthnService;
+use App\Services\PresenceService;
+use App\Services\QRCodeService;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Http\Kernel;
@@ -30,6 +33,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(OtpService::class, function ($app) {
             return new OtpService($app->make(SmsService::class));
         });
+        
+        // Services pour le pointage mobile
+        $this->app->singleton(WebAuthnService::class);
+        $this->app->singleton(PresenceService::class);
+        $this->app->singleton(QRCodeService::class);
     }
 
     /**

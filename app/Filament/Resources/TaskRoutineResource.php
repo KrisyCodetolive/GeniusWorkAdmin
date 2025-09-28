@@ -188,7 +188,7 @@ class TaskRoutineResource extends Resource
                         
                         Tab::make('Métadonnées')
                             ->schema([
-                                Forms\Components\KeyValue::make('metadata')
+                                Forms\Components\KeyValue::make('meta_donnees')
                                     ->label('Métadonnées')
                                     ->columnSpanFull(),
                             ]),

@@ -22,8 +22,11 @@ class WebAuthnService
             // Générer un challenge unique
             $challenge = $this->generateChallenge();
             
-            // Stocker le challenge en cache pour validation ultérieure
-            Cache::put("webauthn_challenge_{$user->id}", $challenge, now()->addMinutes(5));
+            // Encoder le challenge en base64url avant de le stocker
+            $encodedChallenge = base64url_encode($challenge);
+            
+            // Stocker le challenge encodé en cache pour validation ultérieure
+            Cache::put("webauthn_challenge_{$user->id}", $encodedChallenge, now()->addMinutes(5));
             
             $options = [
                 'challenge' => base64url_encode($challenge),
@@ -88,6 +91,9 @@ class WebAuthnService
                 return false;
             }
             
+            // Décoder le challenge stocké en base64url
+            $storedChallenge = base64url_decode($storedChallenge);
+            
             // Supprimer le challenge du cache
             Cache::forget("webauthn_challenge_{$user->id}");
             
@@ -138,9 +144,12 @@ class WebAuthnService
             // Générer un challenge unique
             $challenge = $this->generateChallenge();
             
-            // Stocker le challenge en cache
+            // Encoder le challenge en base64url avant de le stocker dans le cache
+            $encodedChallenge = base64url_encode($challenge);
+            
+            // Stocker le challenge encodé en cache
             Cache::put("webauthn_auth_challenge_{$email}", [
-                'challenge' => $challenge,
+                'challenge' => $encodedChallenge,
                 'user_id' => $user->id
             ], now()->addMinutes(5));
             
@@ -187,6 +196,11 @@ class WebAuthnService
             if (!$challengeData) {
                 Log::warning('Challenge d\'authentification WebAuthn non trouvé ou expiré', ['email' => $email]);
                 return null;
+            }
+            
+            // Décoder le challenge stocké en base64url
+            if (isset($challengeData['challenge'])) {
+                $challengeData['challenge'] = base64url_decode($challengeData['challenge']);
             }
             
             // Supprimer le challenge du cache
