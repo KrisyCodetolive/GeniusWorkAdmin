@@ -700,7 +700,7 @@ class WebPointageService
      * @param string $motif
      * @return Supplementaire
      */
-    protected function creerHeuresSupplementaires(Employeur $employeur, Carbon $heureDebut, Carbon $heureFin, int $minutesSupplementaires, string $motif)
+    public function creerHeuresSupplementaires(Employeur $employeur, Carbon $heureDebut, Carbon $heureFin, int $minutesSupplementaires, string $motif)
     {
         // Convertir les minutes en heures (format décimal)
         $nombreHeures = round($minutesSupplementaires / 60, 2);
