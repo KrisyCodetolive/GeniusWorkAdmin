@@ -79,6 +79,7 @@ class FacturationResource extends Resource
                             ->searchable()
                             ->preload()
                             ->reactive()
+                            ->required()
                             ->afterStateUpdated(function ($state, callable $set, $get) {
                                 if ($state) {
                                     $abonnement = \App\Models\Abonnement::find($state);

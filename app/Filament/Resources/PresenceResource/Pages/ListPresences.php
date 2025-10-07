@@ -37,38 +37,44 @@ class ListPresences extends ListRecords
             // Menu déroulant pour les outils de pointage
             Actions\ActionGroup::make([
                 // SmartClock pour pointage physique
-                Actions\Action::make('smartClock')
-                    ->label('SmartClock')
-                    ->icon('heroicon-o-qr-code')
-                    ->color('success')
-                    ->form([
-                        \Filament\Forms\Components\Select::make('site_id')
-                            ->label('Sélectionnez un site')
-                            ->options(function () use ($user) {
-                                $query = \App\Models\Site::query();
-                                if (!$user->isSuperAdmin() && !$user->isSupport()) {
-                                    $query->where('entreprise_id', $user->entreprise_id);
-                                }
-                                return $query->pluck('nom', 'id');
-                            })
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                    ])
-                    ->action(function (array $data) {
-                        $site = \App\Models\Site::find($data['site_id']);
-                        if (!$site) {
-                            \Filament\Notifications\Notification::make()
-                                ->title('Erreur')
-                                ->body('Site non trouvé')
-                                ->danger()
-                                ->send();
-                            return;
-                        }
-                        
-                        // Redirection vers la page SmartClock
-                        return redirect()->route('smart-clock.index', ['site_id' => $site->id]);
-                    }),
+                \Filament\Actions\Action::make('smartClock')
+                ->label('SmartClock')
+                ->icon('heroicon-o-qr-code')
+                ->color('success')
+                ->form([
+                    \Filament\Forms\Components\Select::make('site_id')
+                        ->label('Sélectionnez un site')
+                        ->options(function () {
+                            $user = auth()->user();
+                            $query = \App\Models\Site::query();
+                            
+                            if (!$user->isSuperAdmin() && !$user->isSupport()) {
+                                $query->where('entreprise_id', $user->entreprise_id);
+                            }
+                            
+                            return $query->pluck('nom', 'id');
+                        })
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                ])
+                ->action(function (array $data) {
+                    $site = \App\Models\Site::find($data['site_id']);
+                    if (!$site) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Erreur')
+                            ->body('Site non trouvé')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+                    
+                    // Stocker le site sélectionné en session
+                    session(['selected_site_id' => $site->id]);
+                    
+                    // Rediriger vers la page SmartClock
+                    return redirect()->route('smart-clock.index');
+                }),
                     
                 // Scanner QR Code mobile
                 Actions\Action::make('scannerQRCode')

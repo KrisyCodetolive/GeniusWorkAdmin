@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('entreprise_id');
             $table->string('titre');
+            $table->string('active');
             $table->text('description')->nullable();
             $table->dateTime('date_debut')->nullable();
             $table->dateTime('date_fin')->nullable();

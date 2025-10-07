@@ -145,6 +145,7 @@ class EmployeurResource extends Resource
                                             TextInput::make('email')
                                                 ->label('Email')
                                                 ->email()
+                                                ->required()
                                                 ->maxLength(255),
                                             TextInput::make('telephone')
                                                 ->label('Téléphone')
@@ -194,6 +195,7 @@ class EmployeurResource extends Resource
                                                 ->helperText('Généré automatiquement'),
                                             Select::make('type_contrat')
                                                 ->label('Type de contrat')
+                                                ->required()
                                                 ->options([
                                                     'cdi' => 'CDI',
                                                     'cdd' => 'CDD',
