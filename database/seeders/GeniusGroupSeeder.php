@@ -11,11 +11,19 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class GeniusGroupSeeder extends Seeder
 {
     public function run(): void
     {
+        // S'assurer que les rôles existent
+        $roles = ['super_admin', 'admin', 'support', 'employe', 'manager'];
+        foreach ($roles as $roleName) {
+            Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+        }
+
         DB::beginTransaction();
 
         try {
