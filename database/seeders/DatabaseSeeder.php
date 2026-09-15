@@ -15,6 +15,7 @@ use Database\Seeders\FilialeSeeder;
 use Database\Seeders\DepartementSeeder;
 use Database\Seeders\WebPointageSeeder;
 use Database\Seeders\SiteSeeder;
+use Database\Seeders\GeniusGroupSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -36,6 +37,7 @@ class DatabaseSeeder extends Seeder
             EmployeurSeeder::class,
             FilialeSeeder::class,
             SiteSeeder::class,
+            GeniusGroupSeeder::class,
         ]);
     }
 }

@@ -35,7 +35,9 @@ class Site extends Model
         'contact_email',
         'contact_telephone',
         'qr_token',
-        'qr_generated_at'
+        'qr_generated_at',
+        'kiosk_token',
+        'kiosk_activated_at'
     ];
 
     /**
