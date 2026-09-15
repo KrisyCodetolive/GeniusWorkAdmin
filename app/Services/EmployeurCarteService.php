@@ -71,10 +71,10 @@ class EmployeurCarteService
     }
     
     /**
-     * Récupère l'URL du QR Code pour un employé
+     * Récupère le QR Code pour un employé (généré en local avec simple-qrcode)
      * 
      * @param Employeur $employeur
-     * @return string URL du QR Code
+     * @return string QR Code en base64 data URL
      */
     protected function getQrCodeUrl(Employeur $employeur): string
     {
@@ -86,85 +86,29 @@ class EmployeurCarteService
         }
         
         try {
-            // Générer l'URL de vérification et le nom du QR code
+            // Générer l'URL de vérification
             $verificationUrl = route('employe.verification', ['code' => $employeur->qr_code_secret]);
-            $qrName = "QR Code - {$employeur->nom_complet}";
             
-            // Définir les options de style pour le QR code
-            $styleOptions = [
-                'foreground_gradient_one' => '#3a5faa',
-                'foreground_gradient_two' => '#324f88',
-                'eyes_inner_color' => '#3a5faa',
-                'eyes_outer_color' => '#324f88',
-            ];
+            // Générer le QR code en local avec simple-qrcode (SVG inline)
+            $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+                ->size(200)
+                ->color(50, 79, 136)
+                ->backgroundColor(255, 255, 255)
+                ->generate($verificationUrl);
             
-            // Utiliser la nouvelle méthode pour récupérer ou créer un QR code
-            $qrCodeId = $this->geniusToolsService->getOrCreateQrCode($verificationUrl, $qrName, $styleOptions);
-            
-            // Mettre à jour l'ID du QR code dans le modèle si nécessaire
-            if ($employeur->qr_code_id !== $qrCodeId) {
-                $employeur->qr_code_id = $qrCodeId;
-                $employeur->save();
-                
-                Log::info('EmployeurCarteService - QR code ID updated for employee', [
-                    'employeur_id' => $employeur->id,
-                    'qr_code_id' => $qrCodeId
-                ]);
-            }
-            
-            // Récupérer les informations complètes du QR code pour obtenir l'URL directe de l'image SVG
-            $qrCodeInfo = $this->geniusToolsService->getQrCode($qrCodeId);
-            
-            // Vérifier si la réponse contient l'URL de l'image SVG
-            if (isset($qrCodeInfo['data']['qr_code']) && !empty($qrCodeInfo['data']['qr_code'])) {
-                $svgUrl = $qrCodeInfo['data']['qr_code'];
-                
-                Log::info('EmployeurCarteService - Using direct SVG URL for QR code', [
-                    'employeur_id' => $employeur->id,
-                    'qr_code_svg_url' => $svgUrl
-                ]);
-                
-                // Télécharger le contenu SVG et le convertir en base64 afin de l'intégrer directement dans l'image
-                try {
-                    // Télécharger le contenu SVG
-                    $svgContent = file_get_contents($svgUrl);
-                    
-                    if ($svgContent !== false) {
-                        // Convertir en base64 et créer une URL data
-                        $base64 = base64_encode($svgContent);
-                        $dataUrl = 'data:image/svg+xml;base64,' . $base64;
-                        
-                        Log::info('EmployeurCarteService - Converted SVG to base64', [
-                            'employeur_id' => $employeur->id,
-                            'content_length' => strlen($dataUrl)
-                        ]);
-                        
-                        // Retourner l'URL data
-                        return $dataUrl;
-                    }
-                } catch (\Exception $e) {
-                    Log::warning('EmployeurCarteService - Failed to convert SVG to base64', [
-                        'employeur_id' => $employeur->id,
-                        'message' => $e->getMessage()
-                    ]);
-                    // Continuer avec l'URL directe en cas d'échec
-                }
-                
-                // Retourner l'URL directe de l'image SVG si la conversion a échoué
-                return $svgUrl;
-            }
-            
-            // Fallback: Retourner l'URL d'affichage du QR code
-            return route('qr-code.display', ['id' => $qrCodeId]);
+            // Convertir en base64 data URL
+            $base64 = base64_encode($svg);
+            return 'data:image/svg+xml;base64,' . $base64;
             
         } catch (\Exception $e) {
-            Log::error('EmployeurCarteService - Failed to generate QR code URL', [
+            Log::error('EmployeurCarteService - Failed to generate QR code', [
                 'employeur_id' => $employeur->id,
                 'error' => $e->getMessage()
             ]);
             
-            // En cas d'erreur, retourner une URL de QR code générique
-            return asset('images/qr-code-placeholder.png');
+            // Fallback: QR code minimal en base64
+            $fallbackSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="white"/><text x="100" y="100" text-anchor="middle" font-size="12">QR Error</text></svg>';
+            return 'data:image/svg+xml;base64,' . base64_encode($fallbackSvg);
         }
     }
     
