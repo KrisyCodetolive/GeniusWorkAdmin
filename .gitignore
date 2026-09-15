@@ -21,3 +21,4 @@ yarn-error.log
 /.vscode
 /.zed
 /laravel_gen_filament.py
+.env
