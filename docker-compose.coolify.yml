@@ -1,12 +1,7 @@
 # ===========================================
 # Docker Compose pour Coolify — Genius Work
 # ===========================================
-# Utilise la base de données gérée par Coolify
-# (ne pas inclure le service db ici)
-#
-# Variables à configurer dans l'UI Coolify :
-#   APP_KEY, APP_URL, DB_HOST, DB_PORT, DB_DATABASE,
-#   DB_USERNAME, DB_PASSWORD
+# Utilise la base de données et Redis gérés par Coolify
 # ===========================================
 
 services:
@@ -25,7 +20,17 @@ services:
       - APP_KEY=${APP_KEY}
       - APP_URL=${APP_URL:-http://localhost}
       - APP_ENV=production
-      - APP_DEBUG=false
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - GENIUS_TOOLS_API_KEY=${GENIUS_TOOLS_API_KEY:-}
+      - GENIUS_TOOLS_BASE_URL=${GENIUS_TOOLS_BASE_URL:-https://linkqr.genius.ci/api}
+      - REDIS_CLIENT=${REDIS_CLIENT:-phpredis}
+      - REDIS_HOST=${REDIS_HOST:-}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_DB=${REDIS_DB:-0}
+      - CACHE_DRIVER=${CACHE_DRIVER:-file}
+      - SESSION_DRIVER=${SESSION_DRIVER:-file}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION:-database}
     volumes:
       - storage-data:/var/www/html/storage
       - videos-data:/var/www/html/public/videos
