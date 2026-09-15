@@ -326,7 +326,7 @@ class PresenceResource extends Resource
                         'mobile_app' => 'heroicon-o-device-phone-mobile',
                         'biometric' => 'heroicon-o-finger-print',
                         null => 'heroicon-o-hand-raised',
-                        default => 'heroicon-o-device-computer',
+                        default => 'heroicon-o-computer-desktop',
                     })
                     ->searchable()
                     ->sortable()
