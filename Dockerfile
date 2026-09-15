@@ -15,6 +15,7 @@ RUN apk add --no-cache \
     zip \
     unzip \
     bash \
+    mysql-client \
     && apk add --no-cache --virtual .build-deps \
     $PHPIZE_DEPS \
     libzip-dev \

@@ -2,11 +2,9 @@
 set -e
 
 # ===========================================
-# Entrypoint — Génère le .env depuis les variables d'environnement
-# (Coolify injecte les vars via l'UI, pas via un fichier .env)
+# Entrypoint — Génère le .env et attend la DB
 # ===========================================
 
-# Générer le fichier .env depuis les variables d'environnement
 echo "📝 Génération du fichier .env..."
 cat > /var/www/html/.env <<EOF
 APP_NAME="${APP_NAME:-Genius Work}"
@@ -42,19 +40,51 @@ if [ -z "${APP_KEY}" ] || [ "${APP_KEY}" = "" ]; then
     php artisan key:generate --force --no-interaction
 fi
 
-# Attendre que la base de données soit prête
-echo "⏳ Attente de la base de données..."
+# Attendre que la base de données soit prête (via PHP/pdo)
+echo "⏳ Attente de la base de données (${DB_HOST}:${DB_PORT})..."
 max_retries=30
 retry=0
-while ! mysqladmin ping -h "${DB_HOST:-db}" -P "${DB_PORT:-3306}" -u "${DB_USERNAME:-genius}" -p"${DB_PASSWORD:-secret}" --silent 2>/dev/null; do
+while [ $retry -lt $max_retries ]; do
     retry=$((retry + 1))
-    if [ $retry -ge $max_retries ]; then
-        echo "❌ Impossible de se connecter à la base de données après $max_retries tentatives"
-        exit 1
-    fi
+    php -r "
+        try {
+            \$pdo = new PDO(
+                'mysql:host=${DB_HOST};port=${DB_PORT};dbname=${DB_DATABASE}',
+                '${DB_USERNAME}',
+                '${DB_PASSWORD}',
+                [PDO::ATTR_TIMEOUT => 5]
+            );
+            echo \"OK\n\";
+            exit(0);
+        } catch (Exception \$e) {
+            echo \$e->getMessage() . \"\n\";
+            exit(1);
+        }
+    " 2>/dev/null && break
     echo "  Tentative $retry/$max_retries..."
     sleep 2
 done
+
+if [ $retry -ge $max_retries ]; then
+    echo "❌ Impossible de se connecter à la base de données après $max_retries tentatives"
+    echo "   Host: ${DB_HOST}:${DB_PORT}"
+    echo "   Database: ${DB_DATABASE}"
+    echo "   User: ${DB_USERNAME}"
+    # Afficher l'erreur réelle
+    php -r "
+        try {
+            \$pdo = new PDO(
+                'mysql:host=${DB_HOST};port=${DB_PORT};dbname=${DB_DATABASE}',
+                '${DB_USERNAME}',
+                '${DB_PASSWORD}',
+                [PDO::ATTR_TIMEOUT => 5]
+            );
+        } catch (Exception \$e) {
+            echo '   Erreur: ' . \$e->getMessage() . \"\n\";
+        }
+    " 2>&1
+    exit 1
+fi
 echo "✅ Base de données accessible"
 
 # Optimisations Laravel
