@@ -5,10 +5,9 @@
 #   - Le reverse proxy (Traefik)
 #   - Le SSL automatique (Let's Encrypt)
 #   - Le domaine personnalisé
-#   - Les variables d'environnement (depuis l'UI Coolify)
 #
-# Ce fichier ne contient que l'app + la DB.
-# Configurer les variables d'environnement dans l'UI Coolify.
+# Variables à configurer dans l'UI Coolify :
+#   APP_KEY, APP_URL, DB_PASSWORD, DB_ROOT_PASSWORD
 # ===========================================
 
 services:
@@ -17,6 +16,16 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-genius_work}
+      - DB_USERNAME=${DB_USERNAME:-genius}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - APP_KEY=${APP_KEY}
+      - APP_URL=${APP_URL:-http://localhost}
+      - APP_ENV=production
+      - APP_DEBUG=false
     volumes:
       - storage-data:/var/www/html/storage
       - videos-data:/var/www/html/public/videos
@@ -32,17 +41,18 @@ services:
     image: mysql:8.0
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: "${DB_DATABASE:-genius_work}"
-      MYSQL_USER: "${DB_USERNAME:-genius}"
-      MYSQL_PASSWORD: "${DB_PASSWORD:-secret}"
-      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-rootsecret}"
+      MYSQL_DATABASE: ${DB_DATABASE:-genius_work}
+      MYSQL_USER: ${DB_USERNAME:-genius}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
     volumes:
       - db-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
     networks:
       - coolify
 
