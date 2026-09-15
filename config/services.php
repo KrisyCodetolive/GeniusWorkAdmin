@@ -58,7 +58,7 @@ return [
 
     // Configuration pour Genius Tools (QR Codes)
     'genius_tools' => [
-        'api_key' => env('GENIUS_TOOLS_API_KEY', '211313bf1816d4c5c54f59362c36e660'),
+        'api_key' => env('GENIUS_TOOLS_API_KEY', ''),
         'base_url' => env('GENIUS_TOOLS_BASE_URL', 'https://linkqr.genius.ci/api'),
     ],
 
