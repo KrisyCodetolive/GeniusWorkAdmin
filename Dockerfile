@@ -4,7 +4,7 @@
 # Version simplifiée pour Coolify
 # ===========================================
 
-FROM php:8.2-fpm-alpine
+FROM php:8.3-fpm-alpine
 
 # Dépendances système + extensions PHP
 RUN apk add --no-cache \
