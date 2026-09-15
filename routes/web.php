@@ -11,6 +11,8 @@ use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WebPointageController;
 use App\Http\Controllers\SmartClockController;
 use App\Http\Controllers\AbonnementController;
+use App\Http\Controllers\PointageTestController;
+use App\Http\Controllers\KioskController;
 
 /*
 |--------------------------------------------------------------------------
@@ -391,6 +393,10 @@ Route::middleware(['auth'])->group(function () {
 */
 Route::prefix('mobile')->name('mobile.')->group(function () {
     Route::prefix('pointage')->name('pointage.')->group(function () {
+        // Scanner de QR codes
+        Route::get('/scanner', [App\Http\Controllers\MobilePointageWebController::class, 'scanner'])
+            ->name('scanner');
+
         // Page principale de pointage (après scan QR code)
         Route::get('/{siteId}', [App\Http\Controllers\MobilePointageWebController::class, 'index'])
             ->name('index');
@@ -402,10 +408,6 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         // Page d'erreur
         Route::get('/error', [App\Http\Controllers\MobilePointageWebController::class, 'error'])
             ->name('error');
-        
-        // Scanner de QR codes
-        Route::get('/scanner', [App\Http\Controllers\MobilePointageWebController::class, 'scanner'])
-            ->name('scanner');
         
         // Page d'aide
         Route::get('/help', [App\Http\Controllers\MobilePointageWebController::class, 'help'])
@@ -445,3 +447,28 @@ require __DIR__.'/auth.php';
 require __DIR__.'/workflow.php';
 require __DIR__.'/paie.php'; // Routes du module de paie
 require __DIR__.'/abonnement.php'; // Routes du module de changement d'abonnement
+
+/*
+|--------------------------------------------------------------------------
+| Routes de test pour le pointage avec douchette (sans authentification)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('pointage/test')->name('pointage.test.')->group(function () {
+    Route::get('/', [PointageTestController::class, 'index'])->name('index');
+    Route::post('/process', [PointageTestController::class, 'processTest'])->name('process');
+    Route::post('/reset', [PointageTestController::class, 'resetTest'])->name('reset');
+    Route::get('/presences', [PointageTestController::class, 'presencesDuJour'])->name('presences');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Routes du mode Kiosque (pointage TV + douchette, sans authentification)
+| Le token identifie le site de manière permanente
+|--------------------------------------------------------------------------
+*/
+Route::prefix('kiosk')->name('kiosk.')->group(function () {
+    Route::get('/{token}', [KioskController::class, 'index'])->name('index');
+    Route::post('/{token}/scan', [KioskController::class, 'scan'])->name('scan');
+    Route::get('/{token}/transition', [KioskController::class, 'transition'])->name('transition');
+    Route::get('/{token}/presences', [KioskController::class, 'presences'])->name('presences');
+});

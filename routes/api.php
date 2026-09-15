@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Models\Site;
+use App\Services\Presence\WebPointageService;
 
 /*
 |--------------------------------------------------------------------------
@@ -98,6 +100,41 @@ Route::prefix('pointage')->name('api.pointage.')->group(function () {
         ->middleware('auth:sanctum')
         ->name('etat-pointage');
 });
+
+// API de pointage pour une borne physique ou un mini-serveur externe.
+Route::post('v1/kiosk/pointage', function (Request $request, WebPointageService $pointageService) {
+    $validated = $request->validate([
+        'idno' => ['required', 'string'],
+        'site_id' => ['required', 'string', 'exists:sites,id'],
+        'pause' => ['sometimes', 'boolean'],
+        'lat' => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
+        'lng' => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
+    ]);
+
+    $site = Site::findOrFail($validated['site_id']);
+
+    $pointageRequest = Request::create('', 'POST', [
+        'idno' => $validated['idno'],
+        'token' => $site->qr_token,
+        'methode_pointage' => 'qrcode_physique',
+        'pause' => $validated['pause'] ?? false,
+        'lat' => $validated['lat'] ?? null,
+        'lng' => $validated['lng'] ?? null,
+    ]);
+
+    $result = $pointageService->processPointage($pointageRequest);
+
+    if (($result['status'] ?? null) === 'success') {
+        $result['redirect'] = route('mobile.pointage.success', [
+            'type' => $result['data']['type'] ?? 'entree',
+            'employeur' => $result['data']['employee'] ?? '',
+            'site' => $result['data']['site'] ?? $site->nom,
+            'heures' => $result['data']['info_supplementaire'] ?? '',
+        ]);
+    }
+
+    return response()->json($result, ($result['status'] ?? null) === 'success' ? 200 : 422);
+})->name('api.v1.kiosk.pointage');
 
 /*
 |--------------------------------------------------------------------------

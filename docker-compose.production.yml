@@ -1,0 +1,79 @@
+# ===========================================
+# Docker Compose Production — Genius Work
+# ===========================================
+# Usage :
+#   1. Copier .env.production.example → .env
+#   2. docker compose -f docker-compose.production.yml up -d --build
+#   3. Le SSL est géré par un reverse proxy (Caddy/Traefik) ou Certbot
+# ===========================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: geniuswork-app
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./.env:/var/www/html/.env:ro
+      - ./storage:/var/www/html/storage
+      - ./public/videos:/var/www/html/public/videos:ro
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-genius_work}
+      - DB_USERNAME=${DB_USERNAME:-genius}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - geniuswork
+
+  db:
+    image: mysql:8.0
+    container_name: geniuswork-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-genius_work}
+      MYSQL_USER: ${DB_USERNAME:-genius}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+    volumes:
+      - geniuswork-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - geniuswork
+
+  # Reverse proxy optionnel pour SSL automatique
+  # Décommenter si vous voulez Caddy avec SSL Let's Encrypt
+  # caddy:
+  #   image: caddy:2-alpine
+  #   container_name: geniuswork-caddy
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./Caddyfile:/etc/caddy/Caddyfile:ro
+  #     - caddy-data:/data
+  #     - caddy-config:/config
+  #   depends_on:
+  #     - app
+  #   networks:
+  #     - geniuswork
+
+volumes:
+  geniuswork-db-data:
+  # caddy-data:
+  # caddy-config:
+
+networks:
+  geniuswork:
+    driver: bridge

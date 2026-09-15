@@ -1,0 +1,56 @@
+# ===========================================
+# Docker Compose pour Coolify — Genius Work
+# ===========================================
+# Coolify gère déjà :
+#   - Le reverse proxy (Traefik)
+#   - Le SSL automatique (Let's Encrypt)
+#   - Le domaine personnalisé
+#   - Les variables d'environnement (depuis l'UI Coolify)
+#
+# Ce fichier ne contient que l'app + la DB.
+# Configurer les variables d'environnement dans l'UI Coolify.
+# ===========================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - storage-data:/var/www/html/storage
+      - videos-data:/var/www/html/public/videos
+    expose:
+      - "80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - coolify
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: "${DB_DATABASE:-genius_work}"
+      MYSQL_USER: "${DB_USERNAME:-genius}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-secret}"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-rootsecret}"
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - coolify
+
+volumes:
+  storage-data:
+  videos-data:
+  db-data:
+
+networks:
+  coolify:
+    driver: bridge

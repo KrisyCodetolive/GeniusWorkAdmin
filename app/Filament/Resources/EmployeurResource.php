@@ -50,6 +50,26 @@ class EmployeurResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'nom_complet';
 
+    public static function normalizeKeyValueState(mixed $state): array
+    {
+        if (is_array($state)) {
+            return $state;
+        }
+
+        if (is_string($state)) {
+            $decodedState = json_decode($state, true);
+
+            if (is_array($decodedState)) {
+                return $decodedState;
+            }
+
+            if ($state !== '') {
+                return ['value' => $state];
+            }
+        }
+
+        return [];
+    }
 
     public static function getNavigationLabel(): string
     {
@@ -205,10 +225,12 @@ class EmployeurResource extends Resource
                                                 ]),
                                             DatePicker::make('date_embauche')
                                                 ->label('Date d\'embauche')
-                                                ->displayFormat('d/m/Y'),
+                                                ->displayFormat('d/m/Y')
+                                                ->required(),
                                             TextInput::make('salaire_base')
                                                 ->label('Salaire de base')
                                                 ->numeric()
+                                                ->required()
                                                 ->prefix('FCFA'),
                                             Select::make('statut')
                                                 ->label('Statut')
@@ -250,12 +272,16 @@ class EmployeurResource extends Resource
                                         ->label('Métadonnées')
                                         ->keyLabel('Clé')
                                         ->valueLabel('Valeur')
+                                        ->formatStateUsing(fn ($state) => self::normalizeKeyValueState($state))
+                                        ->dehydrateStateUsing(fn ($state) => self::normalizeKeyValueState($state))
                                         ->reorderable()
                                         ->columnSpan('full'),
                                     KeyValue::make('configuration')
                                         ->label('Configuration')
                                         ->keyLabel('Paramètre')
                                         ->valueLabel('Valeur')
+                                        ->formatStateUsing(fn ($state) => self::normalizeKeyValueState($state))
+                                        ->dehydrateStateUsing(fn ($state) => self::normalizeKeyValueState($state))
                                         ->reorderable()
                                         ->columnSpan('full'),
                                 ]),

@@ -1,0 +1,27 @@
+# Caddyfile — SSL automatique avec Let's Encrypt
+# Remplacer votre-domaine.com par votre vrai domaine
+
+votre-domaine.com {
+    reverse_proxy app:80
+
+    # Headers de sécurité
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
+
+    # Cache des assets
+    @assets path /build/* /videos/* /images/*
+    handle @assets {
+        header Cache-Control "public, max-age=2592000, immutable"
+        reverse_proxy app:80
+    }
+
+    # Logs
+    log {
+        output stdout
+        format json
+    }
+}

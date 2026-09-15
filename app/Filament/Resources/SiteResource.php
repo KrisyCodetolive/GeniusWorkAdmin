@@ -111,6 +111,26 @@ class SiteResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                Tables\Actions\Action::make('kiosk')
+                    ->label('Mode Kiosque')
+                    ->icon('heroicon-o-tv')
+                    ->color('warning')
+                    ->url(fn (Site $record): string => route('kiosk.index', $record->kiosk_token))
+                    ->openUrlInNewTab()
+                    ->visible(fn (Site $record): bool => !empty($record->kiosk_token)),
+                Tables\Actions\Action::make('copyKioskUrl')
+                    ->label('Copier URL Kiosque')
+                    ->icon('heroicon-o-clipboard')
+                    ->action(function (Site $record) {
+                        $url = route('kiosk.index', $record->kiosk_token);
+                        Notification::make()
+                            ->title('URL Kiosque')
+                            ->body($url)
+                            ->success()
+                            ->persistent()
+                            ->send();
+                    })
+                    ->visible(fn (Site $record): bool => !empty($record->kiosk_token)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
