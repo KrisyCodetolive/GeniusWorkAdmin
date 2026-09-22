@@ -71,6 +71,42 @@ class EmployeurCarteService
     }
     
     /**
+     * Génère uniquement le QR Code au format SVG pour téléchargement direct
+     *
+     * @param Employeur $employeur
+     * @return StreamedResponse
+     */
+    public function genererQrCode(Employeur $employeur): StreamedResponse
+    {
+        // S'assurer que l'employeur a un secret QR valide
+        if (!$employeur->qr_code_secret || !$employeur->qr_code_active ||
+            ($employeur->qr_code_expires_at && $employeur->qr_code_expires_at->isPast())) {
+            $employeur->generateQRCodeSecret();
+            $employeur->save();
+        }
+
+        $verificationUrl = route('employe.verification', ['code' => $employeur->qr_code_secret]);
+
+        $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+            ->size(400)
+            ->color(50, 79, 136)
+            ->backgroundColor(255, 255, 255)
+            ->generate($verificationUrl);
+
+        $filename = 'qrcode-' . Str::slug($employeur->nom_complet) . '-' . time() . '.svg';
+
+        return response()->streamDownload(
+            function () use ($svg) {
+                echo $svg;
+            },
+            $filename,
+            [
+                'Content-Type' => 'image/svg+xml',
+            ]
+        );
+    }
+
+    /**
      * Récupère le QR Code pour un employé (généré en local avec simple-qrcode)
      * 
      * @param Employeur $employeur

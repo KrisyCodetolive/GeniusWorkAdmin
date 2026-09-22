@@ -41,6 +41,15 @@ class ViewEmployeur extends ViewRecord
                         
                     return redirect($url);
                 }),
+            Actions\Action::make('telechargerQrCode')
+                ->label('Télécharger QR Code')
+                ->icon('heroicon-o-qr-code')
+                ->color('primary')
+                ->action(function () {
+                    $record = $this->getRecord();
+                    $carteService = app(EmployeurCarteService::class);
+                    return $carteService->genererQrCode($record);
+                }),
             Actions\Action::make('rotateQRCode')
                 ->label('Régénérer QR Code')
                 ->icon('heroicon-o-qr-code')
