@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
             EmployeurSeeder::class,
             FilialeSeeder::class,
             SiteSeeder::class,
+            ComptabiliteSeeder::class,
         ]);
     }
 }

@@ -114,6 +114,9 @@ class AdminPanelProvider extends PanelProvider
                     ->label('Abonnements')
                     ->icon('heroicon-o-credit-card'),
                 NavigationGroup::make()
+                    ->label('Comptabilité')
+                    ->icon('heroicon-o-banknotes'),
+                NavigationGroup::make()
                     ->label('Rapports')
                     ->icon('heroicon-o-chart-bar'),
 

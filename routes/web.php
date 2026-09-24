@@ -445,3 +445,11 @@ require __DIR__.'/auth.php';
 require __DIR__.'/workflow.php';
 require __DIR__.'/paie.php'; // Routes du module de paie
 require __DIR__.'/abonnement.php'; // Routes du module de changement d'abonnement
+
+// Fichiers privés des sorties d'argent (justificatifs, signatures, preuves, bons de sortie)
+Route::prefix('depenses')->name('depenses.')->middleware(['auth'])->group(function () {
+    Route::get('/justificatifs/{justificatif}', [App\Http\Controllers\DepenseFichierController::class, 'justificatif'])->name('justificatif');
+    Route::get('/signatures/{validation}', [App\Http\Controllers\DepenseFichierController::class, 'signature'])->name('signature');
+    Route::get('/{demande}/preuve-paiement', [App\Http\Controllers\DepenseFichierController::class, 'preuvePaiement'])->name('preuve-paiement');
+    Route::get('/{demande}/bon-sortie', [App\Http\Controllers\DepenseFichierController::class, 'bonSortie'])->name('bon-sortie');
+});

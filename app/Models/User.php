@@ -317,6 +317,11 @@ class User extends Authenticatable implements HasAvatar, FilamentUser
         return $this->role === 'support';
     }
 
+    public function isComptable()
+    {
+        return $this->role === 'comptable';
+    }
+
     public function canValidate()
     {
         return in_array($this->role, ['admin', 'entreprise', 'super_admin']);
@@ -367,6 +372,6 @@ class User extends Authenticatable implements HasAvatar, FilamentUser
     }
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->isSuperAdmin() || $this->isSupport() || $this->isAdmin() || $this->isManager() ;
+        return $this->isSuperAdmin() || $this->isSupport() || $this->isAdmin() || $this->isManager() || $this->isComptable();
     }
 }
