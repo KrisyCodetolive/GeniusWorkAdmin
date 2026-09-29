@@ -162,6 +162,13 @@ class RolesAndPermissionsSeeder extends Seeder
                     'view_reports', 'create_reports', 'export_reports'
                 ]
             ],
+            'comptable' => [
+                'description' => 'Comptable (validation et paiement des dépenses)',
+                'is_system' => true,
+                'permissions' => [
+                    'view_employees', 'view_reports', 'export_reports'
+                ]
+            ],
             'employee' => [
                 'description' => 'Employé',
                 'is_system' => true,

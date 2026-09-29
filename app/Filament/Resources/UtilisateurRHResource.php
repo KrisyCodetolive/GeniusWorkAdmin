@@ -117,6 +117,7 @@ class UtilisateurRHResource extends Resource
                                                     ->options([
                                                         'admin' => 'Administrateur',
                                                         'manager' => 'Manager',
+                                                        'comptable' => 'Comptable',
                                                     ])
                                                     ->required()
                                                     ->default('manager')
@@ -191,11 +192,13 @@ class UtilisateurRHResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'admin' => 'danger',
                         'manager' => 'warning',
+                        'comptable' => 'info',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'admin' => 'Administrateur',
                         'manager' => 'Manager',
+                        'comptable' => 'Comptable',
                         default => $state,
                     })
                     ->sortable(),
@@ -225,6 +228,7 @@ class UtilisateurRHResource extends Resource
                     ->options([
                         'admin' => 'Administrateur',
                         'manager' => 'Manager',
+                        'comptable' => 'Comptable',
                     ]),
                 SelectFilter::make('statut')
                     ->label('Statut')
@@ -284,7 +288,7 @@ class UtilisateurRHResource extends Resource
                 SoftDeletingScope::class,
             ])
             ->where('entreprise_id', $entrepriseId)
-            ->whereIn('role', ['admin', 'manager'])
+            ->whereIn('role', ['admin', 'manager', 'comptable'])
             ->where('id', '!=', $user->id);
     }
     
