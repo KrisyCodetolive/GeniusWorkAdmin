@@ -13,10 +13,20 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        // Routes du kiosk (pointage sans authentification)
-        'kiosk/*/scan',
-
         // Webhooks externes (passerelles de paiement)
         'webhooks/*',
     ];
+
+    /**
+     * Vérifier si la requête est exemptée de la protection CSRF.
+     */
+    public function handle($request, \Closure $next)
+    {
+        // Exempter les routes kiosk (scan de QR code)
+        if (preg_match('#^/kiosk/[a-zA-Z0-9_-]+/scan$#', $request->getPathInfo())) {
+            return $next($request);
+        }
+
+        return parent::handle($request, $next);
+    }
 }
