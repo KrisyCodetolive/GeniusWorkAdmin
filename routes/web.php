@@ -468,7 +468,8 @@ Route::prefix('pointage/test')->name('pointage.test.')->group(function () {
 */
 Route::prefix('kiosk')->name('kiosk.')->group(function () {
     Route::get('/{token}', [KioskController::class, 'index'])->name('index');
-    Route::post('/{token}/scan', [KioskController::class, 'scan'])->name('scan');
+    Route::post('/{token}/scan', [KioskController::class, 'scan'])->name('scan')
+        ->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
     Route::get('/{token}/transition', [KioskController::class, 'transition'])->name('transition');
     Route::get('/{token}/presences', [KioskController::class, 'presences'])->name('presences');
 });
