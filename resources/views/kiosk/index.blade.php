@@ -185,10 +185,24 @@
 
 <script>
 const KIOSK_TOKEN = '{{ $token }}';
-const CSRF_TOKEN = '{{ csrf_token() }}';
 const SCAN_URL = '/kiosk/' + KIOSK_TOKEN + '/scan';
 const PRESENCES_URL = '/kiosk/' + KIOSK_TOKEN + '/presences';
 const OVERLAY_DURATION = 5000; // 5 secondes d'affichage
+
+// === Fonction pour lire le CSRF token depuis le cookie ===
+function getCsrfToken() {
+    const name = 'XSRF-TOKEN=';
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const cookieArray = decodedCookie.split(';');
+    for (let cookie of cookieArray) {
+        cookie = cookie.trim();
+        if (cookie.indexOf(name) === 0) {
+            return decodeURIComponent(cookie.substring(name.length));
+        }
+    }
+    // Fallback si le cookie n'existe pas (ne devrait pas arriver)
+    return '{{ csrf_token() }}';
+}
 
 // === Éléments DOM ===
 const video = document.getElementById('video-player');
@@ -287,7 +301,7 @@ function handleScan(rawCode) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': CSRF_TOKEN,
+            'X-CSRF-TOKEN': getCsrfToken(),
             'Accept': 'application/json',
         },
         body: JSON.stringify({ idno: code }),
