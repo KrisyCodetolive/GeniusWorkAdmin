@@ -189,21 +189,6 @@ const SCAN_URL = '/api/kiosk/' + KIOSK_TOKEN + '/scan';  // ← Utilise l'API sa
 const PRESENCES_URL = '/kiosk/' + KIOSK_TOKEN + '/presences';
 const OVERLAY_DURATION = 5000; // 5 secondes d'affichage
 
-// === Fonction pour lire le CSRF token depuis le cookie ===
-function getCsrfToken() {
-    const name = 'XSRF-TOKEN=';
-    const decodedCookie = decodeURIComponent(document.cookie);
-    const cookieArray = decodedCookie.split(';');
-    for (let cookie of cookieArray) {
-        cookie = cookie.trim();
-        if (cookie.indexOf(name) === 0) {
-            return decodeURIComponent(cookie.substring(name.length));
-        }
-    }
-    // Fallback si le cookie n'existe pas (ne devrait pas arriver)
-    return '{{ csrf_token() }}';
-}
-
 // === Éléments DOM ===
 const video = document.getElementById('video-player');
 const scannerInput = document.getElementById('scanner-input');
@@ -267,6 +252,15 @@ scannerInput.addEventListener('keydown', function(e) {
     }
 });
 
+// === Générer un UUID unique pour l'idempotance ===
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 // === Traitement du scan ===
 function handleScan(rawCode) {
     scanning = true;
@@ -297,14 +291,16 @@ function handleScan(rawCode) {
         info: '',
     });
 
+    // Générer un ID unique pour ce scan (idempotance)
+    const scanRequestId = generateUUID();
+
     fetch(SCAN_URL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': getCsrfToken(),
             'Accept': 'application/json',
         },
-        body: JSON.stringify({ idno: code }),
+        body: JSON.stringify({ idno: code, requestId: scanRequestId }),
     })
     .then(response => {
         if (!response.ok) throw new Error('Erreur serveur: ' + response.status);
