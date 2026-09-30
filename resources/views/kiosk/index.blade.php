@@ -185,8 +185,7 @@
 
 <script>
 const KIOSK_TOKEN = '{{ $token }}';
-const CSRF_TOKEN = '{{ csrf_token() }}';
-const SCAN_URL = '/kiosk/' + KIOSK_TOKEN + '/scan';
+const SCAN_URL = '/api/kiosk/' + KIOSK_TOKEN + '/scan';  // ← Utilise l'API sans CSRF
 const PRESENCES_URL = '/kiosk/' + KIOSK_TOKEN + '/presences';
 const OVERLAY_DURATION = 5000; // 5 secondes d'affichage
 
@@ -253,6 +252,15 @@ scannerInput.addEventListener('keydown', function(e) {
     }
 });
 
+// === Générer un UUID unique pour l'idempotance ===
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 // === Traitement du scan ===
 function handleScan(rawCode) {
     scanning = true;
@@ -283,14 +291,16 @@ function handleScan(rawCode) {
         info: '',
     });
 
+    // Générer un ID unique pour ce scan (idempotance)
+    const scanRequestId = generateUUID();
+
     fetch(SCAN_URL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': CSRF_TOKEN,
             'Accept': 'application/json',
         },
-        body: JSON.stringify({ idno: code }),
+        body: JSON.stringify({ idno: code, requestId: scanRequestId }),
     })
     .then(response => {
         if (!response.ok) throw new Error('Erreur serveur: ' + response.status);

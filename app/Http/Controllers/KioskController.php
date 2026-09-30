@@ -100,6 +100,7 @@ class KioskController extends Controller
                 'token' => $site->qr_token,
                 'methode_pointage' => 'kiosk_qrcode',
                 'pause' => $request->pause ?? false,
+                'requestId' => $request->requestId ?? null,
             ]);
 
             $result = $this->webPointageService->processPointage($serviceRequest);

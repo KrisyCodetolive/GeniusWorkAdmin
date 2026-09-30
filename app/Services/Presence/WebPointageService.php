@@ -13,6 +13,7 @@ use App\Models\Politique;
 use App\Services\QREncryptionService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -41,8 +42,16 @@ class WebPointageService
     public function processPointage(Request $request)
     {
         try {
+            $requestId = $request->requestId;
 
-            
+            // ✅ VÉRIFIER SI CE SCAN A DÉJÀ ÉTÉ TRAITÉ (idempotance)
+            if ($requestId) {
+                $cached = Cache::get('pointage_idempotent_' . $requestId);
+                if ($cached) {
+                    Log::info('Scan idempotent détecté', ['requestId' => $requestId]);
+                    return $cached;
+                }
+            }
 
             $idno = $request->idno;
             
@@ -395,8 +404,8 @@ class WebPointageService
             }
             
             Log::channel('presences')->debug('Préparation de la réponse');
-            // Retourner les données
-            return [
+            // Construire le résultat
+            $result = [
                 'status' => 'success',
                 'data' => [
                     'employee' => $employeur->nom_complet,
@@ -413,6 +422,14 @@ class WebPointageService
                     'minutes_pause' => $presence->minutes_pause ?? 0
                 ]
             ];
+
+            // ✅ METTRE EN CACHE LE RÉSULTAT (5 secondes) pour l'idempotance
+            if ($requestId) {
+                Cache::put('pointage_idempotent_' . $requestId, $result, 5);
+                Log::info('Résultat du scan mis en cache', ['requestId' => $requestId]);
+            }
+
+            return $result;
             
         } catch (\Exception $e) {
             Log::channel('presences')->debug('Erreur lors du traitement du pointage: ' . $e->getMessage(), [

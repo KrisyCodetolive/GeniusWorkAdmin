@@ -101,6 +101,10 @@ Route::prefix('pointage')->name('api.pointage.')->group(function () {
         ->name('etat-pointage');
 });
 
+// API de pointage KIOSK (sans CSRF) - utilise le token du site
+Route::post('kiosk/{token}/scan', [App\Http\Controllers\KioskController::class, 'scan'])
+    ->name('api.kiosk.scan');
+
 // API de pointage pour une borne physique ou un mini-serveur externe.
 Route::post('v1/kiosk/pointage', function (Request $request, WebPointageService $pointageService) {
     $validated = $request->validate([
