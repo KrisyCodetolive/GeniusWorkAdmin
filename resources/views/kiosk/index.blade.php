@@ -185,7 +185,7 @@
 
 <script>
 const KIOSK_TOKEN = '{{ $token }}';
-const SCAN_URL = '/kiosk/' + KIOSK_TOKEN + '/scan';
+const SCAN_URL = '/api/kiosk/' + KIOSK_TOKEN + '/scan';  // ← Utilise l'API sans CSRF
 const PRESENCES_URL = '/kiosk/' + KIOSK_TOKEN + '/presences';
 const OVERLAY_DURATION = 5000; // 5 secondes d'affichage
 
