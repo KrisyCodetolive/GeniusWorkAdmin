@@ -13,6 +13,21 @@ use Illuminate\Support\Facades\DB;
 class AbonnementService
 {
     /**
+     * Entreprises exemptées d'abonnement (accès gratuit illimité).
+     */
+    const ENTREPRISES_EXEMPTES = [
+        '019a0b82-4f14-7234-8948-ba609355b410', // GENIUS GROUPS
+    ];
+
+    /**
+     * Vérifier si une entreprise est exemptée d'abonnement.
+     */
+    public function isExempte(Entreprise $entreprise): bool
+    {
+        return in_array($entreprise->id, self::ENTREPRISES_EXEMPTES);
+    }
+
+    /**
      * Créer un nouvel abonnement pour une entreprise
      *
      * @param Entreprise $entreprise
@@ -389,6 +404,10 @@ class AbonnementService
      */
     public function hasAbonnementActif(Entreprise $entreprise)
     {
+        if ($this->isExempte($entreprise)) {
+            return true;
+        }
+
         return $entreprise->abonnements()
             ->where('statut', 'actif')
             ->where('date_fin', '>', now())
@@ -403,6 +422,17 @@ class AbonnementService
      */
     public function getAbonnementActif(Entreprise $entreprise)
     {
+        if ($this->isExempte($entreprise)) {
+            return $entreprise->abonnements()
+                ->where('statut', 'actif')
+                ->latest('date_debut')
+                ->first() ?? new Abonnement([
+                    'entreprise_id' => $entreprise->id,
+                    'statut' => 'actif',
+                    'date_fin' => now()->addYears(10),
+                ]);
+        }
+
         return $entreprise->abonnements()
             ->where('statut', 'actif')
             ->where('date_fin', '>', now())
@@ -419,6 +449,10 @@ class AbonnementService
      */
     public function hasAccesToFeature(Entreprise $entreprise, string $fonctionnalite)
     {
+        if ($this->isExempte($entreprise)) {
+            return true;
+        }
+
         $abonnement = $this->getAbonnementActif($entreprise);
         
         if (!$abonnement) {

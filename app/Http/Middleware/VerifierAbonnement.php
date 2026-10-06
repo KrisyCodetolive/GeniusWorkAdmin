@@ -39,6 +39,11 @@ class VerifierAbonnement
         }
         
         $entreprise = $user->entreprise;
+
+        // Entreprises exemptées d'abonnement (accès gratuit illimité)
+        if ($this->abonnementService->isExempte($entreprise)) {
+            return $next($request);
+        }
         
         // Vérifier si l'entreprise a un abonnement actif
         if (!$this->abonnementService->hasAbonnementActif($entreprise)) {

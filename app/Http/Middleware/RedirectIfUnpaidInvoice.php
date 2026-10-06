@@ -27,6 +27,14 @@ class RedirectIfUnpaidInvoice
             return $next($request);
         }
         
+        // Entreprises exemptées d'abonnement (accès gratuit illimité)
+        $entreprisesExemptes = [
+            '019a0b82-4f14-7234-8948-ba609355b410', // GENIUS GROUPS
+        ];
+        if ($user->entreprise_id && in_array($user->entreprise_id, $entreprisesExemptes)) {
+            return $next($request);
+        }
+        
         // Si l'utilisateur est déjà sur la page de paiement, on le laisse passer
         if ($request->is('paiement*') || $request->is('factures*')) {
             return $next($request);

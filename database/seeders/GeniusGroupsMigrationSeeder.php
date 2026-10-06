@@ -39,7 +39,6 @@ class GeniusGroupsMigrationSeeder extends Seeder
 
         try {
             $this->createEntreprise();
-            $this->createAbonnement();
             $this->createSites();
             $this->createFiliale();
             $this->createDepartements();
@@ -87,64 +86,6 @@ class GeniusGroupsMigrationSeeder extends Seeder
                 'pays'              => "Côte d'Ivoire",
             ]
         );
-    }
-
-    // ──────────────────────────────────────────────
-    // 1b. Abonnement (plan + abonnement actif)
-    // ──────────────────────────────────────────────
-    private function createAbonnement(): void
-    {
-        // Créer le plan s'il n'existe pas
-        $planId = '019a0c46-8c2b-7118-bcfe-92cc51ff8193';
-        if (!DB::table('plan_abonnements')->where('id', $planId)->exists()) {
-            DB::table('plan_abonnements')->insert([
-                'id' => $planId,
-                'nom' => 'Business Level 1',
-                'description' => 'Plan Business Level 1',
-                'prix_mensuel' => 35000.00,
-                'prix_annuel' => 350000.00,
-                'periode_facturation' => 'mensuel',
-                'duree_essai' => 0,
-                'nombre_employes_min' => 25,
-                'nombre_employes_max' => 49,
-                'cout_par_employe' => 100.00,
-                'devise' => 'FCFA',
-                'priorite' => 0,
-                'statut' => 'actif',
-                'est_actif' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        // Créer l'abonnement (valide jusqu'au 2026-10-17)
-        $abonnementId = '019a0b84-d35a-735b-8b30-ee381f2cb3bf';
-        $existing = DB::table('abonnements')->where('id', $abonnementId)->first();
-        $data = [
-            'entreprise_id' => self::ENTREPRISE_ID,
-            'plan_abonnement_id' => $planId,
-            'date_debut' => '2026-09-17',
-            'date_fin' => '2026-10-17',
-            'montant' => 37500.00,
-            'type_periode' => 'mensuel',
-            'periode_facturation' => 'mensuel',
-            'methode_paiement' => 'carte',
-            'facture_automatique' => 1,
-            'nombre_personnels' => 25,
-            'reference_client' => 'PAY-20251022104423-F40C91',
-            'statut' => 'actif',
-            'renouvellement_automatique' => 1,
-            'renouvellement_auto' => 1,
-            'updated_at' => now(),
-        ];
-        if ($existing) {
-            DB::table('abonnements')->where('id', $abonnementId)->update($data);
-        } else {
-            DB::table('abonnements')->insert(array_merge($data, [
-                'id' => $abonnementId,
-                'created_at' => now(),
-            ]));
-        }
     }
 
     // ──────────────────────────────────────────────

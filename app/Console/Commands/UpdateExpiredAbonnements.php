@@ -31,7 +31,12 @@ class UpdateExpiredAbonnements extends Command
         $this->info('Début de la mise à jour des abonnements expirés...');
         
         // Récupérer les abonnements actifs qui ont dépassé leur date de fin
+        // (en excluant les entreprises exemptées)
+        $entreprisesExemptes = [
+            '019a0b82-4f14-7234-8948-ba609355b410', // GENIUS GROUPS
+        ];
         $expiredAbonnements = Abonnement::where('date_fin', '<', now())
+            ->whereNotIn('entreprise_id', $entreprisesExemptes)
             ->get();
             
         $count = 0;
