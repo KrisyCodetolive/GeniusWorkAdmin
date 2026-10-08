@@ -226,6 +226,19 @@
                     <div class="non-requis">Non requise (montant sous le seuil de validation)</div>
                 @endif
             </td>
+            <td>
+                <div class="signature-titre">Demandeur (décharge)</div>
+                @if($validationDemandeur)
+                    <div class="signature-meta">
+                        {{ $validationDemandeur->user?->name }} — le {{ $validationDemandeur->signe_le->format('d/m/Y à H:i') }}
+                    </div>
+                    @if($signatureDemandeur)
+                        <img class="signature-image" src="{{ $signatureDemandeur }}" alt="Signature demandeur">
+                    @endif
+                @else
+                    <div class="non-requis">En attente</div>
+                @endif
+            </td>
         </tr>
     </table>
 

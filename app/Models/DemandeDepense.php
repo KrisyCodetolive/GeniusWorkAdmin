@@ -21,6 +21,10 @@ class DemandeDepense extends Model
 
     public const STATUT_PAYEE = 'payee';
 
+    public const STATUT_JUSTIFICATION_SOUMISE = 'justification_soumise';
+
+    public const STATUT_CLOTUREE = 'cloturee';
+
     public const STATUT_REJETEE = 'rejetee';
 
     public const STATUT_ANNULEE = 'annulee';
@@ -30,7 +34,9 @@ class DemandeDepense extends Model
         self::STATUT_EN_ATTENTE_COMPTABLE => 'En attente comptabilité',
         self::STATUT_EN_ATTENTE_CEO => 'En attente CEO',
         self::STATUT_APPROUVEE => 'Approuvée (à payer)',
-        self::STATUT_PAYEE => 'Payée',
+        self::STATUT_PAYEE => 'Payée (à justifier)',
+        self::STATUT_JUSTIFICATION_SOUMISE => 'Justification à vérifier',
+        self::STATUT_CLOTUREE => 'Clôturée',
         self::STATUT_REJETEE => 'Rejetée',
         self::STATUT_ANNULEE => 'Annulée',
     ];
@@ -40,7 +46,9 @@ class DemandeDepense extends Model
         self::STATUT_EN_ATTENTE_COMPTABLE => 'warning',
         self::STATUT_EN_ATTENTE_CEO => 'warning',
         self::STATUT_APPROUVEE => 'info',
-        self::STATUT_PAYEE => 'success',
+        self::STATUT_PAYEE => 'info',
+        self::STATUT_JUSTIFICATION_SOUMISE => 'warning',
+        self::STATUT_CLOTUREE => 'success',
         self::STATUT_REJETEE => 'danger',
         self::STATUT_ANNULEE => 'gray',
     ];
@@ -170,6 +178,17 @@ class DemandeDepense extends Model
         return $this->validations()
             ->where('etape', $etape)
             ->where('decision', ValidationDepense::DECISION_APPROUVE)
+            ->reorder('signe_le', 'desc')
+            ->first();
+    }
+
+    /**
+     * Signature de décharge du demandeur, requise après approbation pour autoriser le paiement.
+     */
+    public function signatureDemandeur(): ?ValidationDepense
+    {
+        return $this->validations()
+            ->where('etape', ValidationDepense::ETAPE_SIGNATURE_DEMANDEUR)
             ->reorder('signe_le', 'desc')
             ->first();
     }

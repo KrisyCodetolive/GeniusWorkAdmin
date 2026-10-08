@@ -31,6 +31,18 @@ class LoginController extends Controller
      * @var string
      */
     protected $redirectTo = '/admin';
+
+    /**
+     * Les employés n'ont pas accès au back-office Filament : on les envoie sur leur portail.
+     */
+    public function redirectTo()
+    {
+        $user = Auth::user();
+
+        return $user && $user->canAccessPanel(\Filament\Facades\Filament::getPanel('admin'))
+            ? $this->redirectTo
+            : '/employe/depenses';
+    }
     /**
      * The OTP service instance.
      *

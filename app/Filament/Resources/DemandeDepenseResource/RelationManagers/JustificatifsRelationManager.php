@@ -82,7 +82,8 @@ class JustificatifsRelationManager extends RelationManager
 
     protected function peutModifier(): bool
     {
-        return auth()->user()->can('update', $this->getOwnerRecord());
+        // Brouillon : pièces de la demande. Payée : reçus de la justification.
+        return auth()->user()->can('ajouterJustificatif', $this->getOwnerRecord());
     }
 
     protected function canCreate(): bool

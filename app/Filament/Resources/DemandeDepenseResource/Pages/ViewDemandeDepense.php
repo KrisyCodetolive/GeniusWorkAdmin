@@ -20,6 +20,8 @@ class ViewDemandeDepense extends ViewRecord
             CircuitActions::soumettre(Actions\Action::class),
             CircuitActions::valider(Actions\Action::class),
             CircuitActions::decaisser(Actions\Action::class),
+            CircuitActions::validerJustification(Actions\Action::class),
+            CircuitActions::renvoyerJustification(Actions\Action::class),
             CircuitActions::renvoyer(Actions\Action::class),
             CircuitActions::rejeter(Actions\Action::class),
             CircuitActions::bonSortie(Actions\Action::class),
@@ -74,6 +76,21 @@ class ViewDemandeDepense extends ViewRecord
                             ->state(fn (DemandeDepense $record) => $record->necessiteValidationCeo()
                                 ? 'Requise (montant au-dessus du seuil)'
                                 : 'Non requise'),
+                        Infolists\Components\TextEntry::make('signature_demandeur')
+                            ->label('Décharge du demandeur')
+                            ->state(fn (DemandeDepense $record) => ($v = $record->signatureDemandeur())
+                                ? $v->user?->name.' — le '.$v->signe_le->format('d/m/Y à H:i')
+                                : 'En attente de signature')
+                            ->badge()
+                            ->color(fn (DemandeDepense $record) => $record->signatureDemandeur() ? 'success' : 'warning')
+                            ->url(fn (DemandeDepense $record) => ($v = $record->signatureDemandeur()) ? route('depenses.signature', $v) : null)
+                            ->openUrlInNewTab()
+                            ->visible(fn (DemandeDepense $record) => in_array($record->statut, [
+                                DemandeDepense::STATUT_APPROUVEE,
+                                DemandeDepense::STATUT_PAYEE,
+                                DemandeDepense::STATUT_JUSTIFICATION_SOUMISE,
+                                DemandeDepense::STATUT_CLOTUREE,
+                            ])),
                         Infolists\Components\TextEntry::make('description')
                             ->label('Description')
                             ->placeholder('—')
@@ -104,7 +121,11 @@ class ViewDemandeDepense extends ViewRecord
                             ->visible(fn (DemandeDepense $record) => filled($record->preuve_paiement)),
                     ])
                     ->columns(3)
-                    ->visible(fn (DemandeDepense $record) => $record->statut === DemandeDepense::STATUT_PAYEE),
+                    ->visible(fn (DemandeDepense $record) => in_array($record->statut, [
+                        DemandeDepense::STATUT_PAYEE,
+                        DemandeDepense::STATUT_JUSTIFICATION_SOUMISE,
+                        DemandeDepense::STATUT_CLOTUREE,
+                    ])),
             ]);
     }
 }

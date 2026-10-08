@@ -97,17 +97,67 @@ class DemandeDepensePolicy
         return $this->validerComptabilite($user, $demande) || $this->validerCeo($user, $demande);
     }
 
+    /**
+     * Décharge du demandeur : une fois la demande approuvée, il signe pour autoriser le paiement.
+     */
+    public function signerApprobation(User $user, DemandeDepense $demande): bool
+    {
+        return $demande->statut === DemandeDepense::STATUT_APPROUVEE
+            && $this->estAuteur($user, $demande)
+            && ! $demande->signatureDemandeur();
+    }
+
     public function decaisser(User $user, DemandeDepense $demande): bool
     {
         return $demande->statut === DemandeDepense::STATUT_APPROUVEE
+            && $demande->signatureDemandeur() !== null
             && ($user->isComptable() || $user->isSuperAdmin())
             && $this->memeEntreprise($user, $demande);
     }
 
+    /**
+     * Après paiement, le demandeur joint ses reçus puis soumet la justification.
+     */
+    public function justifier(User $user, DemandeDepense $demande): bool
+    {
+        return $demande->statut === DemandeDepense::STATUT_PAYEE
+            && $this->estAuteur($user, $demande);
+    }
+
+    /**
+     * Justificatifs : l'auteur complète le dossier en brouillon, pendant la validation,
+     * avant le paiement (facture attendue par le comptable) et après paiement (reçus).
+     * Les fichiers ne font pas partie du hash signé : les joindre n'invalide rien.
+     */
+    public function ajouterJustificatif(User $user, DemandeDepense $demande): bool
+    {
+        return in_array($demande->statut, [
+            DemandeDepense::STATUT_BROUILLON,
+            DemandeDepense::STATUT_EN_ATTENTE_COMPTABLE,
+            DemandeDepense::STATUT_EN_ATTENTE_CEO,
+            DemandeDepense::STATUT_APPROUVEE,
+            DemandeDepense::STATUT_PAYEE,
+        ]) && $this->estAuteur($user, $demande);
+    }
+
+    /**
+     * Le comptable vérifie les reçus soumis : clôture ou renvoi vers « payée ».
+     */
+    public function validerJustification(User $user, DemandeDepense $demande): bool
+    {
+        return $demande->statut === DemandeDepense::STATUT_JUSTIFICATION_SOUMISE
+            && ($user->isComptable() || $user->isSuperAdmin())
+            && $this->peutValider($user, $demande);
+    }
+
     public function telechargerBon(User $user, DemandeDepense $demande): bool
     {
-        return in_array($demande->statut, [DemandeDepense::STATUT_APPROUVEE, DemandeDepense::STATUT_PAYEE])
-            && $this->view($user, $demande);
+        return in_array($demande->statut, [
+            DemandeDepense::STATUT_APPROUVEE,
+            DemandeDepense::STATUT_PAYEE,
+            DemandeDepense::STATUT_JUSTIFICATION_SOUMISE,
+            DemandeDepense::STATUT_CLOTUREE,
+        ]) && $this->view($user, $demande);
     }
 
     private function peutValider(User $user, DemandeDepense $demande): bool

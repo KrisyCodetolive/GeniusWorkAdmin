@@ -20,7 +20,11 @@ class ValidationDepense extends Model
 
     public const ETAPE_CEO = 'ceo';
 
+    public const ETAPE_SIGNATURE_DEMANDEUR = 'signature_demandeur';
+
     public const ETAPE_DECAISSEMENT = 'decaissement';
+
+    public const ETAPE_JUSTIFICATION = 'justification';
 
     public const ETAPE_ANNULATION = 'annulation';
 
@@ -36,7 +40,9 @@ class ValidationDepense extends Model
         self::ETAPE_SOUMISSION => 'Soumission',
         self::ETAPE_COMPTABILITE => 'Comptabilité',
         self::ETAPE_CEO => 'CEO',
+        self::ETAPE_SIGNATURE_DEMANDEUR => 'Signature du demandeur',
         self::ETAPE_DECAISSEMENT => 'Décaissement',
+        self::ETAPE_JUSTIFICATION => 'Justification',
         self::ETAPE_ANNULATION => 'Annulation',
     ];
 

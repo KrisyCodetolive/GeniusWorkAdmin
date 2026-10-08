@@ -13,6 +13,8 @@ use App\Http\Controllers\SmartClockController;
 use App\Http\Controllers\AbonnementController;
 use App\Http\Controllers\PointageTestController;
 use App\Http\Controllers\KioskController;
+use App\Http\Controllers\DepenseFichierController;
+use App\Http\Controllers\EmployeDepenseController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,9 +31,17 @@ Route::get('/', function () {
     if (app()->environment('production')) {
         return redirect('https://work.genius.ci');
     }
-    
-    // For local development, redirect to a local route
-    return redirect()->route('mobile.pointage.scanner');
+
+    // En local : chacun vers son espace (back-office Filament ou portail employé).
+    $user = auth()->user();
+
+    if (! $user) {
+        return redirect()->route('login');
+    }
+
+    return $user->canAccessPanel(\Filament\Facades\Filament::getPanel('admin'))
+        ? redirect('/admin')
+        : redirect()->route('employe.depenses.index');
 })->name('home');
 
 Route::middleware(['auth'])->group(function () {
@@ -472,4 +482,34 @@ Route::prefix('kiosk')->name('kiosk.')->group(function () {
         ->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
     Route::get('/{token}/transition', [KioskController::class, 'transition'])->name('transition');
     Route::get('/{token}/presences', [KioskController::class, 'presences'])->name('presences');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Fichiers privés des sorties d'argent (justificatifs, signatures, preuves, bons de sortie)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('depenses')->name('depenses.')->middleware(['auth'])->group(function () {
+    Route::get('/justificatifs/{justificatif}', [DepenseFichierController::class, 'justificatif'])->name('justificatif');
+    Route::get('/signatures/{validation}', [DepenseFichierController::class, 'signature'])->name('signature');
+    Route::get('/{demande}/preuve-paiement', [DepenseFichierController::class, 'preuvePaiement'])->name('preuve-paiement');
+    Route::get('/{demande}/bon-sortie', [DepenseFichierController::class, 'bonSortie'])->name('bon-sortie');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Espace employé : demandes de dépense côté client
+| Le demandeur crée, suit, soumet puis justifie ses dépenses après paiement.
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->prefix('employe/depenses')->name('employe.depenses.')->group(function () {
+    Route::get('/', [EmployeDepenseController::class, 'index'])->name('index');
+    Route::get('/nouvelle', [EmployeDepenseController::class, 'create'])->name('create');
+    Route::post('/', [EmployeDepenseController::class, 'store'])->name('store');
+    Route::get('/{demande}', [EmployeDepenseController::class, 'show'])->name('show');
+    Route::post('/{demande}/soumettre', [EmployeDepenseController::class, 'soumettre'])->name('soumettre');
+    Route::post('/{demande}/annuler', [EmployeDepenseController::class, 'annuler'])->name('annuler');
+    Route::post('/{demande}/signer', [EmployeDepenseController::class, 'signer'])->name('signer');
+    Route::post('/{demande}/justificatifs', [EmployeDepenseController::class, 'ajouterJustificatif'])->name('justificatifs.store');
+    Route::post('/{demande}/justification', [EmployeDepenseController::class, 'soumettreJustification'])->name('justification');
 });

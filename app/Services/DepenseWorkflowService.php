@@ -82,6 +82,20 @@ class DepenseWorkflowService
         return $this->refuser($demande, $user, $motif, DemandeDepense::STATUT_BROUILLON, ValidationDepense::DECISION_RENVOYE, 'renvoyee');
     }
 
+    /**
+     * Décharge signée par le demandeur après approbation : sans elle, pas de décaissement.
+     */
+    public function signerParDemandeur(DemandeDepense $demande, User $user, string $signature): DemandeDepense
+    {
+        $demande = $this->transition($demande, $user, 'signerApprobation', function (DemandeDepense $demande) use ($user, $signature) {
+            $this->journaliser($demande, $user, ValidationDepense::ETAPE_SIGNATURE_DEMANDEUR, ValidationDepense::DECISION_EFFECTUE, null, $signature);
+        });
+
+        $this->notifier($this->comptables($demande), $demande, 'a_payer');
+
+        return $demande;
+    }
+
     public function decaisser(DemandeDepense $demande, User $user, array $paiement): DemandeDepense
     {
         if (! array_key_exists($paiement['mode_paiement'] ?? null, DemandeDepense::MODES_PAIEMENT)) {
@@ -115,6 +129,59 @@ class DepenseWorkflowService
         return $demande;
     }
 
+    /**
+     * Le demandeur a joint ses reçus : la justification part en vérification comptable.
+     */
+    public function soumettreJustification(DemandeDepense $demande, User $user): DemandeDepense
+    {
+        $demande = $this->transition($demande, $user, 'justifier', function (DemandeDepense $demande) {
+            if (! $demande->justificatifs()->where('type', 'recu')->exists()) {
+                throw new InvalidArgumentException('Ajoutez au moins un reçu avant de soumettre la justification.');
+            }
+
+            $demande->update(['statut' => DemandeDepense::STATUT_JUSTIFICATION_SOUMISE]);
+            $this->journaliser($demande, $user, ValidationDepense::ETAPE_JUSTIFICATION, ValidationDepense::DECISION_EFFECTUE);
+        });
+
+        $this->notifier($this->comptables($demande), $demande, 'justification_a_verifier');
+
+        return $demande;
+    }
+
+    /**
+     * Le comptable a vérifié les reçus : la demande est clôturée.
+     */
+    public function validerJustification(DemandeDepense $demande, User $user, ?string $commentaire = null): DemandeDepense
+    {
+        $demande = $this->transition($demande, $user, 'validerJustification', function (DemandeDepense $demande) use ($user, $commentaire) {
+            $demande->update(['statut' => DemandeDepense::STATUT_CLOTUREE]);
+            $this->journaliser($demande, $user, ValidationDepense::ETAPE_JUSTIFICATION, ValidationDepense::DECISION_APPROUVE, $commentaire);
+        });
+
+        $this->notifier($this->demandeurs($demande), $demande, 'cloturee');
+
+        return $demande;
+    }
+
+    /**
+     * Reçus insuffisants ou illisibles : retour à « payée », le demandeur doit compléter.
+     */
+    public function renvoyerJustification(DemandeDepense $demande, User $user, string $motif): DemandeDepense
+    {
+        if (trim($motif) === '') {
+            throw new InvalidArgumentException('Le motif est obligatoire.');
+        }
+
+        $demande = $this->transition($demande, $user, 'validerJustification', function (DemandeDepense $demande) use ($user, $motif) {
+            $demande->update(['statut' => DemandeDepense::STATUT_PAYEE]);
+            $this->journaliser($demande, $user, ValidationDepense::ETAPE_JUSTIFICATION, ValidationDepense::DECISION_RENVOYE, $motif);
+        });
+
+        $this->notifier($this->demandeurs($demande), $demande, 'justification_renvoyee', $motif);
+
+        return $demande;
+    }
+
     public function annuler(DemandeDepense $demande, User $user, ?string $motif = null): DemandeDepense
     {
         return $this->transition($demande, $user, 'annuler', function (DemandeDepense $demande) use ($user, $motif) {
@@ -140,13 +207,16 @@ class DepenseWorkflowService
 
         $comptable = $demande->approbation(ValidationDepense::ETAPE_COMPTABILITE);
         $ceo = $demande->approbation(ValidationDepense::ETAPE_CEO);
+        $demandeur = $demande->signatureDemandeur();
 
         return Pdf::loadView('pdf.bon-sortie', [
             'demande' => $demande,
             'comptable' => $comptable,
             'ceo' => $ceo,
+            'validationDemandeur' => $demandeur,
             'signatureComptable' => $signature($comptable),
             'signatureCeo' => $signature($ceo),
+            'signatureDemandeur' => $signature($demandeur),
             'hash' => $demande->hashDocument(),
         ])->setPaper('a4');
     }
@@ -221,10 +291,13 @@ class DepenseWorkflowService
         return $chemin;
     }
 
+    /**
+     * La demande est approuvée : le demandeur doit signer sa décharge, la comptabilité
+     * n'est prévenue (« a_payer ») qu'après sa signature — voir signerParDemandeur().
+     */
     private function notifierApprobation(DemandeDepense $demande): void
     {
-        $this->notifier($this->demandeurs($demande), $demande, 'approuvee');
-        $this->notifier($this->comptables($demande), $demande, 'a_payer');
+        $this->notifier($this->demandeurs($demande), $demande, 'a_signer');
     }
 
     private function comptables(DemandeDepense $demande)

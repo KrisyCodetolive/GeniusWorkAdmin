@@ -132,6 +132,11 @@
                 <div class="flex items-center space-x-4">
                     @if (Auth::user())
                         <div class="hidden md:block">
+                            <a href="{{ route('employe.depenses.index') }}" class="btn-secondary px-5 py-2 rounded-lg text-blue-500 font-medium hover:shadow-lg transition-all">
+                                Mes dépenses
+                            </a>
+                        </div>
+                        <div class="hidden md:block">
                             <a href="/admin" class="btn-primary px-5 py-2 rounded-lg text-white font-medium hover:shadow-lg transition-all">
                                 Dashbord
                             </a>

@@ -62,6 +62,7 @@ class DemandeDepenseResource extends Resource
 
         if ($user->isComptable() || $user->isSuperAdmin()) {
             $statuts[] = DemandeDepense::STATUT_EN_ATTENTE_COMPTABLE;
+            $statuts[] = DemandeDepense::STATUT_JUSTIFICATION_SOUMISE;
         }
 
         if ($user->isSuperAdmin() || ($user->entreprise_id && ParametreDepense::pour($user->entreprise_id)->estCeo($user))) {
@@ -485,6 +486,8 @@ class DemandeDepenseResource extends Resource
                 CircuitActions::soumettre(Tables\Actions\Action::class)->button(),
                 CircuitActions::valider(Tables\Actions\Action::class)->button()->label('Valider'),
                 CircuitActions::decaisser(Tables\Actions\Action::class)->button()->label('Payer'),
+                CircuitActions::validerJustification(Tables\Actions\Action::class)->button()->label('Clôturer'),
+                CircuitActions::renvoyerJustification(Tables\Actions\Action::class)->button()->label('Renvoyer justificatifs'),
                 CircuitActions::renvoyer(Tables\Actions\Action::class)->button()->label('Renvoyer'),
                 CircuitActions::rejeter(Tables\Actions\Action::class)->button(),
                 CircuitActions::bonSortie(Tables\Actions\Action::class)->button()->label('Bon de sortie'),

@@ -34,6 +34,8 @@ class CircuitActions
             static::soumettre($classe),
             static::valider($classe),
             static::decaisser($classe),
+            static::validerJustification($classe),
+            static::renvoyerJustification($classe),
             static::renvoyer($classe),
             static::rejeter($classe),
             static::bonSortie($classe),
@@ -135,6 +137,52 @@ class CircuitActions
                 $livewire,
                 fn (DepenseWorkflowService $service) => $service->decaisser($record, auth()->user(), $data),
                 'Paiement enregistré. Le bon de sortie est archivé.'
+            ));
+    }
+
+    /** @param  class-string<T>  $classe */
+    public static function validerJustification(string $classe): PageAction|TableAction
+    {
+        return $classe::make('validerJustification')
+            ->label('Clôturer la demande')
+            ->icon('heroicon-o-check-circle')
+            ->color('success')
+            ->visible(fn (DemandeDepense $record) => auth()->user()->can('validerJustification', $record))
+            ->modalHeading(fn (DemandeDepense $record) => "Vérification des justificatifs — {$record->reference}")
+            ->modalDescription('Les reçus joints par le demandeur sont conformes : la demande est clôturée.')
+            ->modalSubmitActionLabel('Clôturer')
+            ->form([
+                Forms\Components\Textarea::make('commentaire')
+                    ->label('Commentaire (facultatif)')
+                    ->rows(2),
+            ])
+            ->action(fn (DemandeDepense $record, array $data, $livewire) => static::executer(
+                $livewire,
+                fn (DepenseWorkflowService $service) => $service->validerJustification($record, auth()->user(), $data['commentaire'] ?? null),
+                'Demande clôturée.'
+            ));
+    }
+
+    /** @param  class-string<T>  $classe */
+    public static function renvoyerJustification(string $classe): PageAction|TableAction
+    {
+        return $classe::make('renvoyerJustification')
+            ->label('Renvoyer les justificatifs')
+            ->icon('heroicon-o-arrow-uturn-left')
+            ->color('warning')
+            ->visible(fn (DemandeDepense $record) => auth()->user()->can('validerJustification', $record))
+            ->modalHeading(fn (DemandeDepense $record) => "Renvoyer les justificatifs de {$record->reference}")
+            ->modalDescription('La demande retourne à « payée » : le demandeur devra compléter ses reçus et soumettre à nouveau.')
+            ->modalSubmitActionLabel('Renvoyer')
+            ->form([
+                Forms\Components\Textarea::make('motif')
+                    ->label('Ce qui manque ou doit être corrigé')
+                    ->required(),
+            ])
+            ->action(fn (DemandeDepense $record, array $data, $livewire) => static::executer(
+                $livewire,
+                fn (DepenseWorkflowService $service) => $service->renvoyerJustification($record, auth()->user(), $data['motif']),
+                'Justificatifs renvoyés au demandeur.'
             ));
     }
 
