@@ -205,6 +205,128 @@ let overlayTimer = null;
 let progressTimer = null;
 let isOnline = navigator.onLine;
 
+// === Module OfflineQueue (IndexedDB) ===
+class OfflineQueue {
+    constructor(dbName = 'KioskOfflineDB', storeName = 'scanQueue') {
+        this.dbName = dbName;
+        this.storeName = storeName;
+        this.db = null;
+        this.isReady = this.init();
+    }
+
+    async init() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, 1);
+
+            request.onerror = () => {
+                console.error('Erreur IndexedDB:', request.error);
+                reject(request.error);
+            };
+
+            request.onsuccess = () => {
+                this.db = request.result;
+                resolve(this.db);
+            };
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(this.storeName)) {
+                    const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
+                    store.createIndex('timestamp', 'timestamp', { unique: false });
+                    store.createIndex('status', 'status', { unique: false });
+                }
+            };
+        });
+    }
+
+    async add(scan) {
+        await this.isReady;
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction([this.storeName], 'readwrite');
+            const store = tx.objectStore(this.storeName);
+            const request = store.add(scan);
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getAll() {
+        await this.isReady;
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction([this.storeName], 'readonly');
+            const store = tx.objectStore(this.storeName);
+            const request = store.getAll();
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getPending() {
+        await this.isReady;
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction([this.storeName], 'readonly');
+            const store = tx.objectStore(this.storeName);
+            const index = store.index('status');
+            const request = index.getAll('pending');
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async updateStatus(id, status) {
+        await this.isReady;
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction([this.storeName], 'readwrite');
+            const store = tx.objectStore(this.storeName);
+            const getRequest = store.get(id);
+
+            getRequest.onsuccess = () => {
+                const scan = getRequest.result;
+                if (scan) {
+                    scan.status = status;
+                    scan.updatedAt = Date.now();
+                    const updateRequest = store.put(scan);
+                    updateRequest.onsuccess = () => resolve();
+                    updateRequest.onerror = () => reject(updateRequest.error);
+                } else {
+                    reject(new Error('Scan not found'));
+                }
+            };
+            getRequest.onerror = () => reject(getRequest.error);
+        });
+    }
+
+    async delete(id) {
+        await this.isReady;
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction([this.storeName], 'readwrite');
+            const store = tx.objectStore(this.storeName);
+            const request = store.delete(id);
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async cleanOldScans(ttlDays = 7) {
+        await this.isReady;
+        const cutoffTime = Date.now() - (ttlDays * 24 * 60 * 60 * 1000);
+        const scans = await this.getAll();
+
+        for (const scan of scans) {
+            if (scan.timestamp < cutoffTime) {
+                await this.delete(scan.id);
+                console.log('Scan expiré supprimé:', scan.id);
+            }
+        }
+    }
+}
+
+const offlineQueue = new OfflineQueue();
+
 // === Horloge ===
 function updateClock() {
     const now = new Date();
@@ -261,17 +383,16 @@ function generateUUID() {
     });
 }
 
-// === Traitement du scan ===
-function handleScan(rawCode) {
+// === Traitement du scan (online/offline) ===
+async function handleScan(rawCode) {
     scanning = true;
 
-    // Extraire le code utile : si c'est une URL, prendre le dernier segment
+    // Extraire le code utile
     let code = rawCode.trim();
     if (code.includes('/')) {
         const parts = code.split('/');
         code = parts[parts.length - 1];
     }
-    // Retirer les éventuels paramètres GET
     if (code.includes('?')) {
         code = code.split('?')[0];
     }
@@ -279,39 +400,42 @@ function handleScan(rawCode) {
 
     console.log('Scan brut:', rawCode.substring(0, 30), '→ extrait:', code.substring(0, 15) + '...');
 
-    // Mettre la vidéo en pause
     video.pause();
+
+    const scanRequestId = generateUUID();
+    const scanData = {
+        idno: code,
+        requestId: scanRequestId,
+    };
 
     // Afficher l'overlay en mode "chargement"
     showOverlay({
         type: 'loading',
         name: 'Vérification...',
-        action: 'Traitement en cours',
+        action: isOnline ? 'Traitement en cours' : 'Mode offline — en attente',
         time: '',
         info: '',
     });
 
-    // Générer un ID unique pour ce scan (idempotance)
-    const scanRequestId = generateUUID();
+    try {
+        // Essayer d'envoyer en ligne
+        const response = await fetch(SCAN_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify(scanData),
+        });
 
-    fetch(SCAN_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-        },
-        body: JSON.stringify({ idno: code, requestId: scanRequestId }),
-    })
-    .then(response => {
         if (!response.ok) throw new Error('Erreur serveur: ' + response.status);
-        return response.json();
-    })
-    .then(data => {
+
+        const data = await response.json();
+
         if (data.status === 'success' && data.redirect) {
-            // Rediriger vers la page de transition (assistant vocal + animation)
+            console.log('✅ Scan envoyé avec succès');
             window.location.href = data.redirect;
         } else {
-            // Erreur : afficher l'overlay inline pendant 5s puis reprendre
             showOverlay({
                 type: 'error',
                 name: 'Erreur',
@@ -322,19 +446,57 @@ function handleScan(rawCode) {
             speak(data.message || 'Erreur, badge non reconnu');
             startOverlayTimer();
         }
-    })
-    .catch(err => {
+    } catch (err) {
         console.error('Erreur scan:', err);
-        showOverlay({
-            type: 'error',
-            name: 'Erreur',
-            action: 'Problème de connexion',
-            time: new Date().toLocaleTimeString('fr-FR'),
-            info: err.message,
-        });
-        speak('Problème de connexion');
-        startOverlayTimer();
-    });
+
+        // Si pas de connexion → stocker en offline
+        if (!navigator.onLine) {
+            try {
+                const queueItem = {
+                    id: scanRequestId,
+                    ...scanData,
+                    timestamp: Date.now(),
+                    status: 'pending',
+                    attempts: 0,
+                };
+
+                await offlineQueue.add(queueItem);
+                console.log('✓ Scan stocké en offline:', scanRequestId);
+
+                showOverlay({
+                    type: 'error',
+                    name: 'Mode Offline',
+                    action: 'Scan enregistré localement',
+                    time: new Date().toLocaleTimeString('fr-FR'),
+                    info: 'Sera envoyé à la reconnexion',
+                });
+                speak('Scan enregistré en mode hors ligne');
+                startOverlayTimer();
+            } catch (queueErr) {
+                console.error('Erreur stockage offline:', queueErr);
+                showOverlay({
+                    type: 'error',
+                    name: 'Erreur',
+                    action: 'Impossible de sauvegarder le scan',
+                    time: new Date().toLocaleTimeString('fr-FR'),
+                    info: queueErr.message,
+                });
+                speak('Erreur de sauvegarde');
+                startOverlayTimer();
+            }
+        } else {
+            // Connexion online mais erreur serveur
+            showOverlay({
+                type: 'error',
+                name: 'Erreur',
+                action: 'Problème de connexion serveur',
+                time: new Date().toLocaleTimeString('fr-FR'),
+                info: err.message,
+            });
+            speak('Erreur de serveur');
+            startOverlayTimer();
+        }
+    }
 }
 
 // === Affichage de l'overlay ===
@@ -434,42 +596,113 @@ function speak(text) {
     window.speechSynthesis.speak(utterance);
 }
 
+// === Flush de la queue offline ===
+async function flushOfflineQueue() {
+    const pendingScans = await offlineQueue.getPending();
+
+    if (pendingScans.length === 0) {
+        console.log('✓ Queue offline vide');
+        return;
+    }
+
+    console.log(`📤 Envoi de ${pendingScans.length} scan(s) en attente...`);
+
+    for (const scan of pendingScans) {
+        try {
+            const response = await fetch(SCAN_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    idno: scan.idno,
+                    requestId: scan.requestId,
+                }),
+            });
+
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                await offlineQueue.updateStatus(scan.id, 'synced');
+                await offlineQueue.delete(scan.id);
+                console.log('✅ Scan synchronisé:', scan.id);
+            } else {
+                await offlineQueue.updateStatus(scan.id, 'error');
+                console.error('❌ Erreur sync scan:', scan.id, data.message);
+            }
+        } catch (err) {
+            console.error('Erreur envoi scan offline:', scan.id, err);
+            // Incrémenter les tentatives
+            scan.attempts = (scan.attempts || 0) + 1;
+            if (scan.attempts < 5) {
+                await offlineQueue.updateStatus(scan.id, 'pending');
+            } else {
+                await offlineQueue.updateStatus(scan.id, 'failed');
+                console.error('❌ Abandon après 5 tentatives:', scan.id);
+            }
+        }
+    }
+}
+
 // === Détection hors-ligne ===
-window.addEventListener('online', () => {
+window.addEventListener('online', async () => {
     isOnline = true;
+    console.log('🔌 Connexion rétablie');
     offlineOverlay.classList.remove('visible');
     video.play().catch(() => {});
     refocusInput();
+
+    // Envoyer les scans en attente
+    await flushOfflineQueue();
 });
 
 window.addEventListener('offline', () => {
     isOnline = false;
+    console.log('⚠️ Pas de connexion');
     offlineOverlay.classList.add('visible');
     video.pause();
 });
 
 // === Ping régulier pour vérifier la connexion serveur ===
-setInterval(() => {
+setInterval(async () => {
     if (!navigator.onLine) return;
     fetch(PRESENCES_URL, {
         headers: { 'Accept': 'application/json' },
         signal: AbortSignal.timeout(5000),
     })
-    .then(() => {
+    .then(async () => {
         if (!isOnline) {
             isOnline = true;
+            console.log('🔌 Serveur reconnecté (ping)');
             offlineOverlay.classList.remove('visible');
             video.play().catch(() => {});
             refocusInput();
+
+            // Envoyer les scans en attente
+            await flushOfflineQueue();
         }
     })
     .catch(() => {
         if (isOnline) {
             isOnline = false;
+            console.log('⚠️ Serveur injoignable');
             offlineOverlay.classList.add('visible');
         }
     });
 }, 30000); // Toutes les 30 secondes
+
+// === Nettoyage TTL (toutes les heures) ===
+setInterval(async () => {
+    try {
+        await offlineQueue.cleanOldScans(7); // Garder 7 jours
+        console.log('🧹 Nettoyage TTL effectué');
+    } catch (err) {
+        console.error('Erreur nettoyage TTL:', err);
+    }
+}, 60 * 60 * 1000); // Toutes les heures
 
 // === Empêcher les raccourcis clavier (mode kiosque) ===
 document.addEventListener('keydown', function(e) {
