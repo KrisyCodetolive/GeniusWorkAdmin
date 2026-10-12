@@ -72,7 +72,8 @@ class DemandeDepenseFilamentTest extends TestCase
             ->callAction('valider', ['signature' => $this->signature]);
         $this->assertSame(DemandeDepense::STATUT_APPROUVEE, $demande->fresh()->statut);
 
-        // Le comptable enregistre le paiement.
+        // Le demandeur signe sa décharge, puis le comptable enregistre le paiement.
+        app(DepenseWorkflowService::class)->signerParDemandeur($demande->fresh(), $this->demandeur, $this->signature);
         $this->actingAs($this->comptable);
         Livewire::test(ViewDemandeDepense::class, ['record' => $demande->getRouteKey()])
             ->assertActionVisible('bonSortie')
@@ -168,6 +169,8 @@ class DemandeDepenseFilamentTest extends TestCase
         $demande->refresh();
         $this->assertSame(DemandeDepense::STATUT_APPROUVEE, $demande->statut);
 
+        app(DepenseWorkflowService::class)->signerParDemandeur($demande->fresh(), $this->demandeur, $this->signature);
+
         // Le comptable paie ; le bon de sortie devient disponible dans le menu de la ligne.
         $this->actingAs($this->comptable);
         Livewire::test(ListDemandeDepenses::class)
@@ -225,7 +228,7 @@ class DemandeDepenseFilamentTest extends TestCase
             ->assertTableActionVisible('rejeter', $enAttente)
             ->assertTableActionHidden('annuler', $enAttente)
             ->assertTableActionHidden('delete', $brouillon)
-            ->assertTableActionVisible('decaisser', $approuvee)
+            ->assertTableActionHidden('decaisser', $approuvee)
             ->assertTableActionVisible('bonSortie', $approuvee)
             ->assertTableActionVisible('view', $approuvee);
     }

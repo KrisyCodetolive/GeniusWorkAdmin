@@ -76,8 +76,14 @@ class DepenseRelationManagersTest extends TestCase
 
         $demande = app(DepenseWorkflowService::class)->soumettre($demande, $this->demandeur);
 
+        // En validation, l'auteur peut encore compléter son dossier.
         Livewire::test(JustificatifsRelationManager::class, ['ownerRecord' => $demande, 'pageClass' => ViewDemandeDepense::class])
             ->assertCanSeeTableRecords([$justificatif])
+            ->assertTableActionVisible('create');
+
+        $demande = app(DepenseWorkflowService::class)->annuler($demande, $this->demandeur);
+
+        Livewire::test(JustificatifsRelationManager::class, ['ownerRecord' => $demande, 'pageClass' => ViewDemandeDepense::class])
             ->assertTableActionHidden('create')
             ->assertTableActionHidden('delete', $justificatif);
     }

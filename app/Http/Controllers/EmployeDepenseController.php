@@ -25,14 +25,15 @@ class EmployeDepenseController extends Controller
     {
         $user = $request->user();
 
-        $demandes = DemandeDepense::query()
-            ->where(function ($query) use ($user) {
-                $query->where('cree_par_user_id', $user->id);
+        $mesDemandes = fn () => DemandeDepense::query()->where(function ($query) use ($user) {
+            $query->where('cree_par_user_id', $user->id);
 
-                if ($user->employeur_id) {
-                    $query->orWhere('demandeur_id', $user->employeur_id);
-                }
-            })
+            if ($user->employeur_id) {
+                $query->orWhere('demandeur_id', $user->employeur_id);
+            }
+        });
+
+        $demandes = $mesDemandes()
             ->when(
                 $request->filled('statut') && array_key_exists($request->statut, DemandeDepense::STATUTS),
                 fn ($query) => $query->where('statut', $request->statut)

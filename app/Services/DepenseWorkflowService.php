@@ -134,7 +134,7 @@ class DepenseWorkflowService
      */
     public function soumettreJustification(DemandeDepense $demande, User $user): DemandeDepense
     {
-        $demande = $this->transition($demande, $user, 'justifier', function (DemandeDepense $demande) {
+        $demande = $this->transition($demande, $user, 'justifier', function (DemandeDepense $demande) use ($user) {
             if (! $demande->justificatifs()->where('type', 'recu')->exists()) {
                 throw new InvalidArgumentException('Ajoutez au moins un reçu avant de soumettre la justification.');
             }

@@ -41,7 +41,16 @@ class DepenseWorkflowTest extends TestCase
         $demande = $this->service->validerComptabilite($demande, $this->comptable, $this->signature, 'Conforme');
         $this->assertSame(DemandeDepense::STATUT_APPROUVEE, $demande->statut);
 
-        $demande = $this->service->decaisser($demande, $this->comptable, [
+        // Sans la décharge du demandeur, le comptable ne peut pas payer.
+        try {
+            $this->service->decaisser($demande, $this->comptable, ['mode_paiement' => 'virement']);
+            $this->fail('Le paiement doit exiger la signature du demandeur.');
+        } catch (AuthorizationException) {
+        }
+
+        $this->service->signerParDemandeur($demande, $this->demandeur, $this->signature);
+
+        $demande = $this->service->decaisser($demande->fresh(), $this->comptable, [
             'mode_paiement' => 'virement',
             'reference_paiement' => 'VIR-001',
         ]);
@@ -50,7 +59,7 @@ class DepenseWorkflowTest extends TestCase
         $this->assertSame($this->comptable->id, $demande->payee_par_user_id);
         $this->assertStringStartsWith('%PDF', Storage::disk('local')->get($demande->pdf_bon_sortie));
         $this->assertSame(
-            [ValidationDepense::ETAPE_SOUMISSION, ValidationDepense::ETAPE_COMPTABILITE, ValidationDepense::ETAPE_DECAISSEMENT],
+            [ValidationDepense::ETAPE_SOUMISSION, ValidationDepense::ETAPE_COMPTABILITE, ValidationDepense::ETAPE_SIGNATURE_DEMANDEUR, ValidationDepense::ETAPE_DECAISSEMENT],
             $demande->validations()->pluck('etape')->all()
         );
     }
