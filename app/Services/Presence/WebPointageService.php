@@ -423,9 +423,10 @@ class WebPointageService
                 ]
             ];
 
-            // ✅ METTRE EN CACHE LE RÉSULTAT (5 secondes) pour l'idempotance
+            // ✅ METTRE EN CACHE LE RÉSULTAT (7 jours) pour l'idempotance
+            // Durée alignée sur le TTL de la file offline du kiosk : un scan renvoyé après une coupure ne doit pas être pointé deux fois
             if ($requestId) {
-                Cache::put('pointage_idempotent_' . $requestId, $result, 5);
+                Cache::put('pointage_idempotent_' . $requestId, $result, 7 * 24 * 60 * 60);
                 Log::info('Résultat du scan mis en cache', ['requestId' => $requestId]);
             }
 

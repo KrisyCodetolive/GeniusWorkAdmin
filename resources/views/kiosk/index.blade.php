@@ -276,7 +276,7 @@ class OfflineQueue {
         });
     }
 
-    async updateStatus(id, status) {
+    async updateStatus(id, status, extra = {}) {
         await this.isReady;
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction([this.storeName], 'readwrite');
@@ -286,7 +286,7 @@ class OfflineQueue {
             getRequest.onsuccess = () => {
                 const scan = getRequest.result;
                 if (scan) {
-                    scan.status = status;
+                    Object.assign(scan, extra, { status });
                     scan.updatedAt = Date.now();
                     const updateRequest = store.put(scan);
                     updateRequest.onsuccess = () => resolve();
@@ -428,7 +428,11 @@ async function handleScan(rawCode) {
             body: JSON.stringify(scanData),
         });
 
-        if (!response.ok) throw new Error('Erreur serveur: ' + response.status);
+        if (!response.ok) {
+            const httpErr = new Error('Erreur serveur: ' + response.status);
+            httpErr.status = response.status;
+            throw httpErr;
+        }
 
         const data = await response.json();
 
@@ -449,8 +453,8 @@ async function handleScan(rawCode) {
     } catch (err) {
         console.error('Erreur scan:', err);
 
-        // Si pas de connexion → stocker en offline
-        if (!navigator.onLine) {
+        // Coupure réseau ou erreur serveur 5xx → stocker en offline (même si le navigateur se croit en ligne)
+        if (isRetryable(err)) {
             try {
                 const queueItem = {
                     id: scanRequestId,
@@ -597,53 +601,75 @@ function speak(text) {
 }
 
 // === Flush de la queue offline ===
+// Un scan reste en file tant qu'il n'a pas été confirmé par le serveur.
+// Il est retiré seulement après une réponse "success" (ou nettoyé par le TTL de 7 jours).
+let flushing = false;
+
+// Erreur réseau (pas de status) ou 5xx : le scan doit être retenté plus tard
+function isRetryable(err) {
+    return err.status === undefined || err.status >= 500;
+}
+
 async function flushOfflineQueue() {
-    const pendingScans = await offlineQueue.getPending();
+    // Évite deux envois simultanés (événement 'online' + ping de 30 s)
+    if (flushing) return;
+    flushing = true;
 
-    if (pendingScans.length === 0) {
-        console.log('✓ Queue offline vide');
-        return;
-    }
+    try {
+        // Ordre chronologique : un sortie ne doit pas passer avant son entrée
+        const pendingScans = (await offlineQueue.getPending())
+            .sort((a, b) => a.timestamp - b.timestamp);
 
-    console.log(`📤 Envoi de ${pendingScans.length} scan(s) en attente...`);
+        if (pendingScans.length === 0) {
+            console.log('✓ Queue offline vide');
+            return;
+        }
 
-    for (const scan of pendingScans) {
-        try {
-            const response = await fetch(SCAN_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({
-                    idno: scan.idno,
-                    requestId: scan.requestId,
-                }),
-            });
+        console.log(`📤 Envoi de ${pendingScans.length} scan(s) en attente...`);
 
-            if (!response.ok) throw new Error('HTTP ' + response.status);
+        for (const scan of pendingScans) {
+            try {
+                const response = await fetch(SCAN_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        idno: scan.idno,
+                        requestId: scan.requestId,
+                    }),
+                });
 
-            const data = await response.json();
+                if (!response.ok) {
+                    const httpErr = new Error('HTTP ' + response.status);
+                    httpErr.status = response.status;
+                    throw httpErr;
+                }
 
-            if (data.status === 'success') {
-                await offlineQueue.updateStatus(scan.id, 'synced');
-                await offlineQueue.delete(scan.id);
-                console.log('✅ Scan synchronisé:', scan.id);
-            } else {
-                await offlineQueue.updateStatus(scan.id, 'error');
-                console.error('❌ Erreur sync scan:', scan.id, data.message);
-            }
-        } catch (err) {
-            console.error('Erreur envoi scan offline:', scan.id, err);
-            // Incrémenter les tentatives
-            scan.attempts = (scan.attempts || 0) + 1;
-            if (scan.attempts < 5) {
-                await offlineQueue.updateStatus(scan.id, 'pending');
-            } else {
-                await offlineQueue.updateStatus(scan.id, 'failed');
-                console.error('❌ Abandon après 5 tentatives:', scan.id);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    await offlineQueue.delete(scan.id);
+                    console.log('✅ Scan synchronisé:', scan.id);
+                } else {
+                    // Refus métier (badge inconnu, doublon...) : pas de nouvelle tentative
+                    await offlineQueue.updateStatus(scan.id, 'error');
+                    console.error('❌ Erreur sync scan:', scan.id, data.message);
+                }
+            } catch (err) {
+                console.error('Erreur envoi scan offline:', scan.id, err);
+                if (isRetryable(err)) {
+                    // Coupure ou 5xx : on garde le scan en attente, la prochaine reconnexion le renverra
+                    await offlineQueue.updateStatus(scan.id, 'pending', { attempts: (scan.attempts || 0) + 1 });
+                } else {
+                    await offlineQueue.updateStatus(scan.id, 'failed', { attempts: (scan.attempts || 0) + 1 });
+                    console.error('❌ Requête rejetée par le serveur:', scan.id, err.status);
+                }
             }
         }
+    } finally {
+        flushing = false;
     }
 }
 
