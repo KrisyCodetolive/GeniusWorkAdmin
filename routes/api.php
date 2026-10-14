@@ -381,3 +381,7 @@ Route::prefix('qr-codes')->name('api.qr-codes.')->middleware('auth:sanctum')->gr
     Route::post('/cleanup', [App\Http\Controllers\API\QRCodeController::class, 'cleanupExpiredQRCodes'])
         ->name('cleanup');
 });
+
+// Synchronisation : lecture des changements depuis l'instance cloud (accès limité par IP, voir config/sync.php)
+Route::get('sync/changes', [App\Http\Controllers\SyncController::class, 'changes'])
+    ->name('api.sync.changes');
