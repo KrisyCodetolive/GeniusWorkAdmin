@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Traits\BelongsToEntreprise;
+use App\Traits\Synchronisable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DemandeDepense extends Model
 {
-    use BelongsToEntreprise, HasUuids, SoftDeletes;
+    use BelongsToEntreprise, HasUuids, SoftDeletes, Synchronisable;
 
     public const STATUT_BROUILLON = 'brouillon';
 

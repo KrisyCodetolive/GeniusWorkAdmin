@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Services\DepenseWorkflowService;
+use App\Traits\Synchronisable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
 class JustificatifDepense extends Model
 {
-    use HasUuids;
+    use HasUuids, Synchronisable;
 
     public const TYPES = [
         'devis' => 'Devis',

@@ -292,6 +292,34 @@ class DepenseWorkflowService
     }
 
     /**
+     * Notification d'une étape reçue de l'autre instance (synchronisation) : mêmes destinataires et
+     * mêmes événements que les transitions ci-dessus. L'annulation ne notifie personne.
+     */
+    public function notifierValidation(ValidationDepense $validation): void
+    {
+        $demande = DemandeDepense::withoutGlobalScopes()->findOrFail($validation->demande_depense_id);
+        $motif = $validation->commentaire;
+
+        match ([$validation->etape, $validation->decision]) {
+            [ValidationDepense::ETAPE_SOUMISSION, ValidationDepense::DECISION_EFFECTUE] => $this->notifier($this->comptables($demande), $demande, 'a_valider_comptable'),
+            [ValidationDepense::ETAPE_COMPTABILITE, ValidationDepense::DECISION_APPROUVE] => $demande->necessiteValidationCeo()
+                ? $this->notifier($demande->parametres()->ceos(), $demande, 'a_valider_ceo')
+                : $this->notifierApprobation($demande),
+            [ValidationDepense::ETAPE_CEO, ValidationDepense::DECISION_APPROUVE] => $this->notifierApprobation($demande),
+            [ValidationDepense::ETAPE_COMPTABILITE, ValidationDepense::DECISION_REJETE],
+            [ValidationDepense::ETAPE_CEO, ValidationDepense::DECISION_REJETE] => $this->notifier($this->demandeurs($demande), $demande, 'rejetee', $motif),
+            [ValidationDepense::ETAPE_COMPTABILITE, ValidationDepense::DECISION_RENVOYE],
+            [ValidationDepense::ETAPE_CEO, ValidationDepense::DECISION_RENVOYE] => $this->notifier($this->demandeurs($demande), $demande, 'renvoyee', $motif),
+            [ValidationDepense::ETAPE_SIGNATURE_DEMANDEUR, ValidationDepense::DECISION_EFFECTUE] => $this->notifier($this->comptables($demande), $demande, 'a_payer'),
+            [ValidationDepense::ETAPE_DECAISSEMENT, ValidationDepense::DECISION_EFFECTUE] => $this->notifier($this->demandeurs($demande), $demande, 'payee'),
+            [ValidationDepense::ETAPE_JUSTIFICATION, ValidationDepense::DECISION_EFFECTUE] => $this->notifier($this->comptables($demande), $demande, 'justification_a_verifier'),
+            [ValidationDepense::ETAPE_JUSTIFICATION, ValidationDepense::DECISION_APPROUVE] => $this->notifier($this->demandeurs($demande), $demande, 'cloturee'),
+            [ValidationDepense::ETAPE_JUSTIFICATION, ValidationDepense::DECISION_RENVOYE] => $this->notifier($this->demandeurs($demande), $demande, 'justification_renvoyee', $motif),
+            default => null,
+        };
+    }
+
+    /**
      * La demande est approuvée : le demandeur doit signer sa décharge, la comptabilité
      * n'est prévenue (« a_payer ») qu'après sa signature — voir signerParDemandeur().
      */

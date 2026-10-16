@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\Synchronisable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Permutation extends Model
 {
-    use HasFactory, SoftDeletes, HasUuids;
+    use HasFactory, SoftDeletes, HasUuids, Synchronisable;
 
     protected $fillable = [
         'employeur_1_id',

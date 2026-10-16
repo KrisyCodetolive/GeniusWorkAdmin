@@ -382,6 +382,19 @@ Route::prefix('qr-codes')->name('api.qr-codes.')->middleware('auth:sanctum')->gr
         ->name('cleanup');
 });
 
-// Synchronisation : lecture des changements depuis l'instance cloud (accès limité par IP, voir config/sync.php)
-Route::get('sync/changes', [App\Http\Controllers\SyncController::class, 'changes'])
-    ->name('api.sync.changes');
+// Synchronisation cloud <-> instance locale (voir config/sync.php)
+Route::prefix('sync')->name('api.sync.')->group(function () {
+    // Connexion avec un compte SuperAdmin du backoffice : renvoie le jeton de lecture
+    Route::post('connexion', [App\Http\Controllers\SyncController::class, 'connexion'])
+        ->middleware('throttle:5,1')
+        ->name('connexion');
+
+    Route::withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class)->group(function () {
+        // Lecture de toute la base par l'instance locale (jeton SuperAdmin obligatoire)
+        Route::get('changes', [App\Http\Controllers\SyncController::class, 'changes'])
+            ->middleware('auth:sanctum')
+            ->name('changes');
+        // Réception des changements (pointages, demandes, statuts) envoyés par l'autre instance (requête signée)
+        Route::post('recevoir', [App\Http\Controllers\SyncController::class, 'recevoir'])->name('recevoir');
+    });
+});

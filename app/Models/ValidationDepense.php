@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\Synchronisable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use LogicException;
@@ -12,7 +13,7 @@ use LogicException;
  */
 class ValidationDepense extends Model
 {
-    use HasUuids;
+    use HasUuids, Synchronisable;
 
     public const ETAPE_SOUMISSION = 'soumission';
 

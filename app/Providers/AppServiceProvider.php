@@ -9,7 +9,9 @@ use App\Services\SMS\SMSLogService;
 use App\Services\WebAuthnService;
 use App\Services\PresenceService;
 use App\Services\QRCodeService;
+use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Http\Kernel;
 
@@ -45,9 +47,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-       
-        
-        
+        // Instance locale : les e-mails des demandes partent du cloud (voir config/sync.php),
+        // seul le canal interne est gardé ici pour ne pas envoyer chaque e-mail deux fois.
+        Event::listen(NotificationSending::class, function (NotificationSending $event) {
+            if (config('sync.role') === 'local'
+                && $event->channel !== 'database'
+                && in_array(get_class($event->notification), config('sync.notifications_cloud', []), true)) {
+                return false;
+            }
+        });
+
         // Register Blade components
         Blade::componentNamespace('App\\View\\Components', 'app');
         
