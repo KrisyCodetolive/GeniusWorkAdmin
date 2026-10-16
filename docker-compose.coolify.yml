@@ -31,6 +31,12 @@ services:
       - CACHE_DRIVER=${CACHE_DRIVER:-file}
       - SESSION_DRIVER=${SESSION_DRIVER:-file}
       - QUEUE_CONNECTION=${QUEUE_CONNECTION:-database}
+      # Synchronisation cloud <-> instance locale (vide = désactivée, voir config/sync.php)
+      - SYNC_ROLE=${SYNC_ROLE:-}
+      - SYNC_REMOTE_URL=${SYNC_REMOTE_URL:-}
+      - SYNC_SECRET=${SYNC_SECRET:-}
+      - SYNC_ENTREPRISE_ID=${SYNC_ENTREPRISE_ID:-}
+      - SYNC_ALLOWED_IPS=${SYNC_ALLOWED_IPS:-}
     volumes:
       - storage-data:/var/www/html/storage
       - videos-data:/var/www/html/public/videos
