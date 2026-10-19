@@ -102,11 +102,16 @@ class DepenseRelationManagersTest extends TestCase
         Storage::disk('local')->assertMissing('depenses/justificatifs/devis.pdf');
     }
 
-    public function test_un_valideur_ne_peut_pas_toucher_aux_justificatifs(): void
+    public function test_la_comptabilite_peut_joindre_des_pieces_pour_le_demandeur_mais_pas_un_autre_employe(): void
     {
         $demande = $this->nouvelleDemande(100000);
-        $this->actingAs($this->comptable);
+        $collegue = $this->creerUtilisateur('manager', $this->entreprise);
 
+        $this->actingAs($this->comptable);
+        Livewire::test(JustificatifsRelationManager::class, ['ownerRecord' => $demande, 'pageClass' => ViewDemandeDepense::class])
+            ->assertTableActionVisible('create');
+
+        $this->actingAs($collegue);
         Livewire::test(JustificatifsRelationManager::class, ['ownerRecord' => $demande, 'pageClass' => ViewDemandeDepense::class])
             ->assertTableActionHidden('create');
     }

@@ -29,7 +29,7 @@ class DepenseWorkflowService
     {
         $demande = $this->transition($demande, $user, 'soumettre', function (DemandeDepense $demande) use ($user) {
             $demande->update(['statut' => DemandeDepense::STATUT_EN_ATTENTE_COMPTABLE]);
-            $this->journaliser($demande, $user, ValidationDepense::ETAPE_SOUMISSION, ValidationDepense::DECISION_EFFECTUE);
+            $this->journaliser($demande, $user, ValidationDepense::ETAPE_SOUMISSION, ValidationDepense::DECISION_EFFECTUE, $this->mentionMandataire($demande, $user));
         });
 
         $this->notifier($this->comptables($demande), $demande, 'a_valider_comptable');
@@ -88,7 +88,7 @@ class DepenseWorkflowService
     public function signerParDemandeur(DemandeDepense $demande, User $user, string $signature): DemandeDepense
     {
         $demande = $this->transition($demande, $user, 'signerApprobation', function (DemandeDepense $demande) use ($user, $signature) {
-            $this->journaliser($demande, $user, ValidationDepense::ETAPE_SIGNATURE_DEMANDEUR, ValidationDepense::DECISION_EFFECTUE, null, $signature);
+            $this->journaliser($demande, $user, ValidationDepense::ETAPE_SIGNATURE_DEMANDEUR, ValidationDepense::DECISION_EFFECTUE, $this->mentionMandataire($demande, $user), $signature);
         });
 
         $this->notifier($this->comptables($demande), $demande, 'a_payer');
@@ -140,7 +140,7 @@ class DepenseWorkflowService
             }
 
             $demande->update(['statut' => DemandeDepense::STATUT_JUSTIFICATION_SOUMISE]);
-            $this->journaliser($demande, $user, ValidationDepense::ETAPE_JUSTIFICATION, ValidationDepense::DECISION_EFFECTUE);
+            $this->journaliser($demande, $user, ValidationDepense::ETAPE_JUSTIFICATION, ValidationDepense::DECISION_EFFECTUE, $this->mentionMandataire($demande, $user));
         });
 
         $this->notifier($this->comptables($demande), $demande, 'justification_a_verifier');
@@ -258,6 +258,16 @@ class DepenseWorkflowService
         });
     }
 
+    /**
+     * Étape du demandeur menée par un tiers (la comptabilité) : le journal le dit explicitement.
+     */
+    private function mentionMandataire(DemandeDepense $demande, User $user): ?string
+    {
+        return $demande->estAuteur($user)
+            ? null
+            : "Enregistré par {$user->name} (comptabilité) pour le compte du demandeur.";
+    }
+
     private function journaliser(DemandeDepense $demande, User $user, string $etape, string $decision, ?string $commentaire = null, ?string $signature = null): ValidationDepense
     {
         return ValidationDepense::create([
@@ -338,7 +348,10 @@ class DepenseWorkflowService
 
     private function demandeurs(DemandeDepense $demande)
     {
-        return collect([$demande->creePar, $demande->demandeur?->user])->filter()->unique('id');
+        // Le compte technique du département n'a pas de boîte mail : seul le demandeur nommé est prévenu.
+        return collect([$demande->creePar, $demande->demandeur?->user])
+            ->filter(fn ($user) => $user && ! $user->estCompteDepartement())
+            ->unique('id');
     }
 
     /**

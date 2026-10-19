@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'entreprise' => \App\Http\Middleware\HasEntreprise::class,
         ]);
+        // Le portail des dépenses a son propre accès (département + nom) ; le reste de l'app garde /login.
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('depense', 'depense/*', 'depenses/*')
+            ? route('employe.depenses.acces')
+            : route('login'));
+        $middleware->appendToGroup('web', \App\Http\Middleware\RestreindreSessionDepartement::class);
         // Trust les proxies de Coolify (Traefik) pour HTTPS
         $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO | Request::HEADER_X_FORWARDED_PREFIX | Request::HEADER_X_FORWARDED_AWS_ELB);
     })

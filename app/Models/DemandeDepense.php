@@ -54,6 +54,8 @@ class DemandeDepense extends Model
         self::STATUT_ANNULEE => 'gray',
     ];
 
+    public const ETAPES_SUIVI = ['Envoi', 'Validation', 'Signature', 'Paiement', 'Justification'];
+
     public const MODES_PAIEMENT = [
         'especes' => 'Espèces',
         'virement' => 'Virement bancaire',
@@ -229,5 +231,77 @@ class DemandeDepense extends Model
     public function estModifiable(): bool
     {
         return $this->statut === self::STATUT_BROUILLON;
+    }
+
+    public function estAuteur(User $user): bool
+    {
+        return $this->cree_par_user_id === $user->id
+            || ($user->employeur_id !== null && $user->employeur_id === $this->demandeur_id);
+    }
+
+    /**
+     * La comptabilité a mené elle-même une étape du demandeur (envoi, décharge, justification) :
+     * elle ne peut alors plus valider cette demande, pour garder deux personnes distinctes.
+     */
+    public function aAgiPourLeDemandeur(User $user): bool
+    {
+        return ! $this->estAuteur($user)
+            && $this->validations()
+                ->where('user_id', $user->id)
+                ->where('decision', ValidationDepense::DECISION_EFFECTUE)
+                ->whereIn('etape', [
+                    ValidationDepense::ETAPE_SOUMISSION,
+                    ValidationDepense::ETAPE_SIGNATURE_DEMANDEUR,
+                    ValidationDepense::ETAPE_JUSTIFICATION,
+                ])
+                ->exists();
+    }
+
+    /**
+     * Position dans ETAPES_SUIVI (égale au nombre d'étapes si clôturée), null si la demande est sortie du circuit.
+     */
+    public function etapeSuivi(): ?int
+    {
+        return match ($this->statut) {
+            self::STATUT_BROUILLON => 0,
+            self::STATUT_EN_ATTENTE_COMPTABLE, self::STATUT_EN_ATTENTE_CEO => 1,
+            self::STATUT_APPROUVEE => 2,
+            self::STATUT_PAYEE => 3,
+            self::STATUT_JUSTIFICATION_SOUMISE => 4,
+            self::STATUT_CLOTUREE => count(self::ETAPES_SUIVI),
+            default => null,
+        };
+    }
+
+    /**
+     * Ce que le demandeur doit faire lui-même à ce stade, null s'il n'a qu'à attendre.
+     */
+    public function actionRequise(): ?string
+    {
+        return match ($this->statut) {
+            self::STATUT_BROUILLON => 'À envoyer',
+            self::STATUT_APPROUVEE => 'À signer',
+            self::STATUT_PAYEE => 'Reçus à joindre',
+            default => null,
+        };
+    }
+
+    /**
+     * Phrase de suivi : où en est la demande et qui doit agir.
+     */
+    public function messageSuivi(): string
+    {
+        return match ($this->statut) {
+            self::STATUT_BROUILLON => 'Pas encore envoyée à la comptabilité.',
+            self::STATUT_EN_ATTENTE_COMPTABLE => 'La comptabilité examine votre demande.',
+            self::STATUT_EN_ATTENTE_CEO => 'Validée par la comptabilité, en attente du CEO.',
+            self::STATUT_APPROUVEE => 'Approuvée : signez votre décharge pour autoriser le paiement.',
+            self::STATUT_PAYEE => 'Argent remis : joignez vos reçus pour justifier la dépense.',
+            self::STATUT_JUSTIFICATION_SOUMISE => 'La comptabilité vérifie vos reçus.',
+            self::STATUT_CLOTUREE => 'Dossier clôturé, justificatifs validés.',
+            self::STATUT_REJETEE => 'Demande rejetée.',
+            self::STATUT_ANNULEE => 'Demande annulée.',
+            default => '',
+        };
     }
 }

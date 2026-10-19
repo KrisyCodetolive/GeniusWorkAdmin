@@ -19,7 +19,9 @@ class ViewDemandeDepense extends ViewRecord
         return [
             CircuitActions::soumettre(Actions\Action::class),
             CircuitActions::valider(Actions\Action::class),
+            CircuitActions::signerDecharge(Actions\Action::class),
             CircuitActions::decaisser(Actions\Action::class),
+            CircuitActions::soumettreJustification(Actions\Action::class),
             CircuitActions::validerJustification(Actions\Action::class),
             CircuitActions::renvoyerJustification(Actions\Action::class),
             CircuitActions::renvoyer(Actions\Action::class),

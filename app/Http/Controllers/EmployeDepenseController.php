@@ -21,27 +21,34 @@ use InvalidArgumentException;
  */
 class EmployeDepenseController extends Controller
 {
+    /**
+     * Demandes en cours uniquement : le portail sert à suivre l'avancement, pas à fouiller l'historique.
+     * Une demande rejetée reste visible une semaine pour que le demandeur en prenne connaissance.
+     */
     public function index(Request $request)
     {
         $user = $request->user();
 
-        $mesDemandes = fn () => DemandeDepense::query()->where(function ($query) use ($user) {
-            $query->where('cree_par_user_id', $user->id);
+        $demandes = DemandeDepense::query()
+            ->where(function ($query) use ($user) {
+                $query->where('cree_par_user_id', $user->id);
 
-            if ($user->employeur_id) {
-                $query->orWhere('demandeur_id', $user->employeur_id);
-            }
-        });
-
-        $demandes = $mesDemandes()
-            ->when(
-                $request->filled('statut') && array_key_exists($request->statut, DemandeDepense::STATUTS),
-                fn ($query) => $query->where('statut', $request->statut)
-            )
-            ->with(['categorie'])
+                if ($user->employeur_id) {
+                    $query->orWhere('demandeur_id', $user->employeur_id);
+                }
+            })
+            ->where(function ($query) {
+                $query->whereNotIn('statut', [
+                    DemandeDepense::STATUT_CLOTUREE,
+                    DemandeDepense::STATUT_ANNULEE,
+                    DemandeDepense::STATUT_REJETEE,
+                ])->orWhere(fn ($rejetee) => $rejetee
+                    ->where('statut', DemandeDepense::STATUT_REJETEE)
+                    ->where('updated_at', '>=', now()->subWeek()));
+            })
+            ->with('categorie')
             ->latest()
-            ->paginate(15)
-            ->withQueryString();
+            ->get();
 
         return view('employe.depenses.index', [
             'demandes' => $demandes,
@@ -67,7 +74,7 @@ class EmployeDepenseController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, DepenseWorkflowService $service)
     {
         $user = $request->user();
         $entrepriseId = $this->entrepriseId($user);
@@ -76,6 +83,11 @@ class EmployeDepenseController extends Controller
             return redirect()->route('employe.depenses.index')
                 ->with('error', 'Votre compte n\'est rattaché à aucune entreprise : vous ne pouvez pas créer de demande ici.');
         }
+
+        $pourDepartement = $user->estCompteDepartement();
+        $departementId = $pourDepartement
+            ? $request->session()->get(DepenseAccesController::SESSION_DEPARTEMENT)
+            : $user->employeur?->departement_id;
 
         $data = $request->validate([
             'objet' => ['required', 'string', 'max:255'],
@@ -92,11 +104,13 @@ class EmployeDepenseController extends Controller
             'justificatifs.*.fichier' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
         ]);
 
-        $demande = DB::transaction(function () use ($user, $data, $request, $entrepriseId) {
+        $demande = DB::transaction(function () use ($user, $data, $request, $entrepriseId, $departementId, $pourDepartement) {
             $demande = DemandeDepense::create([
                 'entreprise_id' => $entrepriseId,
-                'demandeur_id' => $user->employeur_id,
+                // Accès par département : la personne identifiée à l'entrée est le demandeur et en répond.
+                'demandeur_id' => ($pourDepartement ? $request->session()->get(DepenseAccesController::SESSION_DEMANDEUR) : null) ?? $user->employeur_id,
                 'cree_par_user_id' => $user->id,
+                'departement_id' => $departementId,
                 'categorie_depense_id' => $data['categorie_depense_id'],
                 'objet' => $data['objet'],
                 'description' => $data['description'] ?? null,
@@ -112,9 +126,18 @@ class EmployeDepenseController extends Controller
             return $demande;
         });
 
+        // La demande part directement à la comptabilité ; si l'envoi échoue, elle reste en brouillon.
+        try {
+            $service->soumettre($demande, $user);
+        } catch (AuthorizationException|InvalidArgumentException $e) {
+            return redirect()
+                ->route('employe.depenses.show', $demande)
+                ->with('error', "Demande {$demande->reference} enregistrée mais pas envoyée : ".($e instanceof InvalidArgumentException ? $e->getMessage() : 'envoi non autorisé.'));
+        }
+
         return redirect()
             ->route('employe.depenses.show', $demande)
-            ->with('success', "Demande {$demande->reference} enregistrée en brouillon. Vous pouvez la soumettre quand elle est prête.");
+            ->with('success', "Demande {$demande->reference} envoyée à la comptabilité.");
     }
 
     public function show(DemandeDepense $demande)

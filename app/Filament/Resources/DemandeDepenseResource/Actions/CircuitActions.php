@@ -33,7 +33,9 @@ class CircuitActions
         return [
             static::soumettre($classe),
             static::valider($classe),
+            static::signerDecharge($classe),
             static::decaisser($classe),
+            static::soumettreJustification($classe),
             static::validerJustification($classe),
             static::renvoyerJustification($classe),
             static::renvoyer($classe),
@@ -47,7 +49,7 @@ class CircuitActions
     public static function soumettre(string $classe): PageAction|TableAction
     {
         return $classe::make('soumettre')
-            ->label('Soumettre')
+            ->label(fn (DemandeDepense $record) => $record->estAuteur(auth()->user()) ? 'Soumettre' : 'Soumettre pour le demandeur')
             ->icon('heroicon-o-paper-airplane')
             ->color('primary')
             ->visible(fn (DemandeDepense $record) => auth()->user()->can('soumettre', $record))
@@ -90,6 +92,55 @@ class CircuitActions
                     ? $service->validerCeo($record, auth()->user(), $data['signature'], $data['commentaire'] ?? null)
                     : $service->validerComptabilite($record, auth()->user(), $data['signature'], $data['commentaire'] ?? null),
                 'Demande validée et signée.'
+            ));
+    }
+
+    /**
+     * Étape du demandeur : un membre de la comptabilité qui a saisi sa propre dépense la mène à terme
+     * depuis le back-office, sans passer par le portail des départements.
+     *
+     * @param  class-string<T>  $classe
+     */
+    public static function signerDecharge(string $classe): PageAction|TableAction
+    {
+        return $classe::make('signerDecharge')
+            ->label(fn (DemandeDepense $record) => $record->estAuteur(auth()->user()) ? 'Signer ma décharge' : 'Signer la décharge du demandeur')
+            ->icon('heroicon-o-pencil-square')
+            ->color('primary')
+            ->visible(fn (DemandeDepense $record) => auth()->user()->can('signerApprobation', $record))
+            ->modalHeading(fn (DemandeDepense $record) => "Décharge — {$record->reference}")
+            ->modalDescription(fn (DemandeDepense $record) => $record->estAuteur(auth()->user())
+                ? 'Votre signature autorise la comptabilité à procéder au paiement.'
+                : 'Vous signez pour le compte du demandeur, qui n\'a pas pu le faire dans l\'application. Le journal le mentionne.')
+            ->modalSubmitActionLabel('Signer')
+            ->form([
+                SignaturePad::make('signature')
+                    ->label('Votre signature')
+                    ->required(),
+            ])
+            ->action(fn (DemandeDepense $record, array $data, $livewire) => static::executer(
+                $livewire,
+                fn (DepenseWorkflowService $service) => $service->signerParDemandeur($record, auth()->user(), $data['signature']),
+                'Signature enregistrée. La comptabilité peut procéder au paiement.'
+            ));
+    }
+
+    /** @param  class-string<T>  $classe */
+    public static function soumettreJustification(string $classe): PageAction|TableAction
+    {
+        return $classe::make('soumettreJustification')
+            ->label(fn (DemandeDepense $record) => $record->estAuteur(auth()->user()) ? 'Envoyer la justification' : 'Envoyer la justification du demandeur')
+            ->icon('heroicon-o-receipt-percent')
+            ->color('primary')
+            ->visible(fn (DemandeDepense $record) => auth()->user()->can('justifier', $record))
+            ->requiresConfirmation()
+            ->modalHeading(fn (DemandeDepense $record) => "Justification de {$record->reference}")
+            ->modalDescription('Joignez d\'abord vos reçus dans l\'onglet « Justificatifs ». La comptabilité les vérifiera avant la clôture.')
+            ->modalSubmitActionLabel('Envoyer')
+            ->action(fn (DemandeDepense $record, $livewire) => static::executer(
+                $livewire,
+                fn (DepenseWorkflowService $service) => $service->soumettreJustification($record, auth()->user()),
+                'Justification envoyée à la comptabilité pour vérification.'
             ));
     }
 

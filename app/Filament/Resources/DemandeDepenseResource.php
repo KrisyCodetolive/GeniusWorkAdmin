@@ -485,7 +485,9 @@ class DemandeDepenseResource extends Resource
                 // Actions du circuit en boutons : chacun ne voit que ce qu'il a le droit de faire à l'étape en cours.
                 CircuitActions::soumettre(Tables\Actions\Action::class)->button(),
                 CircuitActions::valider(Tables\Actions\Action::class)->button()->label('Valider'),
+                CircuitActions::signerDecharge(Tables\Actions\Action::class)->button()->label('Signer'),
                 CircuitActions::decaisser(Tables\Actions\Action::class)->button()->label('Payer'),
+                CircuitActions::soumettreJustification(Tables\Actions\Action::class)->button()->label('Justifier'),
                 CircuitActions::validerJustification(Tables\Actions\Action::class)->button()->label('Clôturer'),
                 CircuitActions::renvoyerJustification(Tables\Actions\Action::class)->button()->label('Renvoyer justificatifs'),
                 CircuitActions::renvoyer(Tables\Actions\Action::class)->button()->label('Renvoyer'),

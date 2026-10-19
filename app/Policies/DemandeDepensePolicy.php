@@ -42,13 +42,13 @@ class DemandeDepensePolicy
 
     public function update(User $user, DemandeDepense $demande): bool
     {
-        return $demande->estModifiable()
-            && ($this->estAuteur($user, $demande) || $user->isSuperAdmin());
+        return $demande->estModifiable() && $this->peutAgirPourDemandeur($user, $demande);
     }
 
     public function delete(User $user, DemandeDepense $demande): bool
     {
-        return $this->update($user, $demande);
+        return $demande->estModifiable()
+            && ($this->estAuteur($user, $demande) || $user->isSuperAdmin());
     }
 
     public function soumettre(User $user, DemandeDepense $demande): bool
@@ -103,7 +103,7 @@ class DemandeDepensePolicy
     public function signerApprobation(User $user, DemandeDepense $demande): bool
     {
         return $demande->statut === DemandeDepense::STATUT_APPROUVEE
-            && $this->estAuteur($user, $demande)
+            && $this->peutAgirPourDemandeur($user, $demande)
             && ! $demande->signatureDemandeur();
     }
 
@@ -112,7 +112,8 @@ class DemandeDepensePolicy
         return $demande->statut === DemandeDepense::STATUT_APPROUVEE
             && $demande->signatureDemandeur() !== null
             && ($user->isComptable() || $user->isSuperAdmin())
-            && $this->memeEntreprise($user, $demande);
+            && $this->memeEntreprise($user, $demande)
+            && ! $demande->aAgiPourLeDemandeur($user);
     }
 
     /**
@@ -121,7 +122,7 @@ class DemandeDepensePolicy
     public function justifier(User $user, DemandeDepense $demande): bool
     {
         return $demande->statut === DemandeDepense::STATUT_PAYEE
-            && $this->estAuteur($user, $demande);
+            && $this->peutAgirPourDemandeur($user, $demande);
     }
 
     /**
@@ -137,7 +138,7 @@ class DemandeDepensePolicy
             DemandeDepense::STATUT_EN_ATTENTE_CEO,
             DemandeDepense::STATUT_APPROUVEE,
             DemandeDepense::STATUT_PAYEE,
-        ]) && $this->estAuteur($user, $demande);
+        ]) && $this->peutAgirPourDemandeur($user, $demande);
     }
 
     /**
@@ -162,7 +163,19 @@ class DemandeDepensePolicy
 
     private function peutValider(User $user, DemandeDepense $demande): bool
     {
-        return $this->memeEntreprise($user, $demande) && ! $this->estAuteur($user, $demande);
+        return $this->memeEntreprise($user, $demande)
+            && ! $this->estAuteur($user, $demande)
+            && ! $demande->aAgiPourLeDemandeur($user);
+    }
+
+    /**
+     * Étapes du demandeur (envoi, décharge, reçus). La comptabilité peut les mener à sa place quand le
+     * demandeur n'a pas commencé le circuit ; l'étape est alors journalisée à son nom.
+     */
+    private function peutAgirPourDemandeur(User $user, DemandeDepense $demande): bool
+    {
+        return $this->estAuteur($user, $demande)
+            || ($this->memeEntreprise($user, $demande) && ($user->isComptable() || $user->isSuperAdmin()));
     }
 
     private function memeEntreprise(User $user, DemandeDepense $demande): bool
@@ -172,7 +185,6 @@ class DemandeDepensePolicy
 
     private function estAuteur(User $user, DemandeDepense $demande): bool
     {
-        return $demande->cree_par_user_id === $user->id
-            || ($user->employeur_id !== null && $user->employeur_id === $demande->demandeur_id);
+        return $demande->estAuteur($user);
     }
 }

@@ -13,6 +13,7 @@ use App\Http\Controllers\SmartClockController;
 use App\Http\Controllers\AbonnementController;
 use App\Http\Controllers\PointageTestController;
 use App\Http\Controllers\KioskController;
+use App\Http\Controllers\DepenseAccesController;
 use App\Http\Controllers\DepenseFichierController;
 use App\Http\Controllers\EmployeDepenseController;
 
@@ -502,14 +503,28 @@ Route::prefix('depenses')->name('depenses.')->middleware(['auth'])->group(functi
 | Le demandeur crée, suit, soumet puis justifie ses dépenses après paiement.
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->prefix('employe/depenses')->name('employe.depenses.')->group(function () {
-    Route::get('/', [EmployeDepenseController::class, 'index'])->name('index');
-    Route::get('/nouvelle', [EmployeDepenseController::class, 'create'])->name('create');
-    Route::post('/', [EmployeDepenseController::class, 'store'])->name('store');
-    Route::get('/{demande}', [EmployeDepenseController::class, 'show'])->name('show');
-    Route::post('/{demande}/soumettre', [EmployeDepenseController::class, 'soumettre'])->name('soumettre');
-    Route::post('/{demande}/annuler', [EmployeDepenseController::class, 'annuler'])->name('annuler');
-    Route::post('/{demande}/signer', [EmployeDepenseController::class, 'signer'])->name('signer');
-    Route::post('/{demande}/justificatifs', [EmployeDepenseController::class, 'ajouterJustificatif'])->name('justificatifs.store');
-    Route::post('/{demande}/justification', [EmployeDepenseController::class, 'soumettreJustification'])->name('justification');
+Route::redirect('/depenses', '/depense');
+Route::redirect('/employe/depenses', '/depense');
+Route::get('/employe/depenses/{chemin}', fn (string $chemin) => redirect('/depense/'.$chemin))->where('chemin', '.*');
+
+Route::prefix('depense')->name('employe.depenses.')->group(function () {
+    // Accès public sans connexion : département + nom, et ressources PWA (déclarés avant /{demande}).
+    Route::get('/acces', [DepenseAccesController::class, 'acces'])->name('acces');
+    Route::post('/acces', [DepenseAccesController::class, 'verifier'])->middleware('throttle:10,1')->name('acces.verifier');
+    Route::get('/manifest.webmanifest', [DepenseAccesController::class, 'manifeste'])->name('manifeste');
+    Route::get('/sw.js', [DepenseAccesController::class, 'serviceWorker'])->name('sw');
+    Route::get('/hors-ligne', [DepenseAccesController::class, 'horsLigne'])->name('hors-ligne');
+
+    Route::middleware(['auth'])->group(function () {
+        Route::post('/quitter', [DepenseAccesController::class, 'quitter'])->name('quitter');
+        Route::get('/', [EmployeDepenseController::class, 'index'])->name('index');
+        Route::get('/nouvelle', [EmployeDepenseController::class, 'create'])->name('create');
+        Route::post('/', [EmployeDepenseController::class, 'store'])->name('store');
+        Route::get('/{demande}', [EmployeDepenseController::class, 'show'])->name('show');
+        Route::post('/{demande}/soumettre', [EmployeDepenseController::class, 'soumettre'])->name('soumettre');
+        Route::post('/{demande}/annuler', [EmployeDepenseController::class, 'annuler'])->name('annuler');
+        Route::post('/{demande}/signer', [EmployeDepenseController::class, 'signer'])->name('signer');
+        Route::post('/{demande}/justificatifs', [EmployeDepenseController::class, 'ajouterJustificatif'])->name('justificatifs.store');
+        Route::post('/{demande}/justification', [EmployeDepenseController::class, 'soumettreJustification'])->name('justification');
+    });
 });

@@ -28,6 +28,112 @@ class DemandeDepenseFilamentTest extends TestCase
         Filament::setCurrentPanel(Filament::getPanel('admin'));
     }
 
+    public function test_la_comptabilite_mene_sa_propre_depense_depuis_le_back_office(): void
+    {
+        $autreComptable = $this->creerUtilisateur('comptable', $this->entreprise);
+
+        // Un comptable saisit et soumet sa propre dépense.
+        $this->actingAs($this->comptable);
+        Livewire::test(CreateDemandeDepense::class)
+            ->fillForm([
+                'objet' => 'Papier et toner du service comptable',
+                'montant' => 80000,
+                'beneficiaire' => 'Papeterie Centrale',
+                'categorie_depense_id' => $this->categorie->id,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $demande = DemandeDepense::where('objet', 'Papier et toner du service comptable')->firstOrFail();
+        $this->assertSame($this->comptable->id, $demande->cree_par_user_id);
+
+        Livewire::test(ViewDemandeDepense::class, ['record' => $demande->getRouteKey()])->callAction('soumettre');
+        $this->assertSame(DemandeDepense::STATUT_EN_ATTENTE_COMPTABLE, $demande->fresh()->statut);
+
+        // Il ne valide pas lui-même sa dépense : un collègue de la comptabilité s'en charge.
+        Livewire::test(ViewDemandeDepense::class, ['record' => $demande->getRouteKey()])->assertActionHidden('valider');
+        $this->actingAs($autreComptable);
+        Livewire::test(ViewDemandeDepense::class, ['record' => $demande->getRouteKey()])
+            ->callAction('valider', ['signature' => $this->signature]);
+        $this->assertSame(DemandeDepense::STATUT_APPROUVEE, $demande->fresh()->statut);
+
+        // Le demandeur signe sa décharge depuis le back-office (et non depuis le portail).
+        $this->actingAs($this->comptable);
+        Livewire::test(ViewDemandeDepense::class, ['record' => $demande->getRouteKey()])
+            ->assertActionVisible('signerDecharge')
+            ->callAction('signerDecharge', ['signature' => $this->signature]);
+        $this->assertNotNull($demande->fresh()->signatureDemandeur());
+
+        $this->actingAs($autreComptable);
+        Livewire::test(ViewDemandeDepense::class, ['record' => $demande->getRouteKey()])
+            ->callAction('decaisser', ['mode_paiement' => 'especes', 'date_paiement' => now()->toDateString()]);
+        $this->assertSame(DemandeDepense::STATUT_PAYEE, $demande->fresh()->statut);
+
+        // Justification : refusée sans reçu, acceptée avec.
+        $this->actingAs($this->comptable);
+        Livewire::test(ViewDemandeDepense::class, ['record' => $demande->getRouteKey()])
+            ->assertActionVisible('soumettreJustification')
+            ->callAction('soumettreJustification');
+        $this->assertSame(DemandeDepense::STATUT_PAYEE, $demande->fresh()->statut);
+
+        $demande->justificatifs()->create(['fichier' => 'depenses/test/recu.pdf', 'nom_original' => 'recu.pdf', 'type' => 'recu']);
+        Livewire::test(ViewDemandeDepense::class, ['record' => $demande->getRouteKey()])->callAction('soumettreJustification');
+        $this->assertSame(DemandeDepense::STATUT_JUSTIFICATION_SOUMISE, $demande->fresh()->statut);
+
+        $this->actingAs($autreComptable);
+        Livewire::test(ViewDemandeDepense::class, ['record' => $demande->getRouteKey()])->callAction('validerJustification');
+        $this->assertSame(DemandeDepense::STATUT_CLOTUREE, $demande->fresh()->statut);
+    }
+
+    public function test_la_comptabilite_prend_le_relais_quand_le_demandeur_n_a_pas_commence(): void
+    {
+        $autreComptable = $this->creerUtilisateur('comptable', $this->entreprise);
+        $demande = $this->nouvelleDemande(80000); // brouillon laissé par le demandeur
+        $vue = fn () => Livewire::test(ViewDemandeDepense::class, ['record' => $demande->getRouteKey()]);
+
+        // La comptabilité envoie la demande à la place du demandeur : le journal le dit.
+        $this->actingAs($this->comptable);
+        $vue()->assertActionVisible('soumettre')->callAction('soumettre');
+        $this->assertSame(DemandeDepense::STATUT_EN_ATTENTE_COMPTABLE, $demande->fresh()->statut);
+        $this->assertStringContainsString('pour le compte du demandeur', $demande->validations()->where('etape', 'soumission')->firstOrFail()->commentaire);
+
+        // Elle ne peut plus valider elle-même ce qu'elle a envoyé : un collègue s'en charge.
+        $vue()->assertActionHidden('valider');
+        $this->actingAs($autreComptable);
+        $vue()->callAction('valider', ['signature' => $this->signature]);
+        $this->assertSame(DemandeDepense::STATUT_APPROUVEE, $demande->fresh()->statut);
+
+        // Décharge signée pour le demandeur ; la même personne ne paie pas.
+        $this->actingAs($this->comptable);
+        $vue()->assertActionVisible('signerDecharge')->callAction('signerDecharge', ['signature' => $this->signature]);
+        $this->assertNotNull($demande->fresh()->signatureDemandeur());
+        $vue()->assertActionHidden('decaisser');
+
+        $this->actingAs($autreComptable);
+        $vue()->callAction('decaisser', ['mode_paiement' => 'especes', 'date_paiement' => now()->toDateString()]);
+        $this->assertSame(DemandeDepense::STATUT_PAYEE, $demande->fresh()->statut);
+
+        // Reçus et justification enregistrés pour le demandeur ; la clôture revient à un collègue.
+        $this->actingAs($this->comptable);
+        $demande->justificatifs()->create(['fichier' => 'depenses/test/recu.pdf', 'nom_original' => 'recu.pdf', 'type' => 'recu']);
+        $vue()->callAction('soumettreJustification');
+        $this->assertSame(DemandeDepense::STATUT_JUSTIFICATION_SOUMISE, $demande->fresh()->statut);
+        $vue()->assertActionHidden('validerJustification');
+
+        $this->actingAs($autreComptable);
+        $vue()->callAction('validerJustification');
+        $this->assertSame(DemandeDepense::STATUT_CLOTUREE, $demande->fresh()->statut);
+    }
+
+    public function test_un_employe_ordinaire_ne_peut_pas_agir_pour_un_autre(): void
+    {
+        $autre = $this->creerUtilisateur('manager', $this->entreprise);
+        $demande = $this->nouvelleDemande(80000);
+
+        $this->assertFalse($autre->can('soumettre', $demande));
+        $this->assertTrue($this->comptable->can('soumettre', $demande));
+    }
+
     public function test_circuit_complet_depuis_les_ecrans(): void
     {
         // Le demandeur crée la demande : entreprise et auteur sont renseignés automatiquement.

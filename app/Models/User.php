@@ -69,6 +69,7 @@ class User extends Authenticatable implements HasAvatar, FilamentUser
         'email_verified_at' => 'datetime',
         'telephone_verified_at' => 'datetime',
         'pin_changed_at' => 'datetime',
+        'pin_locked_until' => 'datetime',
         'last_login_at' => 'datetime',
         'settings' => 'json',
         'preferences' => 'json',
@@ -96,6 +97,14 @@ class User extends Authenticatable implements HasAvatar, FilamentUser
         
         // Sinon, on construit l'URL à partir du stockage
         return Storage::disk(config('filament-edit-profile.disk', 'public'))->url($this->$avatarColumn);
+    }
+
+    // Domaine réservé aux comptes techniques des départements (portail des dépenses)
+    public const DOMAINE_COMPTE_DEPARTEMENT = 'depenses.invalid';
+
+    public function estCompteDepartement(): bool
+    {
+        return str_ends_with((string) $this->email, '@'.self::DOMAINE_COMPTE_DEPARTEMENT);
     }
 
     // Boot method for model events
@@ -372,6 +381,11 @@ class User extends Authenticatable implements HasAvatar, FilamentUser
     }
     public function canAccessPanel(Panel $panel): bool
     {
+        // Le compte technique d'un département (portail des dépenses) n'ouvre pas le back-office.
+        if ($this->estCompteDepartement()) {
+            return false;
+        }
+
         return $this->isSuperAdmin() || $this->isSupport() || $this->isAdmin() || $this->isManager() || $this->isComptable();
     }
 }

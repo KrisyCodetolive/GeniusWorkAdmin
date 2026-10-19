@@ -1,10 +1,33 @@
+@php
+    $cleDepartement = \App\Http\Controllers\DepenseAccesController::SESSION_DEPARTEMENT;
+    $cleDemandeur = \App\Http\Controllers\DepenseAccesController::SESSION_DEMANDEUR;
+
+    $portailDepartement = auth()->user()?->estCompteDepartement();
+
+    $departementActif = $portailDepartement && session($cleDepartement)
+        ? \App\Models\Departement::withoutGlobalScopes()->whereKey(session($cleDepartement))->value('nom')
+        : null;
+    $personneActive = $portailDepartement && session($cleDemandeur)
+        ? \App\Models\Employeur::withoutGlobalScopes()->whereKey(session($cleDemandeur))->first(['nom', 'prenom'])
+        : null;
+    $personneActive = $personneActive ? trim($personneActive->prenom.' '.$personneActive->nom) : (auth()->user()?->name);
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Espace employé') — GENIUS WORK</title>
+    <title>@yield('title', 'Mes demandes') — GENIUS WORK</title>
+
+    <link rel="manifest" href="{{ route('employe.depenses.manifeste') }}">
+    <meta name="theme-color" content="#3a5faa">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Dépenses">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="icon" type="image/png" href="{{ asset('images/depenses/icon-192.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/depenses/icon-192.png') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,58 +63,29 @@
 </head>
 <body class="min-h-screen font-sans text-slate-700 antialiased">
 
-    <header class="bg-white/95 backdrop-blur border-b border-slate-200 sticky top-0 z-40" x-data="{ open: false }">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center gap-3 min-w-0">
-                    <a href="{{ route('employe.depenses.index') }}" class="flex items-center gap-2 shrink-0">
-                        <img src="{{ asset('images/logo/logo2.png') }}" alt="Genius Work" class="h-8 w-auto">
-                    </a>
-                    <span class="hidden sm:inline text-sm font-medium text-slate-400 border-l border-slate-200 pl-3">Espace employé</span>
-                </div>
-
-                <nav class="hidden md:flex items-center gap-1">
-                    <a href="{{ route('employe.depenses.index') }}"
-                       class="px-3 py-2 rounded-lg text-sm font-medium {{ request()->routeIs('employe.depenses.*') ? 'bg-[#eef2fa] text-[#3a5faa]' : 'text-slate-600 hover:bg-slate-100' }}">
-                        Mes dépenses
-                    </a>
-                    @if (in_array(auth()->user()->role, ['super_admin', 'support', 'admin', 'manager', 'comptable']))
-                        <a href="/admin" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">
-                            Back-office
-                        </a>
+    @auth
+    <header class="bg-white/95 backdrop-blur border-b border-slate-200 sticky top-0 z-40 pt-[env(safe-area-inset-top)]">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6">
+            <div class="flex items-center justify-between h-14 gap-3">
+                <a href="{{ route('employe.depenses.index') }}" class="min-w-0 leading-tight">
+                    @if ($departementActif)
+                        <span class="block text-sm font-semibold text-slate-900 truncate">{{ $departementActif }}</span>
                     @endif
-                </nav>
-
-                <div class="hidden md:flex items-center gap-3">
-                    <span class="h-9 w-9 rounded-full bg-[#eef2fa] text-[#3a5faa] flex items-center justify-center text-sm font-semibold">
-                        {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
-                    </span>
-                    <span class="text-sm text-slate-600 truncate max-w-[160px]">{{ auth()->user()->name }}</span>
-                    <a href="{{ route('logout') }}" class="text-sm font-medium text-slate-500 hover:text-[#3a5faa] px-2 py-1">
-                        Déconnexion
-                    </a>
-                </div>
-
-                <button @click="open = !open" class="md:hidden p-2.5 rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Menu">
-                    <i data-lucide="menu" class="h-5 w-5" x-show="!open"></i>
-                    <i data-lucide="x" class="h-5 w-5" x-show="open" x-cloak></i>
-                </button>
-            </div>
-
-            <nav x-show="open" x-cloak x-transition class="md:hidden pb-3 space-y-1">
-                <a href="{{ route('employe.depenses.index') }}"
-                   class="block px-3 py-3 rounded-lg text-base font-medium {{ request()->routeIs('employe.depenses.*') ? 'bg-[#eef2fa] text-[#3a5faa]' : 'text-slate-600' }}">
-                    Mes dépenses
+                    <span class="block {{ $departementActif ? 'text-xs text-slate-500' : 'text-sm font-semibold text-slate-900' }} truncate">{{ $personneActive }}</span>
                 </a>
-                @if (in_array(auth()->user()->role, ['super_admin', 'support', 'admin', 'manager', 'comptable']))
-                    <a href="/admin" class="block px-3 py-3 rounded-lg text-base font-medium text-slate-600">Back-office</a>
-                @endif
-                <a href="{{ route('logout') }}" class="block px-3 py-3 rounded-lg text-base font-medium text-red-600">Déconnexion</a>
-            </nav>
+
+                <form method="POST" action="{{ route('employe.depenses.quitter') }}" class="shrink-0">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-[#3a5faa] hover:bg-slate-100">
+                        <i data-lucide="log-out" class="h-4 w-4"></i> Quitter
+                    </button>
+                </form>
+            </div>
         </div>
     </header>
+    @endauth
 
-    <main class="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 min-h-[calc(100vh-4rem)]">
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-8 pb-[calc(2rem+env(safe-area-inset-bottom))]">
         @if (session('success'))
             <div x-data="{ ok: true }" x-show="ok" role="status" class="mb-5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-3 flex items-start gap-3">
                 <i data-lucide="check-circle-2" class="h-5 w-5 shrink-0 mt-0.5 text-emerald-600"></i>
@@ -120,6 +114,12 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register(@json(route('employe.depenses.sw', [], false)), { scope: '/depense' }).catch(() => {});
+            });
+        }
     </script>
     @stack('scripts')
 </body>

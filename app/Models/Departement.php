@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use App\Models\Entreprise;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use App\Models\Employeur;
 use App\Models\Responsable;
 use App\Models\Filiale;
@@ -70,6 +72,35 @@ class Departement extends Model
     public function employeurs()
     {
         return $this->hasMany(Employeur::class, 'departement_id');
+    }
+
+    // Portail des dépenses
+
+    /**
+     * Compte technique sous lequel s'exécutent les demandes du département : le circuit de validation
+     * journalise toujours un utilisateur. La personne responsable de chaque demande est son demandeur.
+     */
+    public function compteDepenses(): User
+    {
+        return User::withoutEvents(fn () => User::firstOrCreate(
+            ['email' => 'depenses-'.$this->id.'@'.User::DOMAINE_COMPTE_DEPARTEMENT],
+            [
+                'name' => 'Département '.$this->nom,
+                'password' => Hash::make(Str::random(48)),
+                'role' => 'employeur',
+                'statut' => 'actif',
+                'entreprise_id' => $this->entreprise_id,
+            ]
+        ));
+    }
+
+    public function membresActifs()
+    {
+        return Employeur::withoutGlobalScopes()
+            ->where('departement_id', $this->id)
+            ->where('statut', 'actif')
+            ->orderBy('nom')
+            ->orderBy('prenom');
     }
 
     // Scopes

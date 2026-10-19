@@ -21,308 +21,242 @@
         DemandeDepense::STATUT_CLOTUREE,
     ]);
     $recus = $demande->justificatifs->where('type', 'recu');
-
-    $bandeaux = [
-        DemandeDepense::STATUT_BROUILLON => ['bg-slate-50 border-slate-200 text-slate-800', 'pencil', 'Brouillon : ajoutez vos pièces puis soumettez la demande à la comptabilité.'],
-        DemandeDepense::STATUT_EN_ATTENTE_COMPTABLE => ['bg-amber-50 border-amber-200 text-amber-800', 'hourglass', 'En attente de validation par la comptabilité.'],
-        DemandeDepense::STATUT_EN_ATTENTE_CEO => ['bg-amber-50 border-amber-200 text-amber-800', 'hourglass', 'Validée par la comptabilité, en attente du CEO.'],
-        DemandeDepense::STATUT_APPROUVEE => ['bg-blue-50 border-blue-200 text-blue-800', 'check-circle-2', 'Approuvée — en attente du paiement par la comptabilité.'],
-        DemandeDepense::STATUT_PAYEE => ['bg-blue-50 border-blue-200 text-blue-800', 'receipt', 'Dépense payée : joignez vos reçus puis soumettez la justification.'],
-        DemandeDepense::STATUT_JUSTIFICATION_SOUMISE => ['bg-amber-50 border-amber-200 text-amber-800', 'hourglass', 'Justification envoyée — la comptabilité vérifie vos reçus.'],
-        DemandeDepense::STATUT_CLOTUREE => ['bg-emerald-50 border-emerald-200 text-emerald-800', 'check-circle-2', 'Dossier clôturé : vos justificatifs ont été validés.'],
-        DemandeDepense::STATUT_REJETEE => ['bg-red-50 border-red-200 text-red-800', 'x-circle', 'Demande rejetée. Consultez le motif dans l\'historique.'],
-        DemandeDepense::STATUT_ANNULEE => ['bg-slate-50 border-slate-200 text-slate-800', 'ban', 'Demande annulée.'],
-    ];
-    $bandeau = $bandeaux[$demande->statut] ?? null;
-
-    // Progression : les étapes que l'employé voit défiler, de la création à la clôture.
-    $etapes = ['Brouillon', 'Validation', 'Signature', 'Paiement', 'Justification'];
-    $etapeActuelle = match ($demande->statut) {
-        DemandeDepense::STATUT_BROUILLON => 0,
-        DemandeDepense::STATUT_EN_ATTENTE_COMPTABLE, DemandeDepense::STATUT_EN_ATTENTE_CEO => 1,
-        DemandeDepense::STATUT_APPROUVEE => 2,
-        DemandeDepense::STATUT_PAYEE => 3,
-        DemandeDepense::STATUT_JUSTIFICATION_SOUMISE => 4,
-        DemandeDepense::STATUT_CLOTUREE => 5,
-        default => null,
-    };
+    $enAttente = in_array($demande->statut, [
+        DemandeDepense::STATUT_EN_ATTENTE_COMPTABLE,
+        DemandeDepense::STATUT_EN_ATTENTE_CEO,
+        DemandeDepense::STATUT_JUSTIFICATION_SOUMISE,
+    ]);
+    $refus = in_array($demande->statut, [DemandeDepense::STATUT_REJETEE, DemandeDepense::STATUT_BROUILLON])
+        ? $demande->validations->whereIn('decision', [ValidationDepense::DECISION_REJETE, ValidationDepense::DECISION_RENVOYE])->whereNotNull('commentaire')->last()
+        : null;
 @endphp
 
-<div class="max-w-4xl mx-auto">
-    <a href="{{ route('employe.depenses.index') }}" class="inline-flex items-center text-sm text-slate-600 hover:text-[#3a5faa] mb-4">
-        <i data-lucide="arrow-left" class="h-4 w-4 mr-1"></i> Mes dépenses
+<div class="max-w-xl mx-auto space-y-5">
+    <a href="{{ route('employe.depenses.index') }}" class="inline-flex items-center text-sm text-slate-600 hover:text-[#3a5faa]">
+        <i data-lucide="arrow-left" class="h-4 w-4 mr-1"></i> Mes demandes
     </a>
 
-    {{-- En-tête --}}
-    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
-        <div class="min-w-0">
-            <div class="flex flex-wrap items-center gap-2">
-                <h1 class="text-2xl font-bold text-slate-900 break-all">{{ $demande->reference }}</h1>
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium {{ $badgeClasses[$couleur] }}">
-                    {{ DemandeDepense::STATUTS[$demande->statut] ?? $demande->statut }}
-                </span>
+    {{-- Où en est la demande --}}
+    <div class="card p-5">
+        <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+                <h1 class="text-xl font-bold text-slate-900 break-words">{{ $demande->objet }}</h1>
+                <p class="text-xs text-slate-500 mt-0.5">{{ $demande->reference }} · {{ $demande->created_at->format('d/m/Y') }}</p>
+                <p class="text-sm text-slate-600 mt-0.5">Demandeur : <span class="font-medium text-slate-800">{{ $demande->nomDemandeur() }}</span></p>
             </div>
-            <p class="text-slate-600 mt-1 break-words">{{ $demande->objet }}</p>
+            <p class="shrink-0 text-right text-2xl font-bold text-[#243b6e] leading-tight">
+                {{ number_format((float) $demande->montant, 0, ',', ' ') }}
+                <span class="block text-xs font-medium text-slate-500">{{ $demande->devise }}</span>
+            </p>
         </div>
-        <div class="flex flex-col sm:flex-row gap-2 shrink-0">
-            @can('soumettre', $demande)
-                <form method="POST" action="{{ route('employe.depenses.soumettre', $demande) }}"
-                      onsubmit="return confirm('Soumettre cette demande à la comptabilité ? Elle ne sera plus modifiable.')">
-                    @csrf
-                    <button type="submit" class="btn-primary w-full sm:w-auto inline-flex justify-center items-center px-4 py-3 rounded-xl text-white text-sm font-medium shadow-sm">
-                        <i data-lucide="send" class="h-4 w-4 mr-2"></i> Soumettre
-                    </button>
-                </form>
-            @endcan
-            @can('annuler', $demande)
-                <form method="POST" action="{{ route('employe.depenses.annuler', $demande) }}"
-                      onsubmit="return confirm('Annuler définitivement cette demande ?')">
-                    @csrf
-                    <button type="submit" class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-3 rounded-xl text-sm font-medium text-red-600 bg-white border border-red-200 hover:bg-red-50">
-                        <i data-lucide="ban" class="h-4 w-4 mr-2"></i> Annuler
-                    </button>
-                </form>
-            @endcan
+
+        <div class="mt-5">@include('employe.depenses._suivi', ['demande' => $demande])</div>
+
+        <div class="mt-5 rounded-xl px-4 py-3 flex items-center gap-3 {{ $badgeClasses[$couleur] }}">
+            <i data-lucide="{{ $enAttente ? 'hourglass' : ($demande->statut === DemandeDepense::STATUT_CLOTUREE ? 'check-circle-2' : ($couleur === 'danger' ? 'x-circle' : 'info')) }}" class="h-5 w-5 shrink-0"></i>
+            <div class="min-w-0">
+                <p class="font-semibold leading-tight">{{ DemandeDepense::STATUTS[$demande->statut] ?? $demande->statut }}</p>
+                <p class="text-sm opacity-90">{{ $demande->messageSuivi() }}</p>
+            </div>
         </div>
+
+        @if ($refus)
+            <p class="mt-3 text-sm text-slate-700 bg-slate-50 rounded-lg px-3 py-2 italic">« {{ $refus->commentaire }} » — {{ $refus->user?->name }}</p>
+        @endif
     </div>
 
-    {{-- Progression --}}
-    @if ($etapeActuelle !== null)
-        <ol class="card px-4 py-4 sm:px-6 mb-5 flex items-start" aria-label="Progression de la demande">
-            @foreach ($etapes as $i => $etape)
-                @php $fait = $i < $etapeActuelle; $courante = $i === $etapeActuelle; @endphp
-                <li class="flex-1 flex flex-col items-center text-center relative" @if ($courante) aria-current="step" @endif>
-                    @if (! $loop->first)
-                        <span class="absolute top-4 right-1/2 w-full h-0.5 -z-0 {{ $i <= $etapeActuelle ? 'bg-[#3a5faa]' : 'bg-slate-200' }}"></span>
-                    @endif
-                    <span class="relative z-10 flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold
-                        {{ $fait ? 'bg-[#3a5faa] text-white' : ($courante ? 'bg-white text-[#3a5faa] border-2 border-[#3a5faa]' : 'bg-slate-100 text-slate-500') }}">
-                        @if ($fait) <i data-lucide="check" class="h-4 w-4"></i> @else {{ $i + 1 }} @endif
-                    </span>
-                    <span class="mt-1.5 text-[11px] sm:text-xs leading-tight {{ $courante ? 'font-semibold text-slate-900' : 'text-slate-500' }}">{{ $etape }}</span>
-                </li>
-            @endforeach
-        </ol>
-    @endif
+    {{-- Ce que vous devez faire --}}
+    @can('soumettre', $demande)
+        <form method="POST" action="{{ route('employe.depenses.soumettre', $demande) }}"
+              onsubmit="return confirm('Envoyer cette demande à la comptabilité ? Elle ne sera plus modifiable.')">
+            @csrf
+            <button type="submit" class="btn-primary w-full inline-flex justify-center items-center gap-2 px-6 py-4 rounded-2xl text-white text-lg font-semibold shadow-sm">
+                <i data-lucide="send" class="h-5 w-5"></i> Envoyer la demande
+            </button>
+        </form>
+    @endcan
 
-    {{-- Bandeau de statut --}}
-    @if ($bandeau)
-        <div class="mb-6 rounded-xl border px-4 py-3.5 flex items-center gap-3 {{ $bandeau[0] }}">
-            <i data-lucide="{{ $bandeau[1] }}" class="h-5 w-5 shrink-0"></i>
-            <span>{{ $bandeau[2] }}</span>
+    @can('signerApprobation', $demande)
+        <div class="card !border-[#b9c7e6] p-5">
+            <h2 class="text-base font-semibold text-slate-900 mb-2 flex items-center">
+                <i data-lucide="pen-line" class="h-4 w-4 mr-2 text-[#3a5faa]"></i> Votre décharge
+            </h2>
+            <p class="text-sm text-slate-600 mb-4">Signez ci-dessous pour autoriser la comptabilité à procéder au paiement.</p>
+            <form method="POST" action="{{ route('employe.depenses.signer', $demande) }}" id="form-signature">
+                @csrf
+                <input type="hidden" name="signature" id="signature-data">
+                <div class="border-2 border-dashed border-slate-300 rounded-xl overflow-hidden bg-white touch-none">
+                    <canvas id="pad-signature" class="w-full h-40 cursor-crosshair"></canvas>
+                </div>
+                <div class="flex gap-2 mt-3">
+                    <button type="button" id="effacer-signature"
+                            class="inline-flex items-center px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200">
+                        <i data-lucide="eraser" class="h-4 w-4 mr-1.5"></i> Effacer
+                    </button>
+                    <button type="submit" id="btn-signer"
+                            class="btn-primary flex-1 inline-flex justify-center items-center px-4 py-2.5 rounded-xl text-white text-sm font-semibold shadow-sm">
+                        <i data-lucide="pen-tool" class="h-4 w-4 mr-2"></i> Signer
+                    </button>
+                </div>
+                <p id="signature-vide" class="hidden text-xs text-red-500 mt-2 text-center">Tracez votre signature avant de valider.</p>
+            </form>
         </div>
-    @endif
+    @endcan
 
-    <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        <div class="lg:col-span-3 space-y-5">
-            {{-- Détails --}}
-            <div class="card p-5 sm:p-6">
-                <div class="flex items-baseline justify-between gap-4 mb-5">
-                    <div>
-                        <p class="text-xs font-medium text-slate-500">Montant</p>
-                        <p class="text-3xl sm:text-4xl font-bold text-[#243b6e]">
-                            {{ number_format((float) $demande->montant, 0, ',', ' ') }}
-                            <span class="text-sm font-medium text-slate-500">{{ $demande->devise }}</span>
-                        </p>
-                        <p class="text-xs text-slate-500 italic mt-0.5">{{ $demande->montantEnLettres() }}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-xs font-medium text-slate-500">Validation CEO</p>
-                        <p class="text-sm font-medium text-slate-800 mt-1">
-                            {{ $demande->necessiteValidationCeo() ? 'Requise' : 'Non requise' }}
-                        </p>
-                    </div>
-                </div>
-                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm border-t border-slate-100 pt-5">
-                    <div>
-                        <dt class="text-slate-500 text-xs font-medium">Bénéficiaire</dt>
-                        <dd class="font-medium text-slate-900 mt-0.5">{{ $demande->beneficiaire }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500 text-xs font-medium">Catégorie</dt>
-                        <dd class="font-medium text-slate-900 mt-0.5">{{ $demande->categorie?->nom ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500 text-xs font-medium">Date de besoin</dt>
-                        <dd class="font-medium text-slate-900 mt-0.5">{{ $demande->date_besoin?->format('d/m/Y') ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500 text-xs font-medium">Créée le</dt>
-                        <dd class="font-medium text-slate-900 mt-0.5">{{ $demande->created_at->format('d/m/Y à H:i') }}</dd>
-                    </div>
-                    @if ($demande->description)
-                        <div class="sm:col-span-2">
-                            <dt class="text-slate-500 text-xs font-medium">Description</dt>
-                            <dd class="font-medium text-slate-800 mt-0.5 whitespace-pre-line">{{ $demande->description }}</dd>
-                        </div>
-                    @endif
-                </dl>
-            </div>
+    @can('justifier', $demande)
+        <div class="card !border-emerald-200 p-5">
+            <h2 class="text-base font-semibold text-slate-900 mb-2 flex items-center">
+                <i data-lucide="receipt" class="h-4 w-4 mr-2 text-emerald-500"></i> Justifier la dépense
+            </h2>
+            <p class="text-sm text-slate-600 mb-4">{{ $recus->count() }} reçu(s) joint(s). Ajoutez vos reçus puis envoyez la justification.</p>
 
-            {{-- Paiement --}}
-            @if ($payee)
-                <div class="card p-5 sm:p-6">
-                    <h2 class="text-base font-semibold text-slate-900 mb-4 flex items-center gap-1">
-                        <i data-lucide="banknote" class="h-4 w-4 mr-2 text-emerald-500"></i> Paiement
-                    </h2>
-                    <dl class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                        <div>
-                            <dt class="text-slate-500 text-xs font-medium">Mode</dt>
-                            <dd class="font-medium text-slate-900 mt-0.5">{{ DemandeDepense::MODES_PAIEMENT[$demande->mode_paiement] ?? $demande->mode_paiement }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-slate-500 text-xs font-medium">Date</dt>
-                            <dd class="font-medium text-slate-900 mt-0.5">{{ $demande->date_paiement?->format('d/m/Y') }}</dd>
-                        </div>
-                        <div class="col-span-2">
-                            <dt class="text-slate-500 text-xs font-medium">Référence</dt>
-                            <dd class="font-medium text-slate-900 mt-0.5">{{ $demande->reference_paiement ?? '—' }}</dd>
-                        </div>
-                    </dl>
-                    <div class="flex flex-wrap gap-3 mt-5 pt-4 border-t border-slate-100">
-                        @if ($demande->preuve_paiement)
-                            <a href="{{ route('depenses.preuve-paiement', $demande) }}" target="_blank"
-                               class="inline-flex items-center px-3 py-2 rounded-lg text-xs font-medium text-[#3a5faa] bg-[#eef2fa] hover:bg-[#dde5f4]">
-                                <i data-lucide="paperclip" class="h-4 w-4 mr-1.5"></i> Preuve de paiement
-                            </a>
-                        @endif
-                        @can('telechargerBon', $demande)
-                            <a href="{{ route('depenses.bon-sortie', $demande) }}" target="_blank"
-                               class="inline-flex items-center px-3 py-2 rounded-lg text-xs font-medium text-[#3a5faa] bg-[#eef2fa] hover:bg-[#dde5f4]">
-                                <i data-lucide="file-down" class="h-4 w-4 mr-1.5"></i> Bon de sortie (PDF)
-                            </a>
-                        @endcan
-                    </div>
-                </div>
+            @can('ajouterJustificatif', $demande)
+                <form method="POST" action="{{ route('employe.depenses.justificatifs.store', $demande) }}" enctype="multipart/form-data" class="space-y-3 mb-4">
+                    @csrf
+                    <input type="hidden" name="type" value="recu">
+                    <input type="file" name="fichier" accept=".pdf,image/*" required
+                           class="w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#eef2fa] file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-[#3a5faa]">
+                    <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2.5 rounded-xl text-sm font-medium text-[#3a5faa] bg-[#eef2fa] hover:bg-[#dde5f4]">
+                        <i data-lucide="upload" class="h-4 w-4 mr-2"></i> Ajouter ce reçu
+                    </button>
+                </form>
+            @endcan
+
+            <form method="POST" action="{{ route('employe.depenses.justification', $demande) }}"
+                  onsubmit="return confirm('Envoyer la justification à la comptabilité ?')">
+                @csrf
+                <button type="submit" @disabled($recus->isEmpty())
+                        class="w-full inline-flex justify-center items-center px-4 py-3 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                    <i data-lucide="send" class="h-4 w-4 mr-2"></i> Soumettre la justification
+                </button>
+                @if ($recus->isEmpty())
+                    <p class="text-xs text-red-500 mt-2 text-center">Ajoutez au moins un reçu pour activer ce bouton.</p>
+                @endif
+            </form>
+        </div>
+    @endcan
+
+    {{-- Le reste, replié : détails, pièces, paiement, historique --}}
+    <details class="card px-5 py-4 group">
+        <summary class="cursor-pointer list-none flex items-center justify-between text-sm font-semibold text-slate-700">
+            Détails de la demande
+            <i data-lucide="chevron-down" class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm mt-4 pt-4 border-t border-slate-100">
+            <div><dt class="text-slate-500 text-xs font-medium">Bénéficiaire</dt><dd class="font-medium text-slate-900 mt-0.5">{{ $demande->beneficiaire }}</dd></div>
+            <div><dt class="text-slate-500 text-xs font-medium">Catégorie</dt><dd class="font-medium text-slate-900 mt-0.5">{{ $demande->categorie?->nom ?? '—' }}</dd></div>
+            <div><dt class="text-slate-500 text-xs font-medium">Date de besoin</dt><dd class="font-medium text-slate-900 mt-0.5">{{ $demande->date_besoin?->format('d/m/Y') ?? '—' }}</dd></div>
+            <div><dt class="text-slate-500 text-xs font-medium">Montant en lettres</dt><dd class="font-medium text-slate-900 mt-0.5">{{ $demande->montantEnLettres() }}</dd></div>
+            @if ($demande->description)
+                <div class="sm:col-span-2"><dt class="text-slate-500 text-xs font-medium">Description</dt><dd class="font-medium text-slate-800 mt-0.5 whitespace-pre-line">{{ $demande->description }}</dd></div>
             @endif
+        </dl>
+    </details>
 
-            {{-- Historique --}}
-            <div class="card p-5 sm:p-6">
-                <h2 class="text-base font-semibold text-slate-900 mb-4 flex items-center gap-1">
-                    <i data-lucide="history" class="h-4 w-4 mr-2 text-[#3a5faa]"></i> Historique
-                </h2>
-                <ol class="relative border-l-2 border-slate-100 ml-1.5 space-y-5">
-                    @forelse ($demande->validations as $validation)
-                        <li class="ml-5">
-                            <span class="absolute -left-[7px] flex h-3.5 w-3.5 rounded-full bg-[#eef2fa]0 ring-4 ring-white"></span>
-                            <p class="text-sm font-medium text-slate-900">
-                                {{ ValidationDepense::ETAPES[$validation->etape] ?? $validation->etape }}
-                                <span class="text-slate-500 font-normal">·</span>
-                                {{ ValidationDepense::DECISIONS[$validation->decision] ?? $validation->decision }}
-                            </p>
-                            <p class="text-xs text-slate-500 mt-0.5">
-                                {{ $validation->user?->name ?? '—' }} · {{ $validation->signe_le->format('d/m/Y à H:i') }}
-                            </p>
-                            @if ($validation->commentaire)
-                                <p class="mt-1.5 text-sm text-slate-700 bg-slate-50 rounded-lg px-3 py-2 italic">« {{ $validation->commentaire }} »</p>
-                            @endif
-                        </li>
-                    @empty
-                        <li class="ml-5 text-sm text-slate-500">Aucune étape enregistrée pour l'instant.</li>
-                    @endforelse
-                </ol>
-            </div>
-        </div>
+    <details class="card px-5 py-4 group">
+        <summary class="cursor-pointer list-none flex items-center justify-between text-sm font-semibold text-slate-700">
+            <span>Pièces jointes <span class="text-slate-500 font-normal">({{ $demande->justificatifs->count() }})</span></span>
+            <i data-lucide="chevron-down" class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <ul class="space-y-2 mt-4 pt-4 border-t border-slate-100">
+            @forelse ($demande->justificatifs as $justificatif)
+                <li>
+                    <a href="{{ route('depenses.justificatif', $justificatif) }}" target="_blank"
+                       class="flex items-center justify-between gap-2 rounded-xl border border-slate-100 px-3 py-2.5 hover:bg-[#eef2fa]/60">
+                        <span class="inline-flex items-center min-w-0 text-sm text-slate-800">
+                            <i data-lucide="file" class="h-4 w-4 mr-2 shrink-0 text-slate-500"></i>
+                            <span class="truncate">{{ $justificatif->nom_original ?: basename($justificatif->fichier) }}</span>
+                        </span>
+                        <span class="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{{ $typesJustificatif[$justificatif->type] ?? $justificatif->type }}</span>
+                    </a>
+                </li>
+            @empty
+                <li class="text-sm text-slate-500 text-center py-3 border border-dashed border-slate-200 rounded-xl">Aucune pièce jointe.</li>
+            @endforelse
+        </ul>
 
-        {{-- Sidebar --}}
-        <div class="lg:col-span-2 space-y-5">
-            <div class="card p-5 sm:p-6">
-                <h2 class="text-base font-semibold text-slate-900 mb-4 flex items-center gap-1">
-                    <i data-lucide="paperclip" class="h-4 w-4 mr-2 text-[#3a5faa]"></i>
-                    Justificatifs <span class="ml-1 text-slate-500 font-normal">({{ $demande->justificatifs->count() }})</span>
-                </h2>
-                <ul class="space-y-2">
-                    @forelse ($demande->justificatifs as $justificatif)
-                        <li>
-                            <a href="{{ route('depenses.justificatif', $justificatif) }}" target="_blank"
-                               class="flex items-center justify-between gap-2 rounded-xl border border-slate-100 px-3 py-2.5 hover:bg-[#eef2fa]/60 hover:border-[#c9d6ee] transition-colors">
-                                <span class="inline-flex items-center min-w-0 text-sm text-slate-800">
-                                    <i data-lucide="file" class="h-4 w-4 mr-2 shrink-0 text-slate-500"></i>
-                                    <span class="truncate">{{ $justificatif->nom_original ?: basename($justificatif->fichier) }}</span>
-                                </span>
-                                <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">
-                                    {{ $typesJustificatif[$justificatif->type] ?? $justificatif->type }}
-                                </span>
-                            </a>
-                        </li>
-                    @empty
-                        <li class="text-sm text-slate-500 text-center py-3 border border-dashed border-slate-200 rounded-xl">Aucune pièce jointe.</li>
-                    @endforelse
-                </ul>
+        @if ($demande->statut !== DemandeDepense::STATUT_PAYEE)
+            @can('ajouterJustificatif', $demande)
+                <form method="POST" action="{{ route('employe.depenses.justificatifs.store', $demande) }}"
+                      enctype="multipart/form-data" class="mt-4 pt-4 border-t border-slate-100 space-y-3">
+                    @csrf
+                    <select name="type" class="w-full rounded-xl border-slate-300 text-sm focus:border-[#3a5faa] focus:ring-[#3a5faa]">
+                        @foreach ($typesJustificatif as $valeur => $libelle)
+                            <option value="{{ $valeur }}">{{ $libelle }}</option>
+                        @endforeach
+                    </select>
+                    <input type="file" name="fichier" accept=".pdf,image/*" required
+                           class="w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#eef2fa] file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-[#3a5faa]">
+                    <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 rounded-xl text-sm font-medium text-[#3a5faa] bg-[#eef2fa] hover:bg-[#dde5f4]">
+                        <i data-lucide="upload" class="h-4 w-4 mr-2"></i> Ajouter la pièce
+                    </button>
+                </form>
+            @endcan
+        @endif
+    </details>
 
-                @can('ajouterJustificatif', $demande)
-                    <form method="POST" action="{{ route('employe.depenses.justificatifs.store', $demande) }}"
-                          enctype="multipart/form-data" class="mt-4 pt-4 border-t border-slate-100 space-y-3">
-                        @csrf
-                        <select name="type" class="w-full rounded-xl border-slate-300 text-sm focus:border-[#3a5faa] focus:ring-[#3a5faa]">
-                            @foreach ($typesJustificatif as $valeur => $libelle)
-                                <option value="{{ $valeur }}" @selected($demande->statut === DemandeDepense::STATUT_PAYEE && $valeur === 'recu')>
-                                    {{ $libelle }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <input type="file" name="fichier" accept=".pdf,image/*" required
-                               class="w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#eef2fa] file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-[#3a5faa] hover:file:bg-[#dde5f4]">
-                        <button type="submit"
-                                class="w-full inline-flex justify-center items-center px-4 py-2 rounded-xl text-sm font-medium text-[#3a5faa] bg-[#eef2fa] hover:bg-[#dde5f4]">
-                            <i data-lucide="upload" class="h-4 w-4 mr-2"></i> Ajouter la pièce
-                        </button>
-                    </form>
+    @if ($payee)
+        <details class="card px-5 py-4 group">
+            <summary class="cursor-pointer list-none flex items-center justify-between text-sm font-semibold text-slate-700">
+                Paiement
+                <i data-lucide="chevron-down" class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180"></i>
+            </summary>
+            <dl class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm mt-4 pt-4 border-t border-slate-100">
+                <div><dt class="text-slate-500 text-xs font-medium">Mode</dt><dd class="font-medium text-slate-900 mt-0.5">{{ DemandeDepense::MODES_PAIEMENT[$demande->mode_paiement] ?? $demande->mode_paiement }}</dd></div>
+                <div><dt class="text-slate-500 text-xs font-medium">Date</dt><dd class="font-medium text-slate-900 mt-0.5">{{ $demande->date_paiement?->format('d/m/Y') }}</dd></div>
+                <div class="col-span-2"><dt class="text-slate-500 text-xs font-medium">Référence</dt><dd class="font-medium text-slate-900 mt-0.5">{{ $demande->reference_paiement ?? '—' }}</dd></div>
+            </dl>
+            <div class="flex flex-wrap gap-3 mt-4">
+                @if ($demande->preuve_paiement)
+                    <a href="{{ route('depenses.preuve-paiement', $demande) }}" target="_blank"
+                       class="inline-flex items-center px-3 py-2 rounded-lg text-xs font-medium text-[#3a5faa] bg-[#eef2fa] hover:bg-[#dde5f4]">
+                        <i data-lucide="paperclip" class="h-4 w-4 mr-1.5"></i> Preuve de paiement
+                    </a>
+                @endif
+                @can('telechargerBon', $demande)
+                    <a href="{{ route('depenses.bon-sortie', $demande) }}" target="_blank"
+                       class="inline-flex items-center px-3 py-2 rounded-lg text-xs font-medium text-[#3a5faa] bg-[#eef2fa] hover:bg-[#dde5f4]">
+                        <i data-lucide="file-down" class="h-4 w-4 mr-1.5"></i> Bon de sortie (PDF)
+                    </a>
                 @endcan
             </div>
+        </details>
+    @endif
 
-            @can('signerApprobation', $demande)
-                <div class="card !border-[#b9c7e6] p-5 sm:p-6">
-                    <h2 class="text-base font-semibold text-slate-900 mb-2 flex items-center">
-                        <i data-lucide="pen-line" class="h-4 w-4 mr-2 text-[#3a5faa]"></i> Votre décharge
-                    </h2>
-                    <p class="text-sm text-slate-600 mb-4">
-                        Demande approuvée : signez ci-dessous pour autoriser la comptabilité à procéder au paiement.
+    <details class="card px-5 py-4 group">
+        <summary class="cursor-pointer list-none flex items-center justify-between text-sm font-semibold text-slate-700">
+            Historique
+            <i data-lucide="chevron-down" class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <ol class="relative border-l-2 border-slate-100 ml-1.5 space-y-5 mt-4">
+            @forelse ($demande->validations as $validation)
+                <li class="ml-5">
+                    <span class="absolute -left-[7px] flex h-3.5 w-3.5 rounded-full bg-[#3a5faa] ring-4 ring-white"></span>
+                    <p class="text-sm font-medium text-slate-900">
+                        {{ ValidationDepense::ETAPES[$validation->etape] ?? $validation->etape }}
+                        <span class="text-slate-500 font-normal">·</span>
+                        {{ ValidationDepense::DECISIONS[$validation->decision] ?? $validation->decision }}
                     </p>
-                    <form method="POST" action="{{ route('employe.depenses.signer', $demande) }}" id="form-signature">
-                        @csrf
-                        <input type="hidden" name="signature" id="signature-data">
-                        <div class="border-2 border-dashed border-slate-300 rounded-xl overflow-hidden bg-white touch-none">
-                            <canvas id="pad-signature" class="w-full h-40 cursor-crosshair"></canvas>
-                        </div>
-                        <div class="flex gap-2 mt-3">
-                            <button type="button" id="effacer-signature"
-                                    class="inline-flex items-center px-3 py-2 rounded-xl text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200">
-                                <i data-lucide="eraser" class="h-4 w-4 mr-1.5"></i> Effacer
-                            </button>
-                            <button type="submit" id="btn-signer"
-                                    class="btn-primary flex-1 inline-flex justify-center items-center px-4 py-2 rounded-xl text-white text-sm font-medium shadow-sm">
-                                <i data-lucide="pen-tool" class="h-4 w-4 mr-2"></i> Signer
-                            </button>
-                        </div>
-                        <p id="signature-vide" class="hidden text-xs text-red-500 mt-2 text-center">Tracez votre signature avant de valider.</p>
-                    </form>
-                </div>
-            @endcan
+                    <p class="text-xs text-slate-500 mt-0.5">{{ $validation->user?->name ?? '—' }} · {{ $validation->signe_le->format('d/m/Y à H:i') }}</p>
+                    @if ($validation->commentaire)
+                        <p class="mt-1.5 text-sm text-slate-700 bg-slate-50 rounded-lg px-3 py-2 italic">« {{ $validation->commentaire }} »</p>
+                    @endif
+                </li>
+            @empty
+                <li class="ml-5 text-sm text-slate-500">Aucune étape enregistrée pour l'instant.</li>
+            @endforelse
+        </ol>
+    </details>
 
-            @can('justifier', $demande)
-                <div class="card !border-emerald-200 p-5 sm:p-6">
-                    <h2 class="text-base font-semibold text-slate-900 mb-2 flex items-center">
-                        <i data-lucide="receipt" class="h-4 w-4 mr-2 text-emerald-500"></i> Justifier la dépense
-                    </h2>
-                    <p class="text-sm text-slate-600 mb-4">
-                        {{ $recus->count() }} reçu(s) joint(s). La comptabilité vérifie les pièces avant clôture.
-                    </p>
-                    <form method="POST" action="{{ route('employe.depenses.justification', $demande) }}"
-                          onsubmit="return confirm('Envoyer la justification à la comptabilité ?')">
-                        @csrf
-                        <button type="submit" @disabled($recus->isEmpty())
-                                class="w-full inline-flex justify-center items-center px-4 py-3 rounded-xl text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
-                            <i data-lucide="send" class="h-4 w-4 mr-2"></i> Soumettre la justification
-                        </button>
-                        @if ($recus->isEmpty())
-                            <p class="text-xs text-red-500 mt-2 text-center">Ajoutez au moins un reçu pour activer ce bouton.</p>
-                        @endif
-                    </form>
-                </div>
-            @endcan
-        </div>
-    </div>
+    @can('annuler', $demande)
+        <form method="POST" action="{{ route('employe.depenses.annuler', $demande) }}"
+              onsubmit="return confirm('Annuler définitivement cette demande ?')" class="text-center pt-2">
+            @csrf
+            <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700">
+                <i data-lucide="ban" class="h-4 w-4"></i> Annuler cette demande
+            </button>
+        </form>
+    @endcan
 </div>
 @endsection
 

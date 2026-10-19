@@ -41,7 +41,7 @@ class LoginController extends Controller
 
         return $user && $user->canAccessPanel(\Filament\Facades\Filament::getPanel('admin'))
             ? $this->redirectTo
-            : '/employe/depenses';
+            : '/depense';
     }
     /**
      * The OTP service instance.
