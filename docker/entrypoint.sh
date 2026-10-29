@@ -105,6 +105,10 @@ if [ $retry -ge $max_retries ]; then
 fi
 echo "✅ Base de données accessible"
 
+# Fichiers publics (vidéo du kiosque…) : lien public/storage vers le volume persistant
+mkdir -p storage/app/public
+php artisan storage:link --force --no-interaction || true
+
 # Optimisations Laravel
 echo "🔧 Optimisations Laravel..."
 php artisan config:cache --no-interaction

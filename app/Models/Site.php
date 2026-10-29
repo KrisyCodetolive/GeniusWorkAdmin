@@ -37,7 +37,8 @@ class Site extends Model
         'qr_token',
         'qr_generated_at',
         'kiosk_token',
-        'kiosk_activated_at'
+        'kiosk_activated_at',
+        'kiosk_video',
     ];
 
     /**
@@ -192,5 +193,31 @@ class Site extends Model
         $this->save();
         
         return $this->qr_token;
+    }
+
+    public const DISQUE_VIDEO_KIOSQUE = 'public';
+
+    /**
+     * Vidéo diffusée sur le kiosque du site : celle téléversée depuis le tableau de bord,
+     * sinon la vidéo par défaut livrée avec l'application. L'URL est relative pour fonctionner
+     * quel que soit le domaine d'accès (le nom du fichier change à chaque envoi : pas de cache périmé).
+     */
+    public function kioskVideoUrl(): string
+    {
+        return $this->kiosk_video
+            ? '/storage/'.ltrim($this->kiosk_video, '/')
+            : asset('videos/video.mp4');
+    }
+
+    protected static function booted(): void
+    {
+        // Une vidéo remplacée ou retirée ne doit pas rester sur le disque.
+        static::updating(function (Site $site) {
+            $ancienne = $site->getOriginal('kiosk_video');
+
+            if ($site->isDirty('kiosk_video') && $ancienne) {
+                \Illuminate\Support\Facades\Storage::disk(self::DISQUE_VIDEO_KIOSQUE)->delete($ancienne);
+            }
+        });
     }
 }

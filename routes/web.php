@@ -483,6 +483,7 @@ Route::prefix('kiosk')->name('kiosk.')->group(function () {
         ->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
     Route::get('/{token}/transition', [KioskController::class, 'transition'])->name('transition');
     Route::get('/{token}/presences', [KioskController::class, 'presences'])->name('presences');
+    Route::get('/{token}/video', [KioskController::class, 'video'])->name('video');
 });
 
 /*

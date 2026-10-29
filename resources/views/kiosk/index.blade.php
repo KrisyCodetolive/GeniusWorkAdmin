@@ -139,7 +139,7 @@
 
     <!-- Vidéo entreprise en boucle (muted au démarrage pour autoplay, son activé au 1er clic) -->
     <video id="video-player" autoplay loop muted playsinline>
-        <source src="{{ asset('videos/video.mp4') }}" type="video/mp4">
+        <source src="{{ $videoUrl }}">
     </video>
 
     <!-- Logo entreprise -->
@@ -187,6 +187,7 @@
 const KIOSK_TOKEN = '{{ $token }}';
 const SCAN_URL = '/api/kiosk/' + KIOSK_TOKEN + '/scan';  // ← Utilise l'API sans CSRF
 const PRESENCES_URL = '/kiosk/' + KIOSK_TOKEN + '/presences';
+const VIDEO_URL = '/kiosk/' + KIOSK_TOKEN + '/video';
 const OVERLAY_DURATION = 5000; // 5 secondes d'affichage
 
 // === Éléments DOM ===
@@ -729,6 +730,24 @@ setInterval(async () => {
         console.error('Erreur nettoyage TTL:', err);
     }
 }, 60 * 60 * 1000); // Toutes les heures
+
+// === Vidéo modifiable depuis le tableau de bord ===
+// Toutes les minutes : si la vidéo configurée a changé, on la remplace (jamais pendant un pointage).
+let videoActuelle = @json($videoUrl);
+setInterval(async () => {
+    if (scanning || !navigator.onLine) return;
+    try {
+        const reponse = await fetch(VIDEO_URL, { headers: { 'Accept': 'application/json' }, cache: 'no-store', signal: AbortSignal.timeout(5000) });
+        if (!reponse.ok) return;
+        const { url } = await reponse.json();
+        if (!url || url === videoActuelle || scanning) return;
+
+        videoActuelle = url;
+        video.querySelector('source').src = url;
+        video.load();
+        video.play().catch(() => {});
+    } catch (e) { /* réseau indisponible : on garde la vidéo en cours */ }
+}, 60 * 1000);
 
 // === Empêcher les raccourcis clavier (mode kiosque) ===
 document.addEventListener('keydown', function(e) {

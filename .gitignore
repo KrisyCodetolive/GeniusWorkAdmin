@@ -23,3 +23,7 @@ yarn-error.log
 /laravel_gen_filament.py
 .env
 elngbpzd_geniuswork.sql
+
+# Vidéos lourdes déposées à la main : à envoyer depuis le tableau de bord, pas via git
+/public/assets/*.mp4
+/public/assets/*.mov

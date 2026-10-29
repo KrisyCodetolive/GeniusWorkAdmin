@@ -19,6 +19,7 @@ class ViewSite extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            ...SiteResource::actionsVideoKiosque(Actions\Action::class),
             Actions\EditAction::make(),
         ];
     }

@@ -53,7 +53,23 @@ class KioskController extends Controller
             'site' => $site,
             'token' => $token,
             'recentPresences' => $recentPresences,
+            'videoUrl' => $site->kioskVideoUrl(),
         ]);
+    }
+
+    /**
+     * Vidéo actuellement configurée : le kiosque l'interroge pour changer de vidéo sans rechargement manuel.
+     */
+    public function video(string $token)
+    {
+        $site = Site::where('kiosk_token', $token)->first();
+
+        if (! $site) {
+            return response()->json(['error' => 'Kiosk invalide'], 404);
+        }
+
+        return response()->json(['url' => $site->kioskVideoUrl()])
+            ->header('Cache-Control', 'no-store');
     }
 
     /**

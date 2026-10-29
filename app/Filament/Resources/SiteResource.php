@@ -53,6 +53,63 @@ class SiteResource extends Resource
             ]);
     }
 
+    /**
+     * Vidéo diffusée sur l'écran du kiosque : envoi d'une nouvelle vidéo, ou retour à la vidéo par défaut.
+     * Le kiosque la récupère seul (rechargement périodique), sans toucher au mini PC.
+     *
+     * @param  class-string  $classe  Tables\Actions\Action ou Filament\Actions\Action
+     * @return array<int, object>
+     */
+    public static function actionsVideoKiosque(string $classe): array
+    {
+        return [
+            $classe::make('videoKiosque')
+                ->label('Vidéo du kiosque')
+                ->icon('heroicon-o-film')
+                ->color('info')
+                ->visible(fn (Site $record): bool => auth()->user()->can('update', $record))
+                ->modalHeading(fn (Site $record) => "Vidéo du kiosque — {$record->nom}")
+                ->modalDescription(fn (Site $record) => $record->kiosk_video
+                    ? 'Une vidéo personnalisée est diffusée. En envoyer une nouvelle la remplace.'
+                    : 'La vidéo par défaut est diffusée. Envoyez-en une pour la remplacer.')
+                ->modalSubmitActionLabel('Mettre en ligne')
+                ->form([
+                    Forms\Components\FileUpload::make('kiosk_video')
+                        ->label('Nouvelle vidéo')
+                        ->helperText('MP4 ou WebM, 500 Mo maximum. Au-delà de 100 Mo, l\'envoi peut être refusé par le proxy (Cloudflare) : compressez la vidéo (1080p, ~1 Mbit/s).')
+                        ->disk(Site::DISQUE_VIDEO_KIOSQUE)
+                        ->directory('kiosk/videos')
+                        ->visibility('public')
+                        ->acceptedFileTypes(['video/mp4', 'video/webm'])
+                        ->maxSize(512000)
+                        ->required(),
+                ])
+                ->action(function (Site $record, array $data) {
+                    $record->update(['kiosk_video' => $data['kiosk_video']]);
+
+                    Notification::make()
+                        ->success()
+                        ->title('Vidéo mise en ligne')
+                        ->body('Le kiosque l\'affichera dans la minute qui suit.')
+                        ->send();
+                }),
+
+            $classe::make('videoKiosqueParDefaut')
+                ->label('Vidéo par défaut')
+                ->icon('heroicon-o-arrow-uturn-left')
+                ->color('gray')
+                ->visible(fn (Site $record): bool => filled($record->kiosk_video) && auth()->user()->can('update', $record))
+                ->requiresConfirmation()
+                ->modalHeading(fn (Site $record) => "Revenir à la vidéo par défaut — {$record->nom}")
+                ->modalDescription('La vidéo personnalisée sera supprimée du serveur.')
+                ->action(function (Site $record) {
+                    $record->update(['kiosk_video' => null]);
+
+                    Notification::make()->success()->title('Vidéo par défaut rétablie')->send();
+                }),
+        ];
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -118,6 +175,7 @@ class SiteResource extends Resource
                     ->url(fn (Site $record): string => route('kiosk.index', $record->kiosk_token))
                     ->openUrlInNewTab()
                     ->visible(fn (Site $record): bool => !empty($record->kiosk_token)),
+                ...static::actionsVideoKiosque(Tables\Actions\Action::class),
                 Tables\Actions\Action::make('copyKioskUrl')
                     ->label('Copier URL Kiosque')
                     ->icon('heroicon-o-clipboard')
